@@ -1,0 +1,6 @@
+{
+  "name": "BengkelPro POS",
+  "description": "Aplikasi POS bengkel modern: kelola servis, stok suku cadang, penomoran SKU & lokasi rak gudang, loyalitas pelanggan & promo otomatis, serta komisi teknisi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
