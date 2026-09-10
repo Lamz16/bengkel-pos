@@ -8,6 +8,7 @@ interface HeaderProps {
   activeTab: string;
   showPOSForm: boolean;
   currentUser: User;
+  dbStatus?: { connected: boolean; orm: string };
   onOpenMobileMenu: () => void;
   onClosePOSForm: () => void;
   onOpenPOSForm: () => void;
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   showPOSForm,
   currentUser,
+  dbStatus,
   onOpenMobileMenu,
   onClosePOSForm,
   onOpenPOSForm,
@@ -37,7 +39,6 @@ export const Header: React.FC<HeaderProps> = ({
       case 'reports': return 'Laporan';
       case 'staff': return 'Pengguna';
       case 'settings': return 'Pengaturan';
-      case 'subscription': return 'Langganan';
       default: return activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
     }
   };
@@ -71,6 +72,16 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-2">
+        {dbStatus && (
+          <div 
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide border border-slate-200 bg-slate-50 text-slate-700"
+            title={dbStatus.connected ? "Database PostgreSQL aktif via Prisma ORM" : "Mode Fallback Data (Siap terhubung ke PostgreSQL lokal via Prisma)"}
+          >
+            <span className={cn("w-2 h-2 rounded-full", dbStatus.connected ? "bg-emerald-500 animate-pulse" : "bg-emerald-600")} />
+            <span>PostgreSQL (Prisma)</span>
+          </div>
+        )}
+
         <button
           onClick={() => {
             const nextRole: UserRole = currentUser.role === 'Owner' ? 'Admin' : 'Owner';

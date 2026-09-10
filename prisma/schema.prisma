@@ -1,0 +1,233 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model CompanySettings {
+  id                             String   @id @default("settings-default")
+  name                           String   @default("BengkelPro Mandiri")
+  slogan                         String   @default("Solusi Perawatan & Servis Terpercaya")
+  address                        String   @default("Jl. Otomotif Raya No. 123, Blok B4, Jakarta Selatan")
+  phone                          String   @default("0812-3456-7890")
+  email                          String?  @default("kontak@bengkelpro.com")
+  operationalHours               String?  @default("Senin - Sabtu: 08:00 - 17:00 WIB")
+  ownerName                      String?  @default("Bambang Sutrisno")
+  picName                        String?  @default("Rian Herlambang")
+  defaultMechanicBonusPercent    Float    @default(15)
+  defaultAbsencePenalty          Float    @default(50000)
+  defaultWarrantyPenalty         Float    @default(75000)
+  allowCustomBonusPerTransaction Boolean  @default(true)
+  receiptHeader                  String?  @default("NOTA RESMI & RINCIAN SERVIS")
+  footerNote                     String   @default("Barang yang sudah dibeli tidak dapat ditukar kecuali perjanjian. Terima kasih atas kepercayaan Anda merawat kendaraan bersama kami.")
+  warrantyTerms                  String   @default("Garansi servis 7 hari atau 500 KM untuk pengerjaan perbaikan yang sama dengan menunjukkan nota ini.")
+  showMechanicOnReceipt          Boolean  @default(true)
+  showWarrantyOnReceipt          Boolean  @default(true)
+  showOdometerOnReceipt          Boolean  @default(true)
+  showCustomerPhoneOnReceipt     Boolean  @default(true)
+  receiptContactHelp             String?  @default("WhatsApp CS: 0812-3456-7890")
+  loyaltySilverVisits            Int?     @default(3)
+  loyaltyGoldVisits              Int?     @default(6)
+  loyaltyVipVisits               Int?     @default(10)
+  loyaltySilverDiscountPercent   Float?   @default(5)
+  loyaltyGoldDiscountPercent     Float?   @default(10)
+  loyaltyVipDiscountPercent      Float?   @default(15)
+  updatedAt                      DateTime @updatedAt
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  name               String
+  role               String    @default("Admin") // "Owner" | "Admin"
+  email              String    @unique
+  workshopName       String    @default("BengkelPro Mandiri")
+  status             String    @default("Active")
+  shifts             String?   @default("Pagi")
+  subscriptionTier   String    @default("Premium")
+  subscriptionExpiry DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Customer {
+  id                String            @id @default(uuid())
+  name              String
+  phone             String
+  totalServiceCount Int               @default(0)
+  totalSpent        Float             @default(0)
+  lastVisitDate     DateTime?
+  loyaltyTier       String?           @default("Bronze")
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  vehicles          Vehicle[]
+  services          WorkshopService[]
+}
+
+model Vehicle {
+  id          String            @id @default(uuid())
+  customerId  String
+  plateNumber String
+  model       String
+  brand       String
+  createdAt   DateTime          @default(now())
+  customer    Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  services    WorkshopService[]
+}
+
+model SparePart {
+  id              String            @id @default(uuid())
+  sku             String?           @unique
+  barcode         String?
+  name            String
+  category        String
+  price           Float
+  purchasePrice   Float             @default(0)
+  stock           Int               @default(0)
+  minStock        Int               @default(5)
+  supplierId      String?
+  rackCode        String?
+  shelfLevel      String?
+  binNumber       String?
+  rackLocation    String?
+  rackZone        String?
+  locationNotes   String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  supplier        Supplier?         @relation(fields: [supplierId], references: [id])
+  serviceItems    ServicePartItem[]
+  purchases       PurchaseRecord[]
+  stockHistories  StockHistory[]
+}
+
+model WorkshopService {
+  id                      String            @id @default(uuid())
+  customerId              String?
+  customerName            String
+  customerPhone           String?
+  vehicleId               String?
+  vehiclePlate            String
+  vehicleModel            String
+  kilometers              Int               @default(0)
+  serviceType             String            @default("Servis Rutin")
+  complaint               String
+  diagnosis               String?
+  status                  String            @default("In Progress") // "Pending" | "In Progress" | "Ready" | "Done"
+  laborFee                Float             @default(0)
+  totalAmount             Float             @default(0)
+  paymentStatus           String            @default("Unpaid") // "Unpaid" | "Paid"
+  discountAmount          Float?            @default(0)
+  discountReason          String?
+  mechanicId              String?
+  mechanicName            String?
+  mechanicBonusPercent    Float?            @default(0)
+  mechanicBonusAmount     Float?            @default(0)
+  hasWarrantyClaim        Boolean           @default(false)
+  warrantyClaimDate       DateTime?
+  warrantyClaimReason     String?
+  isMechanicAbsentOnClaim Boolean?          @default(false)
+  warrantyDeductionAmount Float?            @default(0)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  customer                Customer?         @relation(fields: [customerId], references: [id])
+  vehicle                 Vehicle?          @relation(fields: [vehicleId], references: [id])
+  mechanic                Mechanic?         @relation(fields: [mechanicId], references: [id])
+  partsUsed               ServicePartItem[]
+}
+
+model ServicePartItem {
+  id          String          @id @default(uuid())
+  serviceId   String
+  partId      String
+  name        String
+  quantity    Int             @default(1)
+  priceAtTime Float
+  service     WorkshopService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  part        SparePart       @relation(fields: [partId], references: [id])
+}
+
+model Mechanic {
+  id                    String               @id @default(uuid())
+  name                  String
+  phone                 String
+  specialty             String
+  status                String               @default("Active")
+  defaultBonusPercent   Float                @default(15)
+  dailySalary           Float                @default(100000)
+  warrantyPenaltyAmount Float                @default(75000)
+  absencePenaltyAmount  Float                @default(50000)
+  joinedAt              String               @default("2024-01-10")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  deductions            MechanicDeduction[]
+  attendances           MechanicAttendance[]
+  services              WorkshopService[]
+}
+
+model MechanicDeduction {
+  id              String   @id @default(uuid())
+  mechanicId      String
+  mechanicName    String
+  serviceId       String?
+  vehiclePlate    String?
+  date            DateTime @default(now())
+  reason          String
+  type            String   @default("Warranty_Complaint")
+  amount          Float
+  isAbsentNextDay Boolean  @default(false)
+  mechanic        Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+}
+
+model MechanicAttendance {
+  id         String   @id @default(uuid())
+  mechanicId String
+  date       String
+  status     String   @default("Present")
+  notes      String?
+  mechanic   Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+}
+
+model Supplier {
+  id        String           @id @default(uuid())
+  name      String
+  contact   String
+  address   String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  parts     SparePart[]
+  purchases PurchaseRecord[]
+}
+
+model PurchaseRecord {
+  id         String    @id @default(uuid())
+  partId     String
+  supplierId String
+  quantity   Int
+  costPrice  Float
+  date       DateTime  @default(now())
+  part       SparePart @relation(fields: [partId], references: [id])
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  category  String
+  amount    Float
+  note      String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model StockHistory {
+  id        String     @id @default(uuid())
+  partId    String
+  partName  String
+  amount    Int
+  type      String // "In" | "Out"
+  reason    String
+  date      DateTime   @default(now())
+  part      SparePart? @relation(fields: [partId], references: [id])
+}

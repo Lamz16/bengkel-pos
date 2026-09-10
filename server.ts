@@ -1,0 +1,67 @@
+import 'dotenv/config';
+import express, { Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs';
+import { checkDbConnection, isDbConnected } from './src/server/db/connection';
+import { apiRouter } from './src/server/routes';
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
+
+  // Middleware
+  app.use(express.json());
+
+  // Check Database connection (Prisma with PostgreSQL)
+  let isDbReady = false;
+  try {
+    isDbReady = await checkDbConnection();
+  } catch (err) {
+    console.error('Error during initial DB check:', err);
+  }
+
+  // ==========================================
+  // MODULAR REST API ROUTES (SOLID Architecture)
+  // ==========================================
+  app.use('/api', apiRouter);
+
+  // ==========================================
+  // VITE MIDDLEWARE (Dev) or STATIC SERVING (Prod)
+  // ==========================================
+  const distPath = path.join(process.cwd(), 'dist');
+  const hasDist = fs.existsSync(path.join(distPath, 'index.html'));
+  const isProd = process.env.NODE_ENV === 'production' || hasDist;
+
+  if (!isProd) {
+    const { createServer: createViteServer } = await import('vite');
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static(distPath));
+    app.get('*', (req: Request, res: Response) => {
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send('Application build not found');
+      }
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 BengkelPro Backend Server berjalan pada http://0.0.0.0:${PORT}`);
+    console.log(`🗄️  Prisma ORM & PostgreSQL status: ${isDbConnected() ? 'Connected' : 'Fallback Mode (Ready for local PostgreSQL)'}`);
+  });
+}
+
+startServer();

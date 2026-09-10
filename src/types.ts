@@ -46,9 +46,9 @@ export interface User {
   email: string;
   workshopName: string;
   createdAt: string;
-  subscription: {
-    tier: SubscriptionTier;
-    expiryDate: string | null;
+  subscription?: {
+    tier?: string;
+    expiryDate?: string | null;
   };
 }
 

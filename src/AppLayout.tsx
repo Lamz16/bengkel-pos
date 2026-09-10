@@ -10,7 +10,6 @@ import {
   TrendingUp, 
   UserCircle, 
   Settings, 
-  ShieldCheck, 
   Award,
   X
 } from 'lucide-react';
@@ -34,7 +33,6 @@ import { INITIAL_PARTS } from './constants';
 
 // UI and Feature Components
 import { Modal } from './components/Modal';
-import { SubscriptionGuard } from './components/SubscriptionGuard';
 import { InvoiceModal } from './components/InvoiceModal';
 import { AuthView } from './components/AuthView';
 import { Sidebar, NavItem } from './components/Sidebar';
@@ -49,7 +47,6 @@ import { SupplierView } from './components/SupplierView';
 import { ExpenseView } from './components/ExpenseView';
 import { ReportsView } from './components/ReportsView';
 import { StaffView } from './components/StaffView';
-import { SubscriptionView } from './components/SubscriptionView';
 import { SettingsView } from './components/SettingsView';
 import { MechanicsView } from './components/MechanicsView';
 import { MechanicForm } from './components/MechanicForm';
@@ -63,6 +60,7 @@ import { SupplierForm } from './components/forms/SupplierForm';
 import { PartForm } from './components/forms/PartForm';
 import { CustomerForm } from './components/forms/CustomerForm';
 import { AddStockForm } from './components/forms/AddStockForm';
+import { api } from './services/api';
 
 export default function AppLayout() {
   const [currentUser, setCurrentUser] = useState<User | null>({
@@ -72,10 +70,6 @@ export default function AppLayout() {
     email: 'owner@bengkelpro.com',
     workshopName: 'BengkelPro Mandiri',
     createdAt: new Date().toISOString(),
-    subscription: {
-      tier: 'Premium',
-      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    }
   });
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -280,13 +274,41 @@ export default function AppLayout() {
     { id: 'reports', label: 'Laporan', icon: TrendingUp, roles: ['Owner'] },
     { id: 'staff', label: 'Pengguna', icon: UserCircle, roles: ['Owner'] },
     { id: 'settings', label: 'Pengaturan', icon: Settings, roles: ['Owner', 'Admin'] },
-    { id: 'subscription', label: 'Langganan', icon: ShieldCheck, roles: ['Owner'] },
   ], []);
 
   const filteredNavItems = useMemo(() => {
     if (!currentUser) return [];
     return navItems.filter(item => item.roles.includes(currentUser.role));
   }, [currentUser, navItems]);
+
+  const [postgresConnected, setPostgresConnected] = useState(false);
+
+  // Sync data with PostgreSQL / Prisma backend on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadBootstrap() {
+      try {
+        const data = await api.getBootstrap();
+        if (!isMounted) return;
+        if (data.settings) setCompanySettings(data.settings);
+        if (data.customers && data.customers.length > 0) setCustomers(data.customers);
+        if (data.vehicles && data.vehicles.length > 0) setVehicles(data.vehicles);
+        if (data.parts && data.parts.length > 0) setParts(data.parts);
+        if (data.services && data.services.length > 0) setServices(data.services);
+        if (data.mechanics && data.mechanics.length > 0) setMechanics(data.mechanics);
+        if (data.deductions) setDeductions(data.deductions);
+        if (data.suppliers && data.suppliers.length > 0) setSuppliers(data.suppliers);
+        if (data.purchases && data.purchases.length > 0) setPurchases(data.purchases);
+        if (data.expenses && data.expenses.length > 0) setExpenses(data.expenses);
+        if (data.staff && data.staff.length > 0) setStaff(data.staff);
+        setPostgresConnected(data.postgresConnected);
+      } catch (err) {
+        console.warn('Backend bootstrap fallback to local initial state:', err);
+      }
+    }
+    loadBootstrap();
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     if (currentUser) {
@@ -297,115 +319,321 @@ export default function AppLayout() {
     }
   }, [currentUser, filteredNavItems, activeTab]);
 
-  // Action Handlers
-  const handleApplyWarrantyClaim = (data: {
+  // Action Handlers connected to PostgreSQL & Prisma API
+  const handleApplyWarrantyClaim = async (data: {
     serviceId: string;
     reason: string;
     isAbsent: boolean;
     deductionAmount: number;
   }) => {
-    const srv = services.find(s => s.id === data.serviceId);
-    const mec = mechanics.find(m => m.id === srv?.mechanicId);
+    try {
+      const updatedSrv = await api.applyWarrantyClaim(data);
+      setServices(prev => prev.map(s => s.id === data.serviceId ? updatedSrv : s));
+      const [updatedServices, updatedDeductions] = await Promise.all([
+        api.getServices(),
+        api.getDeductions()
+      ]);
+      setServices(updatedServices);
+      setDeductions(updatedDeductions);
+    } catch (err) {
+      console.error('Error applying warranty claim:', err);
+      // Fallback local update
+      const srv = services.find(s => s.id === data.serviceId);
+      const mec = mechanics.find(m => m.id === srv?.mechanicId);
+      setServices(prev => prev.map(s => {
+        if (s.id === data.serviceId) {
+          return {
+            ...s,
+            hasWarrantyClaim: true,
+            warrantyClaimDate: new Date().toISOString(),
+            warrantyClaimReason: data.reason,
+            isMechanicAbsentOnClaim: data.isAbsent,
+            warrantyDeductionAmount: data.deductionAmount,
+            status: 'In Progress' as ServiceStatus
+          };
+        }
+        return s;
+      }));
 
-    setServices(prev => prev.map(s => {
-      if (s.id === data.serviceId) {
-        return {
-          ...s,
-          hasWarrantyClaim: true,
-          warrantyClaimDate: new Date().toISOString(),
-          warrantyClaimReason: data.reason,
-          isMechanicAbsentOnClaim: data.isAbsent,
-          warrantyDeductionAmount: data.deductionAmount,
-          status: 'In Progress' as ServiceStatus
+      if (mec) {
+        const newDeduction: MechanicDeduction = {
+          id: `DED-${Date.now()}`,
+          mechanicId: mec.id,
+          mechanicName: mec.name,
+          serviceId: data.serviceId,
+          vehiclePlate: srv?.vehiclePlate,
+          date: new Date().toISOString(),
+          reason: `Klaim Garansi Servis (${data.reason})${data.isAbsent ? ' + Denda Mangkir H+1' : ''}`,
+          type: 'Warranty_Complaint',
+          amount: data.deductionAmount,
+          isAbsentNextDay: data.isAbsent
         };
+        setDeductions(prev => [newDeduction, ...prev]);
       }
-      return s;
-    }));
-
-    if (mec) {
-      const newDeduction: MechanicDeduction = {
-        id: `DED-${Date.now()}`,
-        mechanicId: mec.id,
-        mechanicName: mec.name,
-        serviceId: data.serviceId,
-        vehiclePlate: srv?.vehiclePlate,
-        date: new Date().toISOString(),
-        reason: `Klaim Garansi Servis (${data.reason})${data.isAbsent ? ' + Denda Mangkir H+1' : ''}`,
-        type: 'Warranty_Complaint',
-        amount: data.deductionAmount,
-        isAbsentNextDay: data.isAbsent
-      };
-
-      setDeductions(prev => [newDeduction, ...prev]);
     }
 
     setWarrantyModalService(null);
   };
 
-  const handleNewService = (service: WorkshopService) => {
-    setParts(prev => {
-      const newParts = [...prev];
-      service.partsUsed.forEach(used => {
-        const idx = newParts.findIndex(p => p.id === used.partId);
-        if (idx !== -1) {
-          newParts[idx] = { ...newParts[idx], stock: Math.max(0, newParts[idx].stock - used.quantity) };
-        }
+  const handleNewService = async (service: WorkshopService) => {
+    try {
+      const savedService = await api.createService(service);
+      setServices(prev => [savedService, ...prev]);
+      const [updatedParts, updatedCustomers] = await Promise.all([
+        api.getParts(),
+        api.getCustomers()
+      ]);
+      setParts(updatedParts);
+      setCustomers(updatedCustomers);
+      setShowPOSForm(false);
+      setSelectedInvoiceId(savedService.id);
+      setActiveTab('pos');
+    } catch (err) {
+      console.error('Error saving service to backend:', err);
+      // Local fallback
+      setParts(prev => {
+        const newParts = [...prev];
+        service.partsUsed.forEach(used => {
+          const idx = newParts.findIndex(p => p.id === used.partId);
+          if (idx !== -1) {
+            newParts[idx] = { ...newParts[idx], stock: Math.max(0, newParts[idx].stock - used.quantity) };
+          }
+        });
+        return newParts;
       });
-      return newParts;
-    });
-
-    setServices(prev => [service, ...prev]);
-    setShowPOSForm(false);
-    setSelectedInvoiceId(service.id);
-    setActiveTab('pos');
+      setServices(prev => [service, ...prev]);
+      setShowPOSForm(false);
+      setSelectedInvoiceId(service.id);
+      setActiveTab('pos');
+    }
   };
 
-  const handleUpdateStatus = (id: string, newStatus: ServiceStatus) => {
+  const handleUpdateStatus = async (id: string, newStatus: ServiceStatus) => {
     setServices(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
     setSelectedServiceId(null);
+    try {
+      await api.updateServiceStatus(id, newStatus);
+    } catch (err) {
+      console.error('Error updating status in backend:', err);
+    }
   };
 
-  const handleAddStock = (partId: string, amount: number, supplierId: string, costPrice: number) => {
-    setParts(prev => prev.map(p => {
-      if (p.id === partId) {
-        return { 
-          ...p, 
-          stock: p.stock + amount,
-          supplierId: supplierId || p.supplierId,
-          purchasePrice: costPrice > 0 ? costPrice : p.purchasePrice
-        };
-      }
-      return p;
-    }));
-
-    if (amount > 0 && supplierId) {
-      const newPurchase: PurchaseRecord = {
-        id: 'PR-' + Math.floor(Math.random() * 100000),
-        partId,
-        supplierId,
-        quantity: amount,
-        costPrice: costPrice || 0,
-        date: new Date().toISOString()
-      };
-      setPurchases(prev => [newPurchase, ...prev]);
-
-      const part = parts.find(p => p.id === partId);
-      const supplier = suppliers.find(s => s.id === supplierId);
-      const partName = part ? part.name : 'Suku Cadang';
-      const supplierName = supplier ? supplier.name : 'Supplier';
-      const totalCost = (costPrice || 0) * amount;
-
-      const newExpense: Expense = {
-        id: 'EXP-' + Math.floor(Math.random() * 100000),
-        category: 'Suku Cadang',
-        amount: totalCost,
-        note: `Beli Stok ${partName} x${amount} Pcs dari ${supplierName}`,
-        date: new Date().toISOString()
-      };
-      setExpenses(prev => [newExpense, ...prev]);
+  const handleAddStock = async (partId: string, amount: number, supplierId: string, costPrice: number) => {
+    try {
+      const updatedPart = await api.addPartStock(partId, amount, supplierId, costPrice);
+      setParts(prev => prev.map(p => p.id === partId ? updatedPart : p));
+      const [updatedPurchases, updatedExpenses] = await Promise.all([
+        api.getPurchases(),
+        api.getExpenses()
+      ]);
+      setPurchases(updatedPurchases);
+      setExpenses(updatedExpenses);
+    } catch (err) {
+      console.error('Error adding stock to backend:', err);
+      // Local fallback
+      setParts(prev => prev.map(p => {
+        if (p.id === partId) {
+          return { 
+            ...p, 
+            stock: p.stock + amount,
+            supplierId: supplierId || p.supplierId,
+            purchasePrice: costPrice > 0 ? costPrice : p.purchasePrice
+          };
+        }
+        return p;
+      }));
     }
-
     setShowAddStock(false);
+  };
+
+  const handleDeletePart = async (id: string) => {
+    setParts(prev => prev.filter(x => x.id !== id));
+    try {
+      await api.deletePart(id);
+    } catch (err) {
+      console.error('Failed to delete part:', err);
+    }
+  };
+
+  const handleSavePart = async (p: SparePart) => {
+    if (editingPart && editingPart.name) {
+      setParts(prev => prev.map(x => x.id === p.id ? p : x));
+      try {
+        const updated = await api.updatePart(p.id, p);
+        setParts(prev => prev.map(x => x.id === p.id ? updated : x));
+      } catch (err) {
+        console.error('Failed to update part:', err);
+      }
+    } else {
+      try {
+        const created = await api.createPart(p);
+        setParts(prev => [created, ...prev]);
+      } catch (err) {
+        console.error('Failed to create part:', err);
+        setParts(prev => [p, ...prev]);
+      }
+    }
+    setEditingPart(null);
+  };
+
+  const handleDeleteCustomer = async (id: string) => {
+    setCustomers(prev => prev.filter(x => x.id !== id));
+    try {
+      await api.deleteCustomer(id);
+    } catch (err) {
+      console.error('Failed to delete customer:', err);
+    }
+  };
+
+  const handleSaveCustomer = async (c: Customer) => {
+    if (editingCustomer && editingCustomer.name) {
+      setCustomers(prev => prev.map(x => x.id === c.id ? c : x));
+      try {
+        const updated = await api.updateCustomer(c.id, c);
+        setCustomers(prev => prev.map(x => x.id === c.id ? updated : x));
+      } catch (err) {
+        console.error('Failed to update customer:', err);
+      }
+    } else {
+      try {
+        const created = await api.createCustomer(c);
+        setCustomers(prev => [created, ...prev]);
+      } catch (err) {
+        console.error('Failed to create customer:', err);
+        setCustomers(prev => [c, ...prev]);
+      }
+    }
+    setEditingCustomer(null);
+  };
+
+  const handleAddVehicle = async (v: Vehicle) => {
+    setVehicles(prev => [v, ...prev]);
+    try {
+      await api.createVehicle(v);
+    } catch (err) {
+      console.error('Failed to add vehicle:', err);
+    }
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    setExpenses(prev => prev.filter(x => x.id !== id));
+    try {
+      await api.deleteExpense(id);
+    } catch (err) {
+      console.error('Failed to delete expense:', err);
+    }
+  };
+
+  const handleSaveExpense = async (e: Expense) => {
+    try {
+      const created = await api.createExpense(e);
+      setExpenses(prev => [created, ...prev]);
+    } catch (err) {
+      console.error('Failed to create expense:', err);
+      setExpenses(prev => [e, ...prev]);
+    }
+    setEditingExpense(null);
+  };
+
+  const handleDeleteSupplier = async (id: string) => {
+    setSuppliers(prev => prev.filter(x => x.id !== id));
+    try {
+      await api.deleteSupplier(id);
+    } catch (err) {
+      console.error('Failed to delete supplier:', err);
+    }
+  };
+
+  const handleSaveSupplier = async (s: Supplier) => {
+    if (editingSupplier && editingSupplier.name) {
+      setSuppliers(prev => prev.map(x => x.id === s.id ? s : x));
+      try {
+        const updated = await api.updateSupplier(s.id, s);
+        setSuppliers(prev => prev.map(x => x.id === s.id ? updated : x));
+      } catch (err) {
+        console.error('Failed to update supplier:', err);
+      }
+    } else {
+      try {
+        const created = await api.createSupplier(s);
+        setSuppliers(prev => [created, ...prev]);
+      } catch (err) {
+        console.error('Failed to create supplier:', err);
+        setSuppliers(prev => [s, ...prev]);
+      }
+    }
+    setEditingSupplier(null);
+  };
+
+  const handleDeleteMechanic = async (id: string) => {
+    setMechanics(prev => prev.filter(m => m.id !== id));
+    try {
+      await api.deleteMechanic(id);
+    } catch (err) {
+      console.error('Failed to delete mechanic:', err);
+    }
+  };
+
+  const handleSaveMechanic = async (m: Mechanic) => {
+    if (editingMechanic) {
+      setMechanics(prev => prev.map(item => item.id === m.id ? m : item));
+      try {
+        const updated = await api.updateMechanic(m.id, m);
+        setMechanics(prev => prev.map(item => item.id === m.id ? updated : item));
+      } catch (err) {
+        console.error('Failed to update mechanic:', err);
+      }
+    } else {
+      try {
+        const created = await api.createMechanic(m);
+        setMechanics(prev => [...prev, created]);
+      } catch (err) {
+        console.error('Failed to create mechanic:', err);
+        setMechanics(prev => [...prev, m]);
+      }
+    }
+    setShowMechanicModal(false);
+    setEditingMechanic(null);
+  };
+
+  const handleDeleteDeduction = async (id: string) => {
+    setDeductions(prev => prev.filter(d => d.id !== id));
+    try {
+      await api.deleteDeduction(id);
+    } catch (err) {
+      console.error('Failed to delete deduction:', err);
+    }
+  };
+
+  const handleSaveManualDeduction = async (ded: MechanicDeduction) => {
+    setDeductions(prev => [ded, ...prev]);
+    setShowManualDeduction(false);
+    setManualDeductionMechanic(null);
+    try {
+      await api.createDeduction(ded);
+    } catch (err) {
+      console.error('Failed to save deduction to backend:', err);
+    }
+  };
+
+  const handleSaveStaff = async (stf: any) => {
+    try {
+      const created = await api.createStaff(stf);
+      setStaff(prev => [created, ...prev]);
+    } catch (err) {
+      console.error('Failed to create staff:', err);
+      setStaff(prev => [stf, ...prev]);
+    }
+    setEditingStaff(null);
+  };
+
+  const handleUpdateSettings = async (newSettings: CompanySettings) => {
+    setCompanySettings(newSettings);
+    try {
+      await api.updateSettings(newSettings);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+    }
   };
 
   const selectedService = useMemo(() => 
@@ -440,6 +668,7 @@ export default function AppLayout() {
           activeTab={activeTab}
           showPOSForm={showPOSForm}
           currentUser={currentUser}
+          dbStatus={{ connected: postgresConnected, orm: 'prisma' }}
           onOpenMobileMenu={() => setIsSidebarOpen(true)}
           onClosePOSForm={() => setShowPOSForm(false)}
           onOpenPOSForm={() => setShowPOSForm(true)}
@@ -535,8 +764,8 @@ export default function AppLayout() {
                   settings={companySettings}
                   initialCustomer={posInitialCustomer}
                   initialPromoPercent={posInitialPromoPercent}
-                  onAddCustomer={(c) => setCustomers(prev => [c, ...prev])}
-                  onAddVehicle={(v) => setVehicles(prev => [v, ...prev])}
+                  onAddCustomer={handleSaveCustomer}
+                  onAddVehicle={handleAddVehicle}
                 />
               </motion.div>
             )}
@@ -549,10 +778,10 @@ export default function AppLayout() {
                   deductions={deductions}
                   onAddMechanic={() => { setEditingMechanic(null); setShowMechanicModal(true); }}
                   onEditMechanic={(m) => { setEditingMechanic(m); setShowMechanicModal(true); }}
-                  onDeleteMechanic={(id) => setMechanics(prev => prev.filter(m => m.id !== id))}
+                  onDeleteMechanic={handleDeleteMechanic}
                   onOpenWarrantyClaim={(srv) => setWarrantyModalService(srv)}
                   onOpenManualDeduction={(m) => { setManualDeductionMechanic(m); setShowManualDeduction(true); }}
-                  onDeleteDeduction={(id) => setDeductions(prev => prev.filter(d => d.id !== id))}
+                  onDeleteDeduction={handleDeleteDeduction}
                 />
               </motion.div>
             )}
@@ -566,7 +795,7 @@ export default function AppLayout() {
                   onAdd={() => setEditingPart({} as SparePart)}
                   onAddStock={() => setShowAddStock(true)}
                   onEdit={(p) => setEditingPart(p)}
-                  onDelete={(id) => setParts(prev => prev.filter(x => x.id !== id))}
+                  onDelete={handleDeletePart}
                 />
               </motion.div>
             )}
@@ -579,7 +808,7 @@ export default function AppLayout() {
                   settings={companySettings}
                   onAdd={() => setEditingCustomer({} as Customer)}
                   onEdit={(c) => setEditingCustomer(c)}
-                  onDelete={(id) => setCustomers(prev => prev.filter(x => x.id !== id))}
+                  onDelete={handleDeleteCustomer}
                   onSelectCustomerForPOS={(cust, promoPct) => {
                     setPosInitialCustomer(cust);
                     setPosInitialPromoPercent(promoPct || null);
@@ -606,7 +835,7 @@ export default function AppLayout() {
                 <ExpenseView 
                   expenses={expenses}
                   onAdd={() => setEditingExpense({} as Expense)}
-                  onDelete={(id) => setExpenses(prev => prev.filter(x => x.id !== id))}
+                  onDelete={handleDeleteExpense}
                 />
               </motion.div>
             )}
@@ -617,26 +846,14 @@ export default function AppLayout() {
                   suppliers={suppliers}
                   onAdd={() => setEditingSupplier({} as Supplier)}
                   onEdit={(s) => setEditingSupplier(s)}
-                  onDelete={(id) => setSuppliers(prev => prev.filter(x => x.id !== id))}
+                  onDelete={handleDeleteSupplier}
                 />
               </motion.div>
             )}
 
             {activeTab === 'reports' && !showPOSForm && (
               <motion.div key="reports" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <SubscriptionGuard user={currentUser}>
-                  <ReportsView services={services} expenses={expenses} />
-                </SubscriptionGuard>
-              </motion.div>
-            )}
-
-            {activeTab === 'subscription' && !showPOSForm && (
-              <motion.div key="subscription" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <SubscriptionView 
-                  user={currentUser} 
-                  onNavigate={setActiveTab}
-                  onLogout={() => setCurrentUser(null)}
-                />
+                <ReportsView services={services} expenses={expenses} />
               </motion.div>
             )}
 
@@ -646,7 +863,7 @@ export default function AppLayout() {
                   settings={companySettings} 
                   mechanics={mechanics}
                   currentUserRole={currentUser.role}
-                  onUpdateSettings={setCompanySettings}
+                  onUpdateSettings={handleUpdateSettings}
                   onBatchUpdateMechanicBonus={(newPercent) => {
                     setMechanics(prev => prev.map(m => ({ ...m, defaultBonusPercent: newPercent })));
                     setCompanySettings(prev => ({ ...prev, defaultMechanicBonusPercent: newPercent }));
@@ -698,15 +915,7 @@ export default function AppLayout() {
             >
               <MechanicForm 
                 mechanic={editingMechanic || undefined}
-                onSave={(m) => {
-                  if (editingMechanic) {
-                    setMechanics(prev => prev.map(item => item.id === m.id ? m : item));
-                  } else {
-                    setMechanics(prev => [...prev, m]);
-                  }
-                  setShowMechanicModal(false);
-                  setEditingMechanic(null);
-                }}
+                onSave={handleSaveMechanic}
                 onCancel={() => { setShowMechanicModal(false); setEditingMechanic(null); }}
               />
             </Modal>
@@ -720,11 +929,7 @@ export default function AppLayout() {
               <ManualDeductionForm 
                 mechanics={mechanics}
                 preselectedMechanicId={manualDeductionMechanic?.id}
-                onSave={(ded) => {
-                  setDeductions(prev => [ded, ...prev]);
-                  setShowManualDeduction(false);
-                  setManualDeductionMechanic(null);
-                }}
+                onSave={handleSaveManualDeduction}
                 onCancel={() => { setShowManualDeduction(false); setManualDeductionMechanic(null); }}
               />
             </Modal>
@@ -746,14 +951,7 @@ export default function AppLayout() {
                 part={editingPart.name ? editingPart : undefined} 
                 suppliers={suppliers}
                 existingParts={parts}
-                onSave={(p) => {
-                  if (editingPart.name) {
-                    setParts(prev => prev.map(x => x.id === p.id ? p : x));
-                  } else {
-                    setParts(prev => [p, ...prev]);
-                  }
-                  setEditingPart(null);
-                }}
+                onSave={handleSavePart}
                 onCancel={() => setEditingPart(null)}
               />
             </Modal>
@@ -763,14 +961,7 @@ export default function AppLayout() {
             <Modal title={editingCustomer.name ? "Edit Pelanggan" : "Tambah Pelanggan Baru"} onClose={() => setEditingCustomer(null)}>
               <CustomerForm 
                 customer={editingCustomer.name ? editingCustomer : undefined} 
-                onSave={(c) => {
-                  if (editingCustomer.name) {
-                    setCustomers(prev => prev.map(x => x.id === c.id ? c : x));
-                  } else {
-                    setCustomers(prev => [c, ...prev]);
-                  }
-                  setEditingCustomer(null);
-                }}
+                onSave={handleSaveCustomer}
                 onCancel={() => setEditingCustomer(null)}
               />
             </Modal>
@@ -780,14 +971,7 @@ export default function AppLayout() {
             <Modal title={editingExpense.category ? "Catat Pengeluaran" : "Pengeluaran Baru"} onClose={() => setEditingExpense(null)}>
               <ExpenseForm 
                 expense={editingExpense.amount ? editingExpense : undefined} 
-                onSave={(e) => {
-                  if (editingExpense.amount) {
-                    setExpenses(prev => prev.map(x => x.id === e.id ? e : x));
-                  } else {
-                    setExpenses(prev => [e, ...prev]);
-                  }
-                  setEditingExpense(null);
-                }}
+                onSave={handleSaveExpense}
                 onCancel={() => setEditingExpense(null)}
               />
             </Modal>
@@ -797,14 +981,7 @@ export default function AppLayout() {
             <Modal title={editingSupplier.name ? "Edit Supplier" : "Tambah Supplier Baru"} onClose={() => setEditingSupplier(null)}>
               <SupplierForm 
                 supplier={editingSupplier.name ? editingSupplier : undefined} 
-                onSave={(s) => {
-                  if (editingSupplier.name) {
-                    setSuppliers(prev => prev.map(x => x.id === s.id ? s : x));
-                  } else {
-                    setSuppliers(prev => [s, ...prev]);
-                  }
-                  setEditingSupplier(null);
-                }}
+                onSave={handleSaveSupplier}
                 onCancel={() => setEditingSupplier(null)}
               />
             </Modal>
@@ -814,14 +991,7 @@ export default function AppLayout() {
             <Modal title={editingStaff.name ? "Edit Karyawan" : "Tambah Karyawan Baru"} onClose={() => setEditingStaff(null)}>
               <StaffForm 
                 staff={editingStaff.name ? editingStaff : undefined} 
-                onSave={(s) => {
-                  if (editingStaff.name) {
-                    setStaff(prev => prev.map(x => x.id === s.id ? s : x));
-                  } else {
-                    setStaff(prev => [s, ...prev]);
-                  }
-                  setEditingStaff(null);
-                }}
+                onSave={handleSaveStaff}
                 onCancel={() => setEditingStaff(null)}
               />
             </Modal>
