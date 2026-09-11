@@ -137,11 +137,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Use relative /api or custom baseUrl
-  const baseUrl = getApiBaseUrl().replace(/\/$/, '');
-  const url = path.startsWith('/api') 
-    ? (baseUrl === '/api' ? path : `${baseUrl}${path.replace(/^\/api/, '')}`)
-    : `${baseUrl}${path}`;
+  const url = path.startsWith('/api') ? path : `/api${path}`;
 
   const res = await fetch(url, {
     ...options,

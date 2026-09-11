@@ -11,32 +11,13 @@ import {
   Clock, 
   User, 
   AlertTriangle,
-  RotateCcw,
   Sparkles,
   Smartphone,
   Eye,
   Sliders,
-  DollarSign,
-  Server,
-  Activity,
-  Key,
-  Copy,
-  Check,
-  RefreshCw,
-  Terminal,
-  Code
+  DollarSign
 } from 'lucide-react';
 import { CompanySettings, Mechanic, UserRole } from '../types';
-import { 
-  getApiBaseUrl, 
-  setApiBaseUrl, 
-  resetApiBaseUrl, 
-  getAuthToken, 
-  setAuthToken, 
-  healthApi, 
-  ApiHealthStatus, 
-  ENDPOINTS 
-} from '../services/api';
 
 interface SettingsViewProps {
   settings: CompanySettings;
@@ -55,55 +36,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onBatchUpdateMechanicBonus,
   onSwitchRole
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'bonus' | 'receipt' | 'api'>('profile');
+  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'bonus' | 'receipt'>('profile');
   const [formData, setFormData] = useState<CompanySettings>(settings);
   const [savedNotification, setSavedNotification] = useState<string | null>(null);
   const [simLaborFee, setSimLaborFee] = useState<number>(100000);
-
-  // REST API Configuration States
-  const [apiBaseUrl, setApiBaseUrlState] = useState<string>(getApiBaseUrl());
-  const [apiTokenInput, setApiTokenInput] = useState<string>(getAuthToken() || '');
-  const [healthStatus, setHealthStatus] = useState<ApiHealthStatus | null>(null);
-  const [isTestingConnection, setIsTestingConnection] = useState<boolean>(false);
-  const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
-
-  const handleTestApiConnection = async () => {
-    setIsTestingConnection(true);
-    setHealthStatus(null);
-    try {
-      const res = await healthApi.checkConnection(apiBaseUrl);
-      setHealthStatus(res);
-    } catch (err: any) {
-      setHealthStatus({
-        online: false,
-        url: apiBaseUrl,
-        message: err.message || 'Gagal terhubung ke REST API.',
-      });
-    } finally {
-      setIsTestingConnection(false);
-    }
-  };
-
-  const handleSaveApiSettings = () => {
-    setApiBaseUrl(apiBaseUrl);
-    if (apiTokenInput.trim()) {
-      setAuthToken(apiTokenInput.trim());
-    }
-    showNotification('Konfigurasi REST API berhasil disimpan!');
-  };
-
-  const handleResetApiUrl = () => {
-    resetApiBaseUrl();
-    const def = getApiBaseUrl();
-    setApiBaseUrlState(def);
-    showNotification(`URL direset ke bawaan: ${def}`);
-  };
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard?.writeText(text);
-    setCopiedEndpoint(label);
-    setTimeout(() => setCopiedEndpoint(null), 2000);
-  };
 
   const showNotification = (msg: string) => {
     setSavedNotification(msg);
@@ -217,19 +153,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         >
           <FileText className="w-4 h-4" />
           <span>3. Isi Nota & Struk</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('api')}
-          className={`flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-            activeSubTab === 'api'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          <Server className="w-4 h-4" />
-          <span>4. Integrasi REST API</span>
         </button>
       </div>
 
@@ -1004,197 +927,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {/* Simulated Paper Bottom Zigzag accent */}
               <div className="pt-2 text-center text-[10px] font-mono text-slate-300">
                 - - - - - - - - - - - - - - - - - - - - - - -
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- SUBTAB 4: INTEGRASI REST API --- */}
-      {activeSubTab === 'api' && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 sm:p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6">
-            <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
-                  <Server className="w-5 h-5 text-blue-600" /> Integrasi REST API Backend
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Hubungkan sistem BengkelPro ke server REST API kustom Anda untuk sinkronisasi data transaksi, stok, pelanggan, dan laporan.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {healthStatus?.online ? (
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-black uppercase border border-emerald-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    API Terhubung ({healthStatus.latencyMs}ms)
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase border border-slate-200">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
-                    Status: Siap Dikonfigurasi
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Server Connection Form */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Terminal className="w-4 h-4 text-blue-600" /> Server Base URL
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={handleResetApiUrl}
-                    className="text-[10px] font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Reset Bawaan
-                  </button>
-                </div>
-                <div className="space-y-1.5">
-                  <input
-                    type="text"
-                    value={apiBaseUrl}
-                    onChange={e => setApiBaseUrlState(e.target.value)}
-                    placeholder="https://api.bengkelanda.com/v1"
-                    className="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:border-blue-500 outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400">
-                    Endpoint API akan diawali dengan Base URL ini (misal: <code className="text-blue-600 font-bold">{apiBaseUrl}/services</code>).
-                  </p>
-                </div>
-
-                <div className="space-y-1.5 pt-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <Key className="w-3.5 h-3.5 text-slate-400" /> Authorization Bearer Token (Opsional)
-                  </label>
-                  <input
-                    type="password"
-                    value={apiTokenInput}
-                    onChange={e => setApiTokenInput(e.target.value)}
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                    className="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:border-blue-500 outline-none"
-                  />
-                  <p className="text-[10px] text-slate-400">
-                    Jika REST API Anda membutuhkan autentikasi header <code>Authorization: Bearer &lt;token&gt;</code>.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleSaveApiSettings}
-                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow transition-all active:scale-95"
-                  >
-                    Simpan Konfigurasi
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleTestApiConnection}
-                    disabled={isTestingConnection}
-                    className="py-3 px-5 bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isTestingConnection ? 'animate-spin' : ''}`} />
-                    <span>{isTestingConnection ? 'Menguji...' : 'Uji Koneksi'}</span>
-                  </button>
-                </div>
-
-                {/* Live Test Status Result */}
-                {healthStatus && (
-                  <div className={`p-4 rounded-xl border text-xs space-y-1 ${
-                    healthStatus.online 
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
-                      : 'bg-rose-50 border-rose-200 text-rose-900'
-                  }`}>
-                    <div className="flex items-center gap-2 font-black uppercase text-[10px]">
-                      {healthStatus.online ? <Check className="w-4 h-4 text-emerald-600" /> : <AlertTriangle className="w-4 h-4 text-rose-600" />}
-                      <span>{healthStatus.online ? 'Koneksi Berhasil!' : 'Koneksi Gagal'}</span>
-                    </div>
-                    <p className="text-[11px] font-medium">{healthStatus.message}</p>
-                    {healthStatus.latencyMs !== undefined && (
-                      <p className="text-[10px] text-emerald-700 font-mono">Waktu Respons: {healthStatus.latencyMs} ms</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Guide & Architecture Overview */}
-              <div className="p-6 bg-slate-900 text-white rounded-2xl space-y-4 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-blue-400">
-                    <Code className="w-4 h-4" />
-                    <h4 className="text-xs font-black uppercase tracking-wider">Modul Client REST API Terintegrasi</h4>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                    Proyek ini sudah dilengkapi modul arsitektur REST API lengkap di folder <code className="text-amber-300 bg-slate-800 px-1.5 py-0.5 rounded">/src/services/api/</code> dengan Axios/Fetch client, interceptor bearer token, pemetaan DTO/entity, dan error handling otomatis.
-                  </p>
-                  <ul className="text-[11px] text-slate-400 space-y-1.5 list-disc list-inside">
-                    <li><strong className="text-white">HttpClient</strong>: Otomatis menyertakan Header & Timeout</li>
-                    <li><strong className="text-white">ServiceOrderApi</strong>: CRUD transaksi servis & riwayat</li>
-                    <li><strong className="text-white">CustomerApi</strong>: CRUD data pelanggan & transaksi</li>
-                    <li><strong className="text-white">InventoryApi</strong>: CRUD sparepart & riwayat stok</li>
-                    <li><strong className="text-white">HealthApi</strong>: Ping status koneksi ke server</li>
-                  </ul>
-                </div>
-
-                <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 font-mono text-[10px] text-slate-300">
-                  <span className="text-slate-500">// Contoh Penggunaan di Komponen:</span><br />
-                  <span className="text-blue-300">import</span> &#123; serviceOrderApi, customerApi &#125; <span className="text-blue-300">from</span> <span className="text-emerald-300">'../services/api'</span>;<br />
-                  <span className="text-purple-300">const</span> res = <span className="text-purple-300">await</span> serviceOrderApi.<span className="text-amber-300">getAll</span>();
-                </div>
-              </div>
-            </div>
-
-            {/* Endpoints Quick Reference Table */}
-            <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Activity className="w-4 h-4 text-blue-600" /> Daftar Endpoint REST API Tersedia
-              </h4>
-              <div className="overflow-x-auto rounded-2xl border border-slate-100">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                    <tr>
-                      <th className="p-3">Kategori</th>
-                      <th className="p-3">Metode & Path</th>
-                      <th className="p-3">Deskripsi</th>
-                      <th className="p-3 text-right">Salin</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {[
-                      { cat: 'Transaksi Servis', method: 'GET / POST', path: ENDPOINTS.SERVICES.LIST, desc: 'Daftar semua servis & buat transaksi kasir baru' },
-                      { cat: 'Detail Servis', method: 'GET / PUT / DELETE', path: ENDPOINTS.SERVICES.DETAIL(':id'), desc: 'Detail, update status, atau hapus servis' },
-                      { cat: 'Pelanggan & CRM', method: 'GET / POST', path: ENDPOINTS.CUSTOMERS.LIST, desc: 'Data pelanggan, total servis & riwayat kunjungan' },
-                      { cat: 'Suku Cadang', method: 'GET / POST', path: ENDPOINTS.PARTS.LIST, desc: 'Stok barang, harga modal, harga jual' },
-                      { cat: 'Mekanik & Bonus', method: 'GET / POST', path: ENDPOINTS.MECHANICS.LIST, desc: 'Daftar teknisi, komisi & pencatatan sanksi' },
-                      { cat: 'Pengeluaran Kas', method: 'GET / POST', path: ENDPOINTS.EXPENSES.LIST, desc: 'Arus kas keluar operasional bengkel' },
-                      { cat: 'Laporan Finansial', method: 'GET', path: ENDPOINTS.REPORTS.SUMMARY, desc: 'Ringkasan omset, profit bersih, dan rekap bonus' },
-                      { cat: 'Health Check', method: 'GET', path: ENDPOINTS.HEALTH, desc: 'Cek koneksi & latensi server' },
-                    ].map((ep, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="p-3 font-bold text-slate-900">{ep.cat}</td>
-                        <td className="p-3">
-                          <code className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-mono text-[11px] font-bold">
-                            {ep.method} {ep.path}
-                          </code>
-                        </td>
-                        <td className="p-3 text-slate-500 text-[11px]">{ep.desc}</td>
-                        <td className="p-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(`${apiBaseUrl}${ep.path}`, `${idx}`)}
-                            className="p-1.5 hover:bg-slate-200/80 rounded-lg text-slate-400 hover:text-blue-600 transition-colors"
-                            title="Salin Full URL"
-                          >
-                            {copiedEndpoint === `${idx}` ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </div>
           </div>
