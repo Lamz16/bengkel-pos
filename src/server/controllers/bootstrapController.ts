@@ -8,6 +8,7 @@ import {
   supplierService,
   financeService,
 } from '../container';
+import { distributorInvoiceRepository } from '../repositories/distributorInvoiceRepository';
 
 export class BootstrapController {
   async getBootstrapData(_req: Request, res: Response) {
@@ -24,6 +25,7 @@ export class BootstrapController {
         purchases,
         expenses,
         staff,
+        distributorInvoices,
       ] = await Promise.all([
         settingsService.getSettings(),
         customerService.getCustomers(),
@@ -36,6 +38,7 @@ export class BootstrapController {
         financeService.getPurchases(),
         financeService.getExpenses(),
         settingsService.getStaff(),
+        distributorInvoiceRepository.getAll(),
       ]);
 
       res.json({
@@ -50,7 +53,9 @@ export class BootstrapController {
         purchases,
         expenses,
         staff,
+        distributorInvoices,
       });
+
     } catch (err: any) {
       console.error('Bootstrap API error:', err);
       res.status(500).json({ error: 'Gagal memuat data awal sistem' });

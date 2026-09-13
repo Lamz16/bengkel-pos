@@ -10,7 +10,8 @@ import {
   Supplier, 
   PurchaseRecord, 
   Expense,
-  User
+  User,
+  DistributorInvoice
 } from '../../types';
 
 export interface MemoryStore {
@@ -26,6 +27,7 @@ export interface MemoryStore {
   purchases: PurchaseRecord[];
   expenses: Expense[];
   staff: Array<{ id: string; name: string; role: string; status: string; shifts?: string; email?: string }>;
+  distributorInvoices?: DistributorInvoice[];
 }
 
 export const memoryStore: MemoryStore = {
@@ -203,5 +205,94 @@ export const memoryStore: MemoryStore = {
   staff: [
     { id: 'STF-1', name: 'Rian Herlambang', role: 'Admin', status: 'Active', shifts: 'Pagi', email: 'rian@bengkelpro.com' },
     { id: 'STF-2', name: 'Budi Hartono', role: 'Admin', status: 'Active', shifts: 'Sore', email: 'budi@bengkelpro.com' }
+  ],
+  distributorInvoices: [
+    {
+      id: 'INV-DIST-101',
+      invoiceNumber: 'INV-SUP-2026-001',
+      supplierId: 'SUP-1',
+      supplierName: 'PT Astra Otoparts (Distributor A)',
+      branchName: 'Bengkel Pusat',
+      branchType: 'Pusat',
+      totalAmount: 3500000,
+      paidAmount: 1000000,
+      remainingAmount: 2500000,
+      issueDate: new Date(Date.now() - 3600000 * 24 * 15).toISOString(),
+      dueDate: new Date(Date.now() + 3600000 * 24 * 3).toISOString(), // 3 days from now
+      status: 'Partial',
+      paymentMethod: 'Transfer',
+      notes: 'Nota Pembelian Kampas Rem & Oli Shell Helix. Tempo 30 Hari.',
+      items: [
+        { id: 'ITEM-1', partName: 'Oli MPX2 0.8L Matik', quantity: 20, unitPrice: 45000, totalPrice: 900000 },
+        { id: 'ITEM-2', partName: 'Kampas Rem Depan Vario', quantity: 25, unitPrice: 50000, totalPrice: 1250000 },
+        { id: 'ITEM-3', partName: 'V-Belt Kit NMax 155', quantity: 9, unitPrice: 150000, totalPrice: 1350000 }
+      ],
+      payments: [
+        { id: 'PAY-1', invoiceId: 'INV-DIST-101', amount: 1000000, paymentDate: new Date(Date.now() - 3600000 * 24 * 5).toISOString(), paymentMethod: 'Transfer', referenceNo: 'TRX-882193', notes: 'DP Cicilan Pertama' }
+      ]
+    },
+    {
+      id: 'INV-DIST-102',
+      invoiceNumber: 'INV-SUP-2026-002',
+      supplierId: 'SUP-1',
+      supplierName: 'Distributor Suku Cadang A',
+      branchName: 'Cabang Bandung',
+      branchType: 'Cabang',
+      totalAmount: 1850000,
+      paidAmount: 0,
+      remainingAmount: 1850000,
+      issueDate: new Date(Date.now() - 3600000 * 24 * 20).toISOString(),
+      dueDate: new Date(Date.now() - 3600000 * 24 * 2).toISOString(), // 2 days overdue
+      status: 'Overdue',
+      paymentMethod: 'Giro',
+      notes: 'Faktur Pengiriman Ban FDR & Tubeless Cabang Bandung.',
+      items: [
+        { id: 'ITEM-4', partName: 'Ban Tubeless 90/90-14 FDR', quantity: 10, unitPrice: 185000, totalPrice: 1850000 }
+      ],
+      payments: []
+    },
+    {
+      id: 'INV-DIST-103',
+      invoiceNumber: 'INV-SUP-2026-003',
+      supplierId: 'SUP-1',
+      supplierName: 'PT Castrol Indonesia',
+      branchName: 'Bengkel Pusat',
+      branchType: 'Pusat',
+      totalAmount: 4200000,
+      paidAmount: 4200000,
+      remainingAmount: 0,
+      issueDate: new Date(Date.now() - 3600000 * 24 * 30).toISOString(),
+      dueDate: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
+      status: 'Paid',
+      paymentMethod: 'Transfer',
+      notes: 'Lunas via Transfer BCA. Nota Pelumas Castrol Power1.',
+      items: [
+        { id: 'ITEM-5', partName: 'Castrol Power1 10W-40 1L', quantity: 60, unitPrice: 70000, totalPrice: 4200000 }
+      ],
+      payments: [
+        { id: 'PAY-2', invoiceId: 'INV-DIST-103', amount: 4200000, paymentDate: new Date(Date.now() - 3600000 * 24 * 5).toISOString(), paymentMethod: 'Transfer', referenceNo: 'BCA-992102', notes: 'Pelunasan Nota Castrol' }
+      ]
+    },
+    {
+      id: 'INV-DIST-104',
+      invoiceNumber: 'INV-SUP-2026-004',
+      supplierId: 'SUP-1',
+      supplierName: 'CV Jaya Akumulator',
+      branchName: 'Cabang Surabaya',
+      branchType: 'Cabang',
+      totalAmount: 2600000,
+      paidAmount: 0,
+      remainingAmount: 2600000,
+      issueDate: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
+      dueDate: new Date(Date.now() + 3600000 * 24 * 12).toISOString(), // 12 days from now
+      status: 'Unpaid',
+      paymentMethod: 'Transfer',
+      notes: 'Nota Aki GS Astra GTZ5S 15 Pcs.',
+      items: [
+        { id: 'ITEM-6', partName: 'Aki GS Astra GTZ5S', quantity: 13, unitPrice: 200000, totalPrice: 2600000 }
+      ],
+      payments: []
+    }
   ]
 };
+

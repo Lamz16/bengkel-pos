@@ -10,6 +10,7 @@ import { expenseRouter, purchaseRouter } from './financeRoutes';
 import { settingsRouter, staffRouter } from './settingsRoutes';
 import { aiRouter } from './aiRoutes';
 import { authRouter } from './authRoutes';
+import { distributorInvoiceRouter } from './distributorInvoiceRoutes';
 
 export const apiRouter = Router();
 
@@ -41,3 +42,5 @@ apiRouter.use('/settings', settingsRouter);
 apiRouter.use('/staff', staffRouter);
 apiRouter.use('/ai', aiRouter);
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/distributor-invoices', distributorInvoiceRouter);
+

@@ -11,6 +11,7 @@ import {
   UserCircle, 
   Settings, 
   Award,
+  Calendar as CalendarIcon,
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -27,7 +28,8 @@ import {
   Supplier, 
   PurchaseRecord, 
   Mechanic, 
-  MechanicDeduction 
+  MechanicDeduction,
+  DistributorInvoice
 } from './types';
 import { INITIAL_PARTS } from './constants';
 
@@ -52,6 +54,7 @@ import { MechanicsView } from './components/MechanicsView';
 import { MechanicForm } from './components/MechanicForm';
 import { WarrantyClaimModal } from './components/WarrantyClaimModal';
 import { ManualDeductionForm } from './components/ManualDeductionForm';
+import { DistributorTempoView } from './components/DistributorTempoView';
 
 // Modular Form Components
 import { StaffForm } from './components/forms/StaffForm';
@@ -261,11 +264,15 @@ export default function AppLayout() {
   const [posInitialCustomer, setPosInitialCustomer] = useState<Customer | null>(null);
   const [posInitialPromoPercent, setPosInitialPromoPercent] = useState<number | null>(null);
 
+  // Distributor Invoices (Nota Tempo) State
+  const [distributorInvoices, setDistributorInvoices] = useState<DistributorInvoice[]>([]);
+
   // Navigation Items Definition
   const navItems: NavItem[] = useMemo(() => [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Owner', 'Admin'] },
     { id: 'pos', label: 'Transaksi', icon: PaymentIcon, roles: ['Owner', 'Admin'] },
     { id: 'pos_history', label: 'Antrean', icon: Wrench, roles: ['Owner', 'Admin'] },
+    { id: 'distributor_tempo', label: 'Nota Tempo', icon: CalendarIcon, roles: ['Owner', 'Admin'] },
     { id: 'mechanics', label: 'Mekanik & Gaji', icon: Award, roles: ['Owner', 'Admin'] },
     { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['Owner', 'Admin'] },
     { id: 'inventory', label: 'Stok Barang', icon: Package, roles: ['Owner', 'Admin'] },
@@ -301,6 +308,7 @@ export default function AppLayout() {
         if (data.purchases && data.purchases.length > 0) setPurchases(data.purchases);
         if (data.expenses && data.expenses.length > 0) setExpenses(data.expenses);
         if (data.staff && data.staff.length > 0) setStaff(data.staff);
+        if (data.distributorInvoices && data.distributorInvoices.length > 0) setDistributorInvoices(data.distributorInvoices);
         setPostgresConnected(data.postgresConnected);
       } catch (err) {
         console.warn('Backend bootstrap fallback to local initial state:', err);
@@ -309,6 +317,82 @@ export default function AppLayout() {
     loadBootstrap();
     return () => { isMounted = false; };
   }, []);
+
+  // Distributor Invoice Handlers
+  const handleAddDistributorInvoice = async (newInv: Partial<DistributorInvoice>) => {
+    try {
+      const created = await api.createDistributorInvoice(newInv);
+      setDistributorInvoices(prev => [created, ...prev]);
+    } catch (err) {
+      console.error('Failed to create distributor invoice:', err);
+      // Fallback local
+      const id = `INV-DIST-${Date.now()}`;
+      const totalAmount = newInv.totalAmount || 0;
+      const formatted: DistributorInvoice = {
+        id,
+        invoiceNumber: newInv.invoiceNumber || `INV-SUP-${Date.now().toString().slice(-4)}`,
+        supplierName: newInv.supplierName || 'Distributor',
+        supplierId: newInv.supplierId,
+        branchName: newInv.branchName || 'Bengkel Pusat',
+        branchType: newInv.branchType || 'Pusat',
+        totalAmount,
+        paidAmount: 0,
+        remainingAmount: totalAmount,
+        issueDate: newInv.issueDate || new Date().toISOString(),
+        dueDate: newInv.dueDate || new Date().toISOString(),
+        status: 'Unpaid',
+        paymentMethod: newInv.paymentMethod || 'Transfer',
+        notes: newInv.notes,
+        items: newInv.items || [],
+        payments: []
+      };
+      setDistributorInvoices(prev => [formatted, ...prev]);
+    }
+  };
+
+  const handleAddDistributorPayment = async (invoiceId: string, paymentData: { amount: number; paymentMethod: string; referenceNo?: string; notes?: string; paymentDate?: string }) => {
+    try {
+      const updated = await api.addDistributorPayment(invoiceId, paymentData);
+      setDistributorInvoices(prev => prev.map(inv => inv.id === invoiceId ? updated : inv));
+    } catch (err) {
+      console.error('Failed to add distributor payment:', err);
+      // Fallback local
+      setDistributorInvoices(prev => prev.map(inv => {
+        if (inv.id === invoiceId) {
+          const newPaid = inv.paidAmount + paymentData.amount;
+          const newRem = Math.max(0, inv.totalAmount - newPaid);
+          const newStatus = newRem === 0 ? 'Paid' : 'Partial';
+          const newPayObj = {
+            id: `PAY-${Date.now()}`,
+            invoiceId,
+            amount: paymentData.amount,
+            paymentDate: paymentData.paymentDate || new Date().toISOString(),
+            paymentMethod: paymentData.paymentMethod,
+            referenceNo: paymentData.referenceNo,
+            notes: paymentData.notes
+          };
+          return {
+            ...inv,
+            paidAmount: newPaid,
+            remainingAmount: newRem,
+            status: newStatus as any,
+            payments: [...(inv.payments || []), newPayObj]
+          };
+        }
+        return inv;
+      }));
+    }
+  };
+
+  const handleDeleteDistributorInvoice = async (id: string) => {
+    try {
+      await api.deleteDistributorInvoice(id);
+      setDistributorInvoices(prev => prev.filter(inv => inv.id !== id));
+    } catch (err) {
+      console.error('Failed to delete distributor invoice:', err);
+      setDistributorInvoices(prev => prev.filter(inv => inv.id !== id));
+    }
+  };
 
   useEffect(() => {
     if (currentUser) {
@@ -785,6 +869,19 @@ export default function AppLayout() {
                   initialPromoPercent={posInitialPromoPercent}
                   onAddCustomer={handleSaveCustomer}
                   onAddVehicle={handleAddVehicle}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'distributor_tempo' && !showPOSForm && (
+              <motion.div key="distributor_tempo" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <DistributorTempoView
+                  invoices={distributorInvoices}
+                  suppliers={suppliers}
+                  parts={parts}
+                  onAddInvoice={handleAddDistributorInvoice}
+                  onAddPayment={handleAddDistributorPayment}
+                  onDeleteInvoice={handleDeleteDistributorInvoice}
                 />
               </motion.div>
             )}

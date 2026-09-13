@@ -11,7 +11,8 @@ import {
   Expense,
   User,
   UserRole,
-  ServiceStatus
+  ServiceStatus,
+  DistributorInvoice
 } from '../types';
 
 export interface BootstrapResponse {
@@ -26,6 +27,7 @@ export interface BootstrapResponse {
   purchases: PurchaseRecord[];
   expenses: Expense[];
   staff: any[];
+  distributorInvoices?: DistributorInvoice[];
   postgresConnected: boolean;
 }
 
@@ -393,5 +395,31 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  // Distributor Invoices (Nota Tempo)
+  async getDistributorInvoices(): Promise<DistributorInvoice[]> {
+    return request<DistributorInvoice[]>('/api/distributor-invoices');
+  },
+
+  async createDistributorInvoice(data: Partial<DistributorInvoice>): Promise<DistributorInvoice> {
+    return request<DistributorInvoice>('/api/distributor-invoices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async addDistributorPayment(invoiceId: string, payment: { amount: number; paymentMethod: string; referenceNo?: string; notes?: string; paymentDate?: string }): Promise<DistributorInvoice> {
+    return request<DistributorInvoice>(`/api/distributor-invoices/${invoiceId}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(payment),
+    });
+  },
+
+  async deleteDistributorInvoice(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/api/distributor-invoices/${id}`, {
+      method: 'DELETE',
+    });
   }
 };
+

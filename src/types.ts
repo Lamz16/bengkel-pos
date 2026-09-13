@@ -197,3 +197,49 @@ export interface PurchaseRecord {
   costPrice: number;
   date: string;
 }
+
+export type DistributorInvoiceStatus = 'Unpaid' | 'Partial' | 'Paid' | 'Overdue';
+export type BranchType = 'Pusat' | 'Cabang';
+
+export interface DistributorInvoiceItem {
+  id: string;
+  invoiceId?: string;
+  partId?: string;
+  partName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface DistributorPayment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: string;
+  referenceNo?: string;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface DistributorInvoice {
+  id: string;
+  invoiceNumber: string;
+  supplierId?: string;
+  supplierName: string;
+  branchName: string; // e.g. "Bengkel Pusat", "Cabang Bandung", etc.
+  branchType: BranchType;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  issueDate: string;
+  dueDate: string;
+  status: DistributorInvoiceStatus;
+  paymentMethod?: string;
+  notes?: string;
+  items?: DistributorInvoiceItem[];
+  payments?: DistributorPayment[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
