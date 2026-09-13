@@ -99,15 +99,6 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-[9px] opacity-60 font-semibold">(Ganti)</span>
         </button>
 
-        {!showPOSForm && (currentUser.role === 'Owner' || currentUser.role === 'Admin') && (
-          <button 
-            onClick={onOpenPOSForm}
-            className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-200 active:scale-90 transition-transform"
-            title="Transaksi POS Baru"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        )}
         <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden hidden sm:block">
            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`} alt="avatar" />
         </div>
