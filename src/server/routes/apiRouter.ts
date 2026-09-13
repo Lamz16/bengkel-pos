@@ -11,6 +11,7 @@ import { settingsRouter, staffRouter } from './settingsRoutes';
 import { aiRouter } from './aiRoutes';
 import { authRouter } from './authRoutes';
 import { distributorInvoiceRouter } from './distributorInvoiceRoutes';
+import { uploadRouter } from './uploadRoutes';
 
 export const apiRouter = Router();
 
@@ -43,4 +44,5 @@ apiRouter.use('/staff', staffRouter);
 apiRouter.use('/ai', aiRouter);
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/distributor-invoices', distributorInvoiceRouter);
+apiRouter.use('/upload', uploadRouter);
 

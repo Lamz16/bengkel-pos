@@ -88,6 +88,7 @@ model SparePart {
   stock           Int               @default(0)
   minStock        Int               @default(5)
   supplierId      String?
+  imageUrl        String?
   rackCode        String?
   shelfLevel      String?
   binNumber       String?

@@ -212,6 +212,14 @@ export const api = {
     await request(`/api/vehicles/${id}`, { method: 'DELETE' });
   },
 
+  // Upload Assets
+  async uploadImage(image: string, folder: string = 'parts'): Promise<{ success: boolean; url: string; filename: string }> {
+    return request<{ success: boolean; url: string; filename: string }>('/api/upload/image', {
+      method: 'POST',
+      body: JSON.stringify({ image, folder }),
+    });
+  },
+
   // Spare Parts
   async getParts(): Promise<SparePart[]> {
     return request<SparePart[]>('/api/parts');

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SparePart, Supplier } from '../../types';
-import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Layers } from 'lucide-react';
+import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Image as ImageIcon, Upload, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { generatePartSKU, DEFAULT_RACK_LIST } from '../../utils/inventory';
+import { compressAndConvertToWebP, formatBytes, CompressionResult } from '../../utils/imageCompressor';
+import { api } from '../../services/api';
 
 interface PartFormProps {
   part?: SparePart;
@@ -18,6 +20,11 @@ export const PartForm: React.FC<PartFormProps> = ({
   onSave, 
   onCancel 
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [compressionMeta, setCompressionMeta] = useState<CompressionResult | null>(null);
+
   const [formData, setFormData] = useState<SparePart>(() => {
     if (part && part.id) return part;
     const initialCategory = 'Oli';
@@ -38,7 +45,8 @@ export const PartForm: React.FC<PartFormProps> = ({
       rackZone: 'Gudang Utama',
       locationNotes: '',
       lastUpdated: new Date().toISOString(),
-      supplierId: ''
+      supplierId: '',
+      imageUrl: ''
     };
   });
 
@@ -56,6 +64,56 @@ export const PartForm: React.FC<PartFormProps> = ({
     setFormData({ ...formData, sku: newSku });
   };
 
+  const processImageFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Harap pilih berkas gambar (JPG, PNG, WEBP, GIF, DLL)');
+      return;
+    }
+    try {
+      setIsCompressing(true);
+      // 1. Convert & compress client-side to WebP
+      const compressed = await compressAndConvertToWebP(file, { maxWidth: 900, maxHeight: 900, quality: 0.82 });
+      setCompressionMeta(compressed);
+
+      // 2. Save WebP to local server storage (/uploads/parts/)
+      try {
+        const res = await api.uploadImage(compressed.webpDataUrl, 'parts');
+        if (res && res.url) {
+          setFormData(prev => ({ ...prev, imageUrl: res.url }));
+        } else {
+          setFormData(prev => ({ ...prev, imageUrl: compressed.webpDataUrl }));
+        }
+      } catch (err) {
+        console.warn('Backend upload fallback to compressed data URL:', err);
+        setFormData(prev => ({ ...prev, imageUrl: compressed.webpDataUrl }));
+      }
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      alert('Gagal mengompresi gambar.');
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processImageFile(e.dataTransfer.files[0]);
+    }
+  };
+
   const previewLocation = [
     formData.rackCode || 'Tanpa Rak',
     formData.shelfLevel,
@@ -64,6 +122,127 @@ export const PartForm: React.FC<PartFormProps> = ({
 
   return (
     <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+      {/* Upload Foto & Format WebP Compressor */}
+      <div className="p-4 bg-slate-900 text-white rounded-2xl shadow-sm space-y-3 border border-slate-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-blue-400">
+            <ImageIcon className="w-4 h-4" />
+            <span className="text-xs font-black uppercase tracking-wider">Foto Barang (WebP Formatter & Compressor)</span>
+          </div>
+          {formData.imageUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setFormData(prev => ({ ...prev, imageUrl: '' }));
+                setCompressionMeta(null);
+              }}
+              className="flex items-center gap-1 text-[11px] font-bold text-rose-400 hover:text-rose-300 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Hapus Foto
+            </button>
+          )}
+        </div>
+
+        <input 
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+              processImageFile(e.target.files[0]);
+            }
+          }}
+        />
+
+        {formData.imageUrl ? (
+          <div className="flex flex-col sm:flex-row gap-4 items-center bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+            <div className="relative w-28 h-28 rounded-xl bg-slate-950 overflow-hidden border border-slate-700 shrink-0 group">
+              <img 
+                src={formData.imageUrl} 
+                alt={formData.name || 'Foto Part'} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-md hover:bg-blue-500"
+                >
+                  Ganti
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 flex-1 text-center sm:text-left">
+              <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold text-emerald-300">Tersimpan format WebP lokal</span>
+              </div>
+              <p className="text-[11px] text-slate-300 font-mono break-all">
+                {formData.imageUrl.length > 50 ? `${formData.imageUrl.substring(0, 45)}...` : formData.imageUrl}
+              </p>
+              {compressionMeta && (
+                <div className="flex flex-wrap items-center gap-2 pt-1 justify-center sm:justify-start">
+                  <span className="text-[10px] bg-blue-900/60 text-blue-300 font-bold px-2 py-0.5 rounded border border-blue-700/50">
+                    Dimensi: {compressionMeta.width}x{compressionMeta.height} px
+                  </span>
+                  <span className="text-[10px] bg-emerald-900/60 text-emerald-300 font-bold px-2 py-0.5 rounded border border-emerald-700/50">
+                    Ukuran WebP: {formatBytes(compressionMeta.compressedSize)} (-{compressionMeta.compressionRatio}%)
+                  </span>
+                </div>
+              )}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
+                  Pilih / Unggah Ulang
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+              dragActive 
+                ? 'border-blue-500 bg-blue-950/40 text-blue-300 scale-[0.99]' 
+                : 'border-slate-700 hover:border-slate-500 bg-slate-800/40 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {isCompressing ? (
+              <div className="space-y-2 py-2 flex flex-col items-center">
+                <RefreshCw className="w-7 h-7 text-blue-400 animate-spin" />
+                <p className="text-xs font-bold text-blue-300">Mengompresi & Mengonversi ke WebP...</p>
+                <p className="text-[10px] text-slate-400">Mengurangi ukuran berkas secara otomatis</p>
+              </div>
+            ) : (
+              <div className="space-y-2 py-1 flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 shadow-inner">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-200">
+                    Klik atau Tarik Berkas Gambar ke Sini
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Otomatis dikompres & dikonversi ke format WebP ringan (PNG, JPG, HEIC, GIF)
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Basic Part Info */}
       <div className="space-y-1.5">
         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nama Part / Barang *</label>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Menu, ArrowLeft, Plus } from 'lucide-react';
+import { Menu, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { cn } from '../lib/utils';
 
@@ -9,6 +9,8 @@ interface HeaderProps {
   showPOSForm: boolean;
   currentUser: User;
   dbStatus?: { connected: boolean; orm: string };
+  lowStockCount?: number;
+  onOpenLowStockModal?: () => void;
   onOpenMobileMenu: () => void;
   onClosePOSForm: () => void;
   onOpenPOSForm: () => void;
@@ -20,6 +22,8 @@ export const Header: React.FC<HeaderProps> = ({
   showPOSForm,
   currentUser,
   dbStatus,
+  lowStockCount = 0,
+  onOpenLowStockModal,
   onOpenMobileMenu,
   onClosePOSForm,
   onOpenPOSForm,
@@ -72,6 +76,17 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-2">
+        {lowStockCount > 0 && onOpenLowStockModal && (
+          <button
+            onClick={onOpenLowStockModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-black transition-all shadow-2xs animate-pulse"
+            title={`Terdapat ${lowStockCount} barang stok menipis/habis. Klik untuk membuka monitoring.`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+            <span>Stok Menipis ({lowStockCount})</span>
+          </button>
+        )}
+
         {dbStatus && (
           <div 
             className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide border border-slate-200 bg-slate-50 text-slate-700"

@@ -115,6 +115,7 @@ export interface SparePart {
   minStock: number;
   lastUpdated: string;
   supplierId?: string;
+  imageUrl?: string;       // Foto/Gambar barang (WebP)
 
   // Letak Barang di Rak & Gudang
   rackCode?: string;       // Kode Rak (e.g. "Rak A", "Rak B", "Etalase 1")

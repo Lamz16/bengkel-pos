@@ -16,6 +16,7 @@ export const INITIAL_PARTS: SparePart[] = [
     binNumber: 'Kotak 01',
     rackZone: 'Gudang Utama',
     locationNotes: 'Deretan botol pelumas matic sebelah kiri',
+    imageUrl: 'https://images.unsplash.com/photo-1615906655593-ad0386982a0f?auto=format&fit=crop&w=400&q=80',
     lastUpdated: new Date().toISOString() 
   },
   { 
@@ -33,6 +34,7 @@ export const INITIAL_PARTS: SparePart[] = [
     binNumber: 'Kotak 03',
     rackZone: 'Gudang Utama',
     locationNotes: 'Dus merah sistem pengereman Vario/Beat',
+    imageUrl: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=400&q=80',
     lastUpdated: new Date().toISOString() 
   },
   { 
@@ -48,6 +50,7 @@ export const INITIAL_PARTS: SparePart[] = [
     rackCode: 'Rak C',
     shelfLevel: 'Tingkat 3 (Atas)',
     binNumber: 'Kotak 02',
+    imageUrl: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=400&q=80',
     rackZone: 'Gudang Utama',
     locationNotes: 'Kotak plastik transparan di ambalan atas',
     lastUpdated: new Date().toISOString() 

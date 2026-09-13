@@ -16,21 +16,28 @@ import {
   CheckCircle2,
   Warehouse,
   ChevronRight,
-  Filter
+  Filter,
+  Image as ImageIcon,
+  ZoomIn,
+  Eye,
+  PackageX
 } from 'lucide-react';
 import { SparePart, Supplier, PurchaseRecord } from '../types';
 import { cn } from '../lib/utils';
 import { formatPartLocation, groupPartsByRack, DEFAULT_RACK_LIST } from '../utils/inventory';
 import { Modal } from './Modal';
 
+import { LowStockModal } from './LowStockModal';
+
 interface InventoryViewProps {
   parts: SparePart[];
   suppliers: Supplier[];
   purchases: PurchaseRecord[];
   onAdd: () => void;
-  onAddStock: () => void;
+  onAddStock: (partId?: string) => void;
   onEdit: (p: SparePart) => void;
   onDelete: (id: string) => void;
+  initialShowLowStockModal?: boolean;
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
@@ -40,12 +47,18 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onAdd, 
   onAddStock, 
   onEdit, 
-  onDelete 
+  onDelete,
+  initialShowLowStockModal = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'stock' | 'rack_locator' | 'purchases'>('stock');
   const [selectedRackFilter, setSelectedRackFilter] = useState<string>('all');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
+  const [stockStatusFilter, setStockStatusFilter] = useState<'all' | 'low_stock' | 'out_of_stock'>('all');
+  const [showLowStockModal, setShowLowStockModal] = useState(initialShowLowStockModal);
+  
+  // Enlarged Image preview modal state
+  const [selectedImagePart, setSelectedImagePart] = useState<SparePart | null>(null);
   
   // Quick rack edit modal state
   const [quickRackPart, setQuickRackPart] = useState<SparePart | null>(null);
@@ -98,9 +111,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       const matchCategory = 
         selectedCategoryFilter === 'all' ? true : p.category === selectedCategoryFilter;
 
-      return matchSearch && matchRack && matchCategory;
+      const matchStatus = 
+        stockStatusFilter === 'all' ? true :
+        stockStatusFilter === 'low_stock' ? (p.stock <= p.minStock) :
+        p.stock === 0;
+
+      return matchSearch && matchRack && matchCategory && matchStatus;
     });
-  }, [parts, searchTerm, selectedRackFilter, selectedCategoryFilter]);
+  }, [parts, searchTerm, selectedRackFilter, selectedCategoryFilter, stockStatusFilter]);
 
   // Grouped racks summary for the Warehouse Rack Locator tab
   const rackGroups = useMemo(() => {
@@ -193,7 +211,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         <>
           {/* Quick Stat Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-            <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-2xs">
+            <div 
+              onClick={() => setStockStatusFilter('all')}
+              className={cn(
+                "p-3 rounded-2xl border shadow-2xs cursor-pointer transition-all hover:scale-[1.02]",
+                stockStatusFilter === 'all' ? "bg-white border-blue-500 ring-2 ring-blue-500/20" : "bg-white border-slate-100"
+              )}
+            >
               <p className="text-[10px] font-bold text-slate-400 uppercase">Total Jenis Part</p>
               <p className="text-lg font-black text-slate-900 mt-0.5">{parts.length} Item</p>
             </div>
@@ -205,27 +229,38 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <p className="text-[10px] font-bold text-slate-400 uppercase">Rak Terdaftar</p>
               <p className="text-lg font-black text-amber-600 mt-0.5">{availableRacks.length} Rak</p>
             </div>
-            <div className={cn(
-              "p-3 rounded-2xl border shadow-2xs flex items-center justify-between",
-              lowStockCount > 0 ? "bg-rose-50 border-rose-100" : "bg-emerald-50 border-emerald-100"
-            )}>
+            <div 
+              onClick={() => setShowLowStockModal(true)}
+              className={cn(
+                "p-3 rounded-2xl border shadow-2xs flex items-center justify-between cursor-pointer transition-all hover:scale-[1.02] group",
+                lowStockCount > 0 
+                  ? "bg-rose-50 border-rose-300 hover:border-rose-500 ring-2 ring-rose-500/20" 
+                  : "bg-emerald-50 border-emerald-100"
+              )}
+              title="Klik untuk membuka modal monitoring & rincian stok menipis"
+            >
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Stok Menipis</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                  Stok Menipis
+                  <span className="text-[8px] bg-rose-600 text-white font-black px-1.5 py-0.2 rounded group-hover:bg-rose-700 transition-colors">
+                    Buka ➔
+                  </span>
+                </p>
                 <p className={cn("text-lg font-black mt-0.5", lowStockCount > 0 ? "text-rose-600" : "text-emerald-600")}>
                   {lowStockCount} Item
                 </p>
               </div>
               {lowStockCount > 0 && (
-                <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
-                  <AlertTriangle className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-rose-100 group-hover:bg-rose-600 group-hover:text-white flex items-center justify-center text-rose-600 transition-colors">
+                  <AlertTriangle className="w-4 h-4 animate-bounce" />
                 </div>
               )}
             </div>
           </div>
 
           {/* Search and Action Buttons */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="text" 
@@ -235,8 +270,18 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl shadow-sm outline-none text-sm font-bold text-slate-900 focus:border-blue-500 transition-colors"
               />
             </div>
+            {lowStockCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowLowStockModal(true)}
+                className="flex items-center gap-2 h-12 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-rose-200 transition-all shrink-0 active:scale-95"
+              >
+                <AlertTriangle className="w-4 h-4 text-amber-300 animate-pulse" />
+                <span>Monitoring ({lowStockCount})</span>
+              </button>
+            )}
             <button 
-              onClick={onAddStock} 
+              onClick={() => onAddStock()} 
               className="hidden md:flex items-center gap-2 h-12 px-5 bg-amber-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-amber-100 hover:bg-amber-600 transition-colors shrink-0"
             >
               <Package className="w-4 h-4" />
@@ -250,6 +295,56 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                <Plus className="w-5 h-5" />
                <span className="hidden sm:inline">Part Baru</span>
             </button>
+          </div>
+
+          {/* Status Quick Filter Chips (Semua / Stok Menipis / Stok Habis) */}
+          <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+              Filter Status:
+            </span>
+            <button
+              onClick={() => setStockStatusFilter('all')}
+              className={cn(
+                "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0",
+                stockStatusFilter === 'all'
+                  ? "bg-slate-900 text-white shadow-2xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              )}
+            >
+              Semua Barang ({parts.length})
+            </button>
+            <button
+              onClick={() => setStockStatusFilter('low_stock')}
+              className={cn(
+                "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0 flex items-center gap-1.5",
+                stockStatusFilter === 'low_stock'
+                  ? "bg-amber-500 text-white shadow-2xs"
+                  : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+              )}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Stok Menipis ({lowStockCount})</span>
+            </button>
+            <button
+              onClick={() => setStockStatusFilter('out_of_stock')}
+              className={cn(
+                "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0 flex items-center gap-1.5",
+                stockStatusFilter === 'out_of_stock'
+                  ? "bg-rose-600 text-white shadow-2xs"
+                  : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
+              )}
+            >
+              <PackageX className="w-3.5 h-3.5" />
+              <span>Stok Habis / 0 Pcs ({parts.filter(p => p.stock === 0).length})</span>
+            </button>
+            {stockStatusFilter !== 'all' && (
+              <button
+                onClick={() => setStockStatusFilter('all')}
+                className="text-[11px] font-bold text-blue-600 hover:underline px-2"
+              >
+                Reset Filter
+              </button>
+            )}
           </div>
 
           {/* Filter by Rak & Kategori */}
@@ -355,14 +450,44 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                      {/* Stock indicator badge */}
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex flex-col items-center justify-center text-xs font-black shrink-0",
-                        part.stock <= part.minStock ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-600"
-                      )}>
-                        <span className="text-sm font-black leading-none">{part.stock}</span>
-                        <span className="text-[8px] font-bold uppercase mt-0.5">Pcs</span>
-                      </div>
+                      {/* Image Thumbnail / Stock Badge */}
+                      {part.imageUrl ? (
+                        <div 
+                          onClick={() => setSelectedImagePart(part)}
+                          className="relative w-16 h-16 rounded-xl bg-slate-900 border border-slate-200 overflow-hidden shrink-0 cursor-pointer group/img shadow-2xs hover:border-blue-500 transition-all"
+                          title="Klik untuk memperbesar foto barang WebP"
+                        >
+                          <img 
+                            src={part.imageUrl} 
+                            alt={part.name} 
+                            className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <ZoomIn className="w-5 h-5 drop-shadow" />
+                          </div>
+                          <div className={cn(
+                            "absolute bottom-0 inset-x-0 text-[9px] font-black text-center py-0.5 leading-none",
+                            part.stock <= part.minStock ? "bg-rose-600 text-white" : "bg-slate-900/80 text-emerald-300"
+                          )}>
+                            {part.stock} Pcs
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={cn(
+                          "w-14 h-14 rounded-xl flex flex-col items-center justify-center text-xs font-black shrink-0 relative border border-slate-100",
+                          part.stock <= part.minStock ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-slate-50 text-slate-700"
+                        )}>
+                          <span className="text-sm font-black leading-none">{part.stock}</span>
+                          <span className="text-[8px] font-bold uppercase mt-0.5">Pcs</span>
+                          <button
+                            onClick={() => onEdit(part)}
+                            className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xs hover:scale-110 transition-transform"
+                            title="Tambah foto barang"
+                          >
+                            <ImageIcon className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      )}
 
                       {/* Part Information */}
                       <div className="flex-1 min-w-0">
@@ -821,6 +946,84 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           </div>
         </Modal>
       )}
+
+      {/* Modal Preview Foto Barang WebP */}
+      {selectedImagePart && (
+        <Modal
+          isOpen={Boolean(selectedImagePart)}
+          onClose={() => setSelectedImagePart(null)}
+          title={`Foto Barang: ${selectedImagePart.name}`}
+        >
+          <div className="space-y-4">
+            <div className="relative aspect-square max-h-[380px] w-full rounded-2xl bg-slate-950 overflow-hidden border border-slate-800 flex items-center justify-center">
+              <img 
+                src={selectedImagePart.imageUrl} 
+                alt={selectedImagePart.name}
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-slate-500">Nama Part:</span>
+                <span className="font-black text-slate-900">{selectedImagePart.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-slate-500">Kode SKU / Part:</span>
+                <span className="font-mono font-bold text-blue-600">{selectedImagePart.sku || selectedImagePart.id}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-slate-500">Format Gambar:</span>
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  WebP Compressed Asset
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                <span className="font-bold text-slate-500">Lokasi Rak:</span>
+                <span className="font-bold text-amber-700">
+                  {selectedImagePart.rackCode ? formatPartLocation(selectedImagePart) : 'Belum Diatur'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedImagePart(null)}
+                className="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={() => {
+                  const p = selectedImagePart;
+                  setSelectedImagePart(null);
+                  onEdit(p);
+                }}
+                className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-200 flex items-center justify-center gap-1.5"
+              >
+                <Edit className="w-4 h-4" />
+                Ubah / Ganti Foto
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Low Stock Monitoring Modal */}
+      <LowStockModal
+        isOpen={showLowStockModal}
+        onClose={() => setShowLowStockModal(false)}
+        parts={parts}
+        suppliers={suppliers}
+        onAddStock={(partId) => {
+          setShowLowStockModal(false);
+          onAddStock(partId);
+        }}
+        onEditPart={(p) => {
+          setShowLowStockModal(false);
+          onEdit(p);
+        }}
+      />
     </div>
   );
 };

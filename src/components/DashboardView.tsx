@@ -27,9 +27,11 @@ interface DashboardViewProps {
   parts: SparePart[];
   user: User;
   onPrint: (id: string) => void;
+  onOpenLowStock?: () => void;
+  onNavigateToInventory?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, user, onPrint }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, user, onPrint, onOpenLowStock, onNavigateToInventory }) => {
   const [historySearch, setHistorySearch] = useState('');
   
   const searchResults = useMemo(() => {
@@ -41,22 +43,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
     ).slice(0, 5);
   }, [historySearch, services]);
 
+  const lowStockParts = useMemo(() => {
+    return parts.filter(p => p.stock <= p.minStock);
+  }, [parts]);
+
   const stats = useMemo(() => {
     const totalRevenue = services.filter(s => s.status === 'Done').reduce((acc, s) => acc + s.totalAmount, 0);
     const activeJobs = services.filter(s => s.status !== 'Done').length;
     const completedJobs = services.filter(s => s.status === 'Done').length;
-    const lowStockCount = parts.filter(p => p.stock <= p.minStock).length;
+    const lowStockCount = lowStockParts.length;
 
-    const items: { label: string, value: number | string, icon: any, color: string, bg: string }[] = [
+    const items: { label: string, value: number | string, icon: any, color: string, bg: string, isClickable?: boolean, onClick?: () => void }[] = [
       { label: 'Active', value: activeJobs, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
       { label: 'Done', value: completedJobs, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50' },
-      { label: 'Low Stock', value: lowStockCount, icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
+      { 
+        label: 'Low Stock', 
+        value: lowStockCount, 
+        icon: AlertTriangle, 
+        color: 'text-rose-600', 
+        bg: lowStockCount > 0 ? 'bg-rose-100 animate-pulse' : 'bg-rose-50',
+        isClickable: true,
+        onClick: onOpenLowStock
+      },
     ];
 
     items.unshift({ label: "Revenue", value: `Rp ${(totalRevenue / 1000).toFixed(0)}k`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' });
 
     return items;
-  }, [services, parts, user]);
+  }, [services, parts, user, lowStockParts, onOpenLowStock]);
 
   const topServices = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -97,6 +111,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
 
   return (
     <div className="space-y-6">
+      {/* Alert Banner if Low Stock Exists */}
+      {lowStockParts.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={onOpenLowStock}
+          className="p-4 bg-gradient-to-r from-rose-900 to-rose-800 text-white rounded-2xl shadow-md border border-rose-700/80 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:shadow-lg transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0 border border-white/30">
+              <AlertTriangle className="w-5 h-5 text-rose-200 animate-bounce" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white flex items-center gap-2">
+                Peringatan Monitoring Stok Barang!
+                <span className="text-[10px] bg-rose-500 text-white font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Urgent
+                </span>
+              </h4>
+              <p className="text-xs text-rose-100 font-medium mt-0.5">
+                Terdapat <strong>{lowStockParts.length} jenis sparepart</strong> yang stoknya menipis atau habis. Klik di sini untuk melihat rincian & melakukan restok.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="px-4 py-2 bg-white text-rose-900 hover:bg-rose-50 font-black text-xs rounded-xl shadow-sm transition-transform active:scale-95 shrink-0"
+          >
+            Lihat Daftar Stok Menipis →
+          </button>
+        </motion.div>
+      )}
+
       {/* Stats - 2x2 Grid on Mobile */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map((stat, i) => (
@@ -105,10 +152,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.05 }}
             key={stat.label} 
-            className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col"
+            onClick={stat.onClick}
+            className={cn(
+              "p-4 bg-white rounded-2xl border shadow-sm flex flex-col transition-all relative overflow-hidden group",
+              stat.isClickable 
+                ? "cursor-pointer hover:border-rose-400 hover:shadow-md hover:scale-[1.02] border-rose-200 bg-rose-50/30" 
+                : "border-slate-100"
+            )}
           >
-            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", stat.bg)}>
-              <stat.icon className={cn("w-4 h-4", stat.color)} />
+            <div className="flex items-center justify-between">
+              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", stat.bg)}>
+                <stat.icon className={cn("w-4 h-4", stat.color)} />
+              </div>
+              {stat.isClickable && (
+                <span className="text-[9px] font-black uppercase text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full opacity-80 group-hover:opacity-100 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                  Klik Rincian ➔
+                </span>
+              )}
             </div>
             <h3 className="text-lg font-black text-slate-900 leading-none">{stat.value}</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-wider">{stat.label}</p>

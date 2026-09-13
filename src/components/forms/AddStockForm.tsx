@@ -4,12 +4,19 @@ import { SparePart, Supplier } from '../../types';
 interface AddStockFormProps {
   parts: SparePart[];
   suppliers: Supplier[];
+  initialPartId?: string;
   onSave: (partId: string, amount: number, supplierId: string, costPrice: number) => void;
 }
 
-export const AddStockForm: React.FC<AddStockFormProps> = ({ parts, suppliers, onSave }) => {
-  const [selectedPartId, setSelectedPartId] = useState(parts[0]?.id || '');
+export const AddStockForm: React.FC<AddStockFormProps> = ({ parts, suppliers, initialPartId, onSave }) => {
+  const [selectedPartId, setSelectedPartId] = useState(initialPartId || parts[0]?.id || '');
   const [amount, setAmount] = useState('0');
+
+  useEffect(() => {
+    if (initialPartId) {
+      setSelectedPartId(initialPartId);
+    }
+  }, [initialPartId]);
   
   const currentPart = useMemo(() => parts.find(p => p.id === selectedPartId), [parts, selectedPartId]);
   const [costPrice, setCostPrice] = useState('0');

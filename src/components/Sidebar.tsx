@@ -22,6 +22,7 @@ interface SidebarProps {
   showPOSForm: boolean;
   currentUser: User;
   isMobileOpen: boolean;
+  lowStockCount?: number;
   onSelectTab: (tabId: string) => void;
   onCloseMobile: () => void;
   onLogout: () => void;
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   showPOSForm,
   currentUser,
   isMobileOpen,
+  lowStockCount = 0,
   onSelectTab,
   onCloseMobile,
   onLogout
@@ -53,17 +55,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all group",
+                  "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all group",
                   activeTab === item.id && !showPOSForm
                     ? "bg-blue-50 text-blue-700 font-medium" 
                     : "text-slate-500 hover:bg-slate-50 rounded-md transition-colors"
                 )}
               >
-                <item.icon className={cn(
-                  "w-5 h-5",
-                  activeTab === item.id && !showPOSForm ? "text-blue-700" : "text-slate-400 group-hover:text-slate-600"
-                )} />
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <item.icon className={cn(
+                    "w-5 h-5",
+                    activeTab === item.id && !showPOSForm ? "text-blue-700" : "text-slate-400 group-hover:text-slate-600"
+                  )} />
+                  {item.label}
+                </div>
+                {item.id === 'inventory' && lowStockCount > 0 && (
+                  <span className="text-[10px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-full shadow-2xs animate-pulse">
+                    {lowStockCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -137,12 +146,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onCloseMobile();
                     }}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all",
-                      activeTab === item.id && !showPOSForm ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50"
+                      "w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all",
+                      activeTab === item.id && !showPOSForm ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-500 hover:bg-slate-50"
                     )}
                   >
-                    <item.icon className="w-5 h-5" />
-                    <span className="text-sm font-bold">{item.label}</span>
+                    <div className="flex items-center gap-3">
+                      <item.icon className="w-5 h-5" />
+                      <span className="text-sm font-bold">{item.label}</span>
+                    </div>
+                    {item.id === 'inventory' && lowStockCount > 0 && (
+                      <span className="text-[10px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-full shadow-2xs animate-pulse">
+                        {lowStockCount} Menipis
+                      </span>
+                    )}
                   </button>
                 ))}
               </nav>

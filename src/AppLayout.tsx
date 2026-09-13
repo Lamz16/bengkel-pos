@@ -44,6 +44,7 @@ import { POSForm } from './components/POSForm';
 import { HistoryView } from './components/HistoryView';
 import { ServiceDetail } from './components/ServiceDetail';
 import { InventoryView } from './components/InventoryView';
+import { LowStockModal } from './components/LowStockModal';
 import { CustomersView } from './components/CustomersView';
 import { SupplierView } from './components/SupplierView';
 import { ExpenseView } from './components/ExpenseView';
@@ -261,8 +262,15 @@ export default function AppLayout() {
   const [showManualDeduction, setShowManualDeduction] = useState(false);
   const [manualDeductionMechanic, setManualDeductionMechanic] = useState<Mechanic | null>(null);
   const [showAddStock, setShowAddStock] = useState(false);
+  const [addStockInitialPartId, setAddStockInitialPartId] = useState<string | undefined>(undefined);
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
   const [posInitialCustomer, setPosInitialCustomer] = useState<Customer | null>(null);
   const [posInitialPromoPercent, setPosInitialPromoPercent] = useState<number | null>(null);
+
+  // Low stock calculation for badges and global alerts
+  const lowStockCount = useMemo(() => {
+    return parts.filter(p => p.stock <= p.minStock).length;
+  }, [parts]);
 
   // Distributor Invoices (Nota Tempo) State
   const [distributorInvoices, setDistributorInvoices] = useState<DistributorInvoice[]>([]);
@@ -762,6 +770,7 @@ export default function AppLayout() {
         showPOSForm={showPOSForm}
         currentUser={currentUser}
         isMobileOpen={isSidebarOpen}
+        lowStockCount={lowStockCount}
         onSelectTab={(tabId) => {
           setActiveTab(tabId);
           setShowPOSForm(false);
@@ -778,6 +787,8 @@ export default function AppLayout() {
           showPOSForm={showPOSForm}
           currentUser={currentUser}
           dbStatus={{ connected: postgresConnected, orm: 'prisma' }}
+          lowStockCount={lowStockCount}
+          onOpenLowStockModal={() => setShowLowStockModal(true)}
           onOpenMobileMenu={() => setIsSidebarOpen(true)}
           onClosePOSForm={() => setShowPOSForm(false)}
           onOpenPOSForm={() => setShowPOSForm(true)}
@@ -794,6 +805,8 @@ export default function AppLayout() {
                   parts={parts} 
                   user={currentUser} 
                   onPrint={setSelectedInvoiceId} 
+                  onOpenLowStock={() => setShowLowStockModal(true)}
+                  onNavigateToInventory={() => setActiveTab('inventory')}
                 />
               </motion.div>
             )}
@@ -909,7 +922,10 @@ export default function AppLayout() {
                   suppliers={suppliers}
                   purchases={purchases}
                   onAdd={() => setEditingPart({} as SparePart)}
-                  onAddStock={() => setShowAddStock(true)}
+                  onAddStock={(partId) => {
+                    setAddStockInitialPartId(partId);
+                    setShowAddStock(true);
+                  }}
                   onEdit={(p) => setEditingPart(p)}
                   onDelete={handleDeletePart}
                 />
@@ -1046,14 +1062,45 @@ export default function AppLayout() {
           )}
 
           {showAddStock && (
-            <Modal title="Tambah Stok Barang" onClose={() => setShowAddStock(false)}>
+            <Modal 
+              title="Tambah Stok Barang" 
+              onClose={() => { 
+                setShowAddStock(false); 
+                setAddStockInitialPartId(undefined); 
+              }}
+            >
               <AddStockForm 
                 parts={parts} 
                 suppliers={suppliers}
-                onSave={handleAddStock} 
+                initialPartId={addStockInitialPartId}
+                onSave={(partId, amount, supplierId, costPrice) => {
+                  handleAddStock(partId, amount, supplierId, costPrice);
+                  setAddStockInitialPartId(undefined);
+                }} 
               />
             </Modal>
           )}
+
+          {/* Global Low Stock Monitoring Modal */}
+          <LowStockModal
+            isOpen={showLowStockModal}
+            onClose={() => setShowLowStockModal(false)}
+            parts={parts}
+            suppliers={suppliers}
+            onAddStock={(partId) => {
+              setShowLowStockModal(false);
+              setAddStockInitialPartId(partId);
+              setShowAddStock(true);
+            }}
+            onEditPart={(p) => {
+              setShowLowStockModal(false);
+              setEditingPart(p);
+            }}
+            onGoToInventory={() => {
+              setShowLowStockModal(false);
+              setActiveTab('inventory');
+            }}
+          />
 
           {editingPart && (
             <Modal title={editingPart.name ? "Edit Part & Lokasi Rak" : "Tambah Part & Atur Lokasi Rak"} onClose={() => setEditingPart(null)}>
