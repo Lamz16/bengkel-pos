@@ -17,7 +17,7 @@ export async function seedDatabase() {
       phone: '0812-3456-7890',
       email: 'kontak@bengkelpro.com',
       operationalHours: 'Senin - Sabtu: 08:00 - 17:00 WIB',
-      ownerName: 'Bambang Sutrisno',
+      ownerName: 'Pemilik Bengkel',
       picName: 'Rian Herlambang',
       defaultMechanicBonusPercent: 15,
       defaultAbsencePenalty: 50000,
@@ -43,32 +43,35 @@ export async function seedDatabase() {
   // 2. Users / Staff
   await prisma.user.upsert({
     where: { email: 'owner@bengkelpro.com' },
-    update: {},
+    update: {
+      password: 'akundemo',
+    },
     create: {
       id: 'USR-01',
-      name: 'Bambang Sutrisno',
+      name: 'Pemilik Bengkel',
       role: 'Owner',
       email: 'owner@bengkelpro.com',
+      password: 'akundemo',
       workshopName: 'BengkelPro Mandiri',
       status: 'Active',
       shifts: 'Pagi',
-      subscriptionTier: 'Premium',
-      subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
   });
 
   await prisma.user.upsert({
     where: { email: 'admin@bengkelpro.com' },
-    update: {},
+    update: {
+      password: 'akundemo',
+    },
     create: {
       id: 'USR-02',
       name: 'Rian Herlambang',
       role: 'Admin',
       email: 'admin@bengkelpro.com',
+      password: 'akundemo',
       workshopName: 'BengkelPro Mandiri',
       status: 'Active',
       shifts: 'Pagi',
-      subscriptionTier: 'Premium',
     },
   });
 

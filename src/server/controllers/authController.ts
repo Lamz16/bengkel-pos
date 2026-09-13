@@ -4,41 +4,55 @@ import { staffRepository, settingsRepository } from '../container';
 export class AuthController {
   async login(req: Request, res: Response) {
     try {
-      const { email, role } = req.body;
+      const { email, password, role } = req.body;
       
       let user = null;
-      if (email) {
-        user = await staffRepository.findByEmail(email);
-      }
-      
-      if (!user && role) {
+      if (email && email.trim()) {
+        user = await staffRepository.findByEmail(email.trim());
+      } else if (role) {
         user = await staffRepository.findByRole(role);
       }
 
+      // 1. Apabila user tidak ada -> fallback "Email tidak terdaftar."
       if (!user) {
-        // Create user in DB if email/role provided but not existing
-        user = await staffRepository.createUser({
-          name: role === 'Owner' ? 'Bambang Sutrisno' : 'Rian Herlambang',
-          email: email || (role === 'Owner' ? 'owner@bengkelpro.com' : 'admin@bengkelpro.com'),
-          role: role || 'Owner',
-          workshopName: 'BengkelPro Mandiri'
+        return res.status(401).json({ 
+          error: 'Email tidak terdaftar.' 
         });
       }
 
-      res.json(user);
+      // 2. Apabila password salah -> fallback "Password salah."
+      const expectedPassword = user.password || 'akundemo';
+      if (!password || password !== expectedPassword) {
+        return res.status(401).json({ 
+          error: 'Password salah.' 
+        });
+      }
+
+      const { password: _, ...userSafe } = user;
+      res.json(userSafe);
     } catch (err: any) {
       console.error('[AuthController] login error:', err);
-      res.status(500).json({ error: 'Gagal melakukan otentikasi' });
+      res.status(500).json({ error: 'Gagal melakukan otentikasi server' });
     }
   }
 
   async register(req: Request, res: Response) {
     try {
-      const { workshopName, email } = req.body;
+      const { workshopName, email, password } = req.body;
       
+      if (!email || !email.trim()) {
+        return res.status(400).json({ error: 'Email wajib diisi untuk pendaftaran.' });
+      }
+
+      const existingUser = await staffRepository.findByEmail(email.trim());
+      if (existingUser) {
+        return res.status(400).json({ error: `Email "${email}" sudah terdaftar. Silakan gunakan menu Masuk/Login.` });
+      }
+
       const user = await staffRepository.createUser({
         name: workshopName ? `Pemilik ${workshopName}` : 'Pemilik Bengkel',
-        email: email || 'owner@bengkelpro.com',
+        email: email.trim(),
+        password: password || 'akundemo',
         role: 'Owner',
         workshopName: workshopName || 'BengkelPro Mandiri'
       });
@@ -47,7 +61,8 @@ export class AuthController {
         await settingsRepository.update({ name: workshopName });
       }
 
-      res.json(user);
+      const { password: _, ...userSafe } = user;
+      res.json(userSafe);
     } catch (err: any) {
       console.error('[AuthController] register error:', err);
       res.status(500).json({ error: 'Gagal mendaftarkan akun bengkel' });
@@ -56,3 +71,4 @@ export class AuthController {
 }
 
 export const authController = new AuthController();
+

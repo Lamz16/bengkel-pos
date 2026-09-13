@@ -63,13 +63,13 @@ import { AddStockForm } from './components/forms/AddStockForm';
 import { api } from './services/api';
 
 export default function AppLayout() {
-  const [currentUser, setCurrentUser] = useState<User | null>({
-    id: 'USR-01',
-    name: 'Bambang Sutrisno',
-    role: 'Owner',
-    email: 'owner@bengkelpro.com',
-    workshopName: 'BengkelPro Mandiri',
-    createdAt: new Date().toISOString(),
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('bengkelpro_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -228,7 +228,7 @@ export default function AppLayout() {
     phone: "0812-3456-7890",
     email: "kontak@bengkelpro.com",
     operationalHours: "Senin - Sabtu: 08:00 - 17:00 WIB",
-    ownerName: "Bambang Sutrisno",
+    ownerName: "Pemilik Bengkel",
     picName: "Rian Herlambang",
     defaultMechanicBonusPercent: 15,
     defaultAbsencePenalty: 50000,
@@ -641,8 +641,33 @@ export default function AppLayout() {
   [services, selectedServiceId]);
 
   if (!currentUser) {
-    return <AuthView onLogin={setCurrentUser} />;
+    return (
+      <AuthView 
+        onLogin={(u) => {
+          setCurrentUser(u);
+          try {
+            localStorage.setItem('bengkelpro_user', JSON.stringify(u));
+          } catch {}
+        }} 
+      />
+    );
   }
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('bengkelpro_user');
+    } catch {}
+  };
+
+  const handleSwitchRole = (nextRole: UserRole) => {
+    if (!currentUser) return;
+    const updatedUser: User = { ...currentUser, role: nextRole };
+    setCurrentUser(updatedUser);
+    try {
+      localStorage.setItem('bengkelpro_user', JSON.stringify(updatedUser));
+    } catch {}
+  };
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans text-slate-900 selection:bg-blue-100">
@@ -658,7 +683,7 @@ export default function AppLayout() {
           setShowPOSForm(false);
         }}
         onCloseMobile={() => setIsSidebarOpen(false)}
-        onLogout={() => setCurrentUser(null)}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
@@ -672,13 +697,7 @@ export default function AppLayout() {
           onOpenMobileMenu={() => setIsSidebarOpen(true)}
           onClosePOSForm={() => setShowPOSForm(false)}
           onOpenPOSForm={() => setShowPOSForm(true)}
-          onSwitchRole={(nextRole) => {
-            setCurrentUser({
-              ...currentUser,
-              role: nextRole,
-              name: nextRole === 'Owner' ? 'Bambang Sutrisno' : 'Rian Herlambang'
-            });
-          }}
+          onSwitchRole={handleSwitchRole}
         />
 
         {/* Scrollable Viewport */}
@@ -868,13 +887,7 @@ export default function AppLayout() {
                     setMechanics(prev => prev.map(m => ({ ...m, defaultBonusPercent: newPercent })));
                     setCompanySettings(prev => ({ ...prev, defaultMechanicBonusPercent: newPercent }));
                   }}
-                  onSwitchRole={(newRole) => {
-                    setCurrentUser({
-                      ...currentUser,
-                      role: newRole,
-                      name: newRole === 'Owner' ? 'Bambang Sutrisno' : 'Rian Herlambang'
-                    });
-                  }}
+                  onSwitchRole={handleSwitchRole}
                 />
               </motion.div>
             )}

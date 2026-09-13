@@ -260,7 +260,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="text"
                     value={formData.ownerName || ''}
                     onChange={e => setFormData({ ...formData, ownerName: e.target.value })}
-                    placeholder="Bambang Sutrisno"
+                    placeholder="Nama Pemilik Bengkel"
                     className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:border-blue-500 outline-none transition-all"
                   />
                 </div>

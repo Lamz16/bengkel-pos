@@ -38,6 +38,7 @@ export class StaffRepository implements IStaffRepository {
             name: u.name,
             role: u.role,
             email: u.email,
+            password: u.password || 'akundemo',
             workshopName: u.workshopName,
             createdAt: u.createdAt.toISOString ? u.createdAt.toISOString() : u.createdAt,
           };
@@ -62,6 +63,7 @@ export class StaffRepository implements IStaffRepository {
             name: u.name,
             role: u.role,
             email: u.email,
+            password: u.password || 'akundemo',
             workshopName: u.workshopName,
             createdAt: u.createdAt.toISOString ? u.createdAt.toISOString() : u.createdAt,
           };
@@ -74,8 +76,9 @@ export class StaffRepository implements IStaffRepository {
     return memUser || null;
   }
 
-  async createUser(data: { name: string; email: string; role: string; workshopName?: string }): Promise<any> {
+  async createUser(data: { name: string; email: string; role: string; password?: string; workshopName?: string }): Promise<any> {
     const id = `USR-${Date.now().toString().slice(-4)}`;
+    const userPassword = data.password || 'akundemo';
     if (isDbConnected()) {
       try {
         const created = await prisma.user.create({
@@ -84,6 +87,7 @@ export class StaffRepository implements IStaffRepository {
             name: data.name,
             role: data.role || 'Owner',
             email: data.email,
+            password: userPassword,
             workshopName: data.workshopName || 'BengkelPro Mandiri',
             status: 'Active',
             shifts: 'Pagi',
@@ -94,6 +98,7 @@ export class StaffRepository implements IStaffRepository {
           name: created.name,
           role: (created.role as any) || 'Owner',
           email: created.email,
+          password: created.password,
           workshopName: created.workshopName,
           createdAt: created.createdAt.toISOString ? created.createdAt.toISOString() : created.createdAt,
         };
@@ -103,7 +108,7 @@ export class StaffRepository implements IStaffRepository {
         console.error('[StaffRepo] createUser error:', err);
       }
     }
-    const userObj = { id, name: data.name, role: (data.role as any) || 'Owner', email: data.email, workshopName: data.workshopName || 'BengkelPro Mandiri', createdAt: new Date().toISOString() };
+    const userObj = { id, name: data.name, role: (data.role as any) || 'Owner', email: data.email, password: userPassword, workshopName: data.workshopName || 'BengkelPro Mandiri', createdAt: new Date().toISOString() };
     memoryStore.users.push(userObj as any);
     return userObj;
   }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Wrench, ChevronRight, Loader2 } from 'lucide-react';
+import { Wrench, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { cn } from '../lib/utils';
 import { api } from '../services/api';
@@ -33,16 +33,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
       onLogin(dbUser);
     } catch (err: any) {
       console.error('Auth error:', err);
-      // Fallback if network issue or db connection delay
-      const fallbackUser: User = {
-        id: 'USR-' + Math.random().toString(36).substr(2, 9),
-        name: workshopName || (role === 'Owner' ? 'Bambang Sutrisno' : 'Rian Herlambang'),
-        role: step === 'login' ? role : 'Owner',
-        email: email || (role === 'Owner' ? 'owner@bengkelpro.com' : 'admin@bengkelpro.com'),
-        workshopName: workshopName || 'BengkelPro Mandiri',
-        createdAt: new Date().toISOString(),
-      };
-      onLogin(fallbackUser);
+      setErrorMsg(err.message || 'Gagal masuk. Silakan periksa kredensial Anda.');
     } finally {
       setLoading(false);
     }
@@ -68,7 +59,18 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           </div>
         </div>
 
+        {errorMsg && (
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 text-xs font-semibold leading-relaxed mb-6 flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-950">Gagal Masuk</p>
+              <p className="text-[11px] text-rose-800 mt-0.5">{errorMsg}</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleAuth} className="space-y-5">
+
           {step === 'register' && (
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nama Bengkel</label>
@@ -117,7 +119,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                 ))}
               </div>
               <div className="p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl text-[10px] text-blue-800 text-center font-medium leading-relaxed">
-                💡 <strong>Hak Akses:</strong> <strong>Superadmin/Owner</strong> (akses penuh termasuk laporan & keuangan) dan <strong>Admin/PIC</strong> (operasional kasir POS, antrean servis, mekanik, dan stok suku cadang).
+                💡 <strong>Kredensial Demo:</strong> Email: <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">owner@bengkelpro.com</code> atau <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">admin@bengkelpro.com</code> | Password: <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">akundemo</code>
               </div>
             </div>
           )}

@@ -1,7 +1,6 @@
 export type ServiceStatus = 'Pending' | 'In Progress' | 'Ready' | 'Done';
 // Hak Akses Sistem: Superadmin/Owner dan Admin/PIC
 export type UserRole = 'Owner' | 'Admin';
-export type SubscriptionTier = 'Free' | 'Basic' | 'Premium';
 
 export interface CompanySettings {
   // Fitur Profil Bengkel
@@ -44,12 +43,9 @@ export interface User {
   name: string;
   role: UserRole;
   email: string;
+  password?: string;
   workshopName: string;
   createdAt: string;
-  subscription?: {
-    tier?: string;
-    expiryDate?: string | null;
-  };
 }
 
 export interface Mechanic {
@@ -176,13 +172,6 @@ export interface StockHistory {
   type: 'In' | 'Out';
   reason: string;
   date: string;
-}
-
-export interface SubscriptionPlan {
-  id: 'monthly' | 'yearly';
-  name: string;
-  price: number;
-  features: string[];
 }
 
 export interface Expense {

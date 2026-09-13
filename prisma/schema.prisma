@@ -15,7 +15,7 @@ model CompanySettings {
   phone                          String   @default("0812-3456-7890")
   email                          String?  @default("kontak@bengkelpro.com")
   operationalHours               String?  @default("Senin - Sabtu: 08:00 - 17:00 WIB")
-  ownerName                      String?  @default("Bambang Sutrisno")
+  ownerName                      String?  @default("Pemilik Bengkel")
   picName                        String?  @default("Rian Herlambang")
   defaultMechanicBonusPercent    Float    @default(15)
   defaultAbsencePenalty          Float    @default(50000)
@@ -39,17 +39,16 @@ model CompanySettings {
 }
 
 model User {
-  id                 String    @id @default(uuid())
-  name               String
-  role               String    @default("Admin") // "Owner" | "Admin"
-  email              String    @unique
-  workshopName       String    @default("BengkelPro Mandiri")
-  status             String    @default("Active")
-  shifts             String?   @default("Pagi")
-  subscriptionTier   String    @default("Premium")
-  subscriptionExpiry DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  name         String
+  role         String   @default("Admin") // "Owner" | "Admin"
+  email        String   @unique
+  password     String   @default("akundemo")
+  workshopName String   @default("BengkelPro Mandiri")
+  status       String   @default("Active")
+  shifts       String?  @default("Pagi")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Customer {

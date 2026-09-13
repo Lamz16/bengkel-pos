@@ -36,7 +36,7 @@ export const memoryStore: MemoryStore = {
     phone: "0812-3456-7890",
     email: "kontak@bengkelpro.com",
     operationalHours: "Senin - Sabtu: 08:00 - 17:00 WIB",
-    ownerName: "Bambang Sutrisno",
+    ownerName: "Pemilik Bengkel",
     picName: "Rian Herlambang",
     defaultMechanicBonusPercent: 15,
     defaultAbsencePenalty: 50000,
@@ -60,9 +60,10 @@ export const memoryStore: MemoryStore = {
   users: [
     {
       id: 'USR-01',
-      name: 'Bambang Sutrisno',
+      name: 'Pemilik Bengkel',
       role: 'Owner',
       email: 'owner@bengkelpro.com',
+      password: 'akundemo',
       workshopName: 'BengkelPro Mandiri',
       createdAt: new Date().toISOString(),
     },
@@ -71,6 +72,7 @@ export const memoryStore: MemoryStore = {
       name: 'Rian Herlambang',
       role: 'Admin',
       email: 'admin@bengkelpro.com',
+      password: 'akundemo',
       workshopName: 'BengkelPro Mandiri',
       createdAt: new Date().toISOString(),
     }
