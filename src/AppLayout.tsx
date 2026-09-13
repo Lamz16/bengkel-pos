@@ -15,26 +15,13 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  WorkshopService, 
-  User, 
-  UserRole, 
-  CompanySettings, 
-  SparePart, 
-  ServiceStatus, 
-  Customer, 
-  Vehicle, 
-  Expense, 
-  Supplier, 
-  PurchaseRecord, 
-  Mechanic, 
-  MechanicDeduction,
-  DistributorInvoice
-} from './types';
+import { WorkshopService, User, UserRole, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
 import { INITIAL_PARTS } from './constants';
+import { getStoredCategories, saveStoredCategories, getStoredRacks, saveStoredRacks, getStoredZones, saveStoredZones } from './utils/inventory';
 
 // UI and Feature Components
 import { Modal } from './components/Modal';
+import { MasterDataModal } from './components/MasterDataModal';
 import { InvoiceModal } from './components/InvoiceModal';
 import { AuthView } from './components/AuthView';
 import { Sidebar, NavItem } from './components/Sidebar';
@@ -266,6 +253,27 @@ export default function AppLayout() {
   const [showLowStockModal, setShowLowStockModal] = useState(false);
   const [posInitialCustomer, setPosInitialCustomer] = useState<Customer | null>(null);
   const [posInitialPromoPercent, setPosInitialPromoPercent] = useState<number | null>(null);
+
+  // Master Data States (Categories, Racks & Warehouse Zones)
+  const [masterCategories, setMasterCategories] = useState<PartCategory[]>(() => getStoredCategories());
+  const [masterRacks, setMasterRacks] = useState<WarehouseRack[]>(() => getStoredRacks());
+  const [masterZones, setMasterZones] = useState<WarehouseZone[]>(() => getStoredZones());
+  const [showMasterDataModal, setShowMasterDataModal] = useState(false);
+
+  const handleSaveMasterCategories = (cats: PartCategory[]) => {
+    setMasterCategories(cats);
+    saveStoredCategories(cats);
+  };
+
+  const handleSaveMasterRacks = (racks: WarehouseRack[]) => {
+    setMasterRacks(racks);
+    saveStoredRacks(racks);
+  };
+
+  const handleSaveMasterZones = (zones: WarehouseZone[]) => {
+    setMasterZones(zones);
+    saveStoredZones(zones);
+  };
 
   // Low stock calculation for badges and global alerts
   const lowStockCount = useMemo(() => {
@@ -921,6 +929,9 @@ export default function AppLayout() {
                   parts={parts} 
                   suppliers={suppliers}
                   purchases={purchases}
+                  categories={masterCategories}
+                  racks={masterRacks}
+                  zones={masterZones}
                   onAdd={() => setEditingPart({} as SparePart)}
                   onAddStock={(partId) => {
                     setAddStockInitialPartId(partId);
@@ -929,6 +940,7 @@ export default function AppLayout() {
                   onEdit={(p) => setEditingPart(p)}
                   onDelete={handleDeletePart}
                   onOpenLowStockModal={() => setShowLowStockModal(true)}
+                  onOpenMasterDataModal={() => setShowMasterDataModal(true)}
                 />
               </motion.div>
             )}
@@ -1111,10 +1123,27 @@ export default function AppLayout() {
                 part={editingPart.name ? editingPart : undefined} 
                 suppliers={suppliers}
                 existingParts={parts}
+                categories={masterCategories}
+                racks={masterRacks}
+                zones={masterZones}
                 onSave={handleSavePart}
                 onCancel={() => setEditingPart(null)}
               />
             </Modal>
+          )}
+
+          {/* Master Data Management Modal (Categories, Racks & Warehouse Zones) */}
+          {showMasterDataModal && (
+            <MasterDataModal
+              isOpen={showMasterDataModal}
+              onClose={() => setShowMasterDataModal(false)}
+              categories={masterCategories}
+              racks={masterRacks}
+              zones={masterZones}
+              onSaveCategories={handleSaveMasterCategories}
+              onSaveRacks={handleSaveMasterRacks}
+              onSaveZones={handleSaveMasterZones}
+            />
           )}
 
           {editingCustomer && (

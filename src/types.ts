@@ -126,6 +126,27 @@ export interface SparePart {
   locationNotes?: string;  // Petunjuk posisi (e.g. "Dekat pintu kiri, susunan paling depan")
 }
 
+export interface WarehouseRack {
+  id: string;
+  code: string;          // Kode Rak (e.g. "Rak A", "Rak F1")
+  name: string;          // Nama Keterangan (e.g. "Rak A - Pelumas & Oli")
+  zone: string;          // Nama Gudang/Zona (e.g. "Gudang Utama", "Gudang Belakang")
+  description?: string;
+}
+
+export interface PartCategory {
+  id: string;
+  name: string;          // Nama Kategori (e.g. "Oli", "Rem", "Busi")
+  skuPrefix?: string;    // Prefix Kode SKU (e.g. "OLI", "REM")
+  description?: string;
+}
+
+export interface WarehouseZone {
+  id: string;
+  name: string;          // Nama Gudang / Zona (e.g. "Gudang Utama", "Toko Depan")
+  description?: string;
+}
+
 export interface WorkshopService {
   id: string;
   customerId: string;

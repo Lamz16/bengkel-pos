@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { SparePart, Supplier } from '../../types';
+import { SparePart, Supplier, PartCategory, WarehouseRack, WarehouseZone } from '../../types';
 import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Image as ImageIcon, Upload, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { generatePartSKU, DEFAULT_RACK_LIST } from '../../utils/inventory';
+import { generatePartSKU, DEFAULT_RACK_LIST, DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_ZONES } from '../../utils/inventory';
 import { compressAndConvertToWebP, formatBytes, CompressionResult } from '../../utils/imageCompressor';
 import { api } from '../../services/api';
 
@@ -9,6 +9,9 @@ interface PartFormProps {
   part?: SparePart;
   suppliers: Supplier[];
   existingParts?: SparePart[];
+  categories?: PartCategory[];
+  racks?: WarehouseRack[];
+  zones?: WarehouseZone[];
   onSave: (p: SparePart) => void;
   onCancel: () => void;
 }
@@ -17,6 +20,9 @@ export const PartForm: React.FC<PartFormProps> = ({
   part, 
   suppliers, 
   existingParts = [], 
+  categories = DEFAULT_PART_CATEGORIES,
+  racks,
+  zones = DEFAULT_WAREHOUSE_ZONES,
   onSave, 
   onCancel 
 }) => {
@@ -54,13 +60,13 @@ export const PartForm: React.FC<PartFormProps> = ({
     // If SKU is empty or follows the standard prefix pattern, update it automatically
     let updatedSku = formData.sku;
     if (!formData.sku || formData.sku.includes('-')) {
-      updatedSku = generatePartSKU(newCategory, existingParts);
+      updatedSku = generatePartSKU(newCategory, existingParts, categories);
     }
     setFormData({ ...formData, category: newCategory, sku: updatedSku });
   };
 
   const handleGenerateSku = () => {
-    const newSku = generatePartSKU(formData.category || 'Oli', existingParts);
+    const newSku = generatePartSKU(formData.category || 'Oli', existingParts, categories);
     setFormData({ ...formData, sku: newSku });
   };
 
@@ -324,8 +330,8 @@ export const PartForm: React.FC<PartFormProps> = ({
               className="w-full h-10 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-bold text-slate-900"
             />
             <datalist id="rack-presets">
-              {DEFAULT_RACK_LIST.map(r => (
-                <option key={r.code} value={r.code}>{r.name}</option>
+              {(racks || DEFAULT_RACK_LIST).map(r => (
+                <option key={r.code} value={r.code}>{r.name} ({r.zone})</option>
               ))}
             </datalist>
           </div>
@@ -373,14 +379,13 @@ export const PartForm: React.FC<PartFormProps> = ({
               Zona / Ruang Gudang
             </label>
             <select
-              value={formData.rackZone || 'Gudang Utama'}
+              value={formData.rackZone || (zones[0]?.name || 'Gudang Utama')}
               onChange={e => setFormData({ ...formData, rackZone: e.target.value })}
               className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl outline-none text-xs font-bold text-slate-700"
             >
-              <option value="Gudang Utama">Gudang Utama</option>
-              <option value="Toko Kasir">Toko Kasir / Etalase Depan</option>
-              <option value="Gudang Belakang">Gudang Belakang</option>
-              <option value="Area Servis Luar">Area Servis Luar</option>
+              {zones.map(z => (
+                <option key={z.id} value={z.name}>{z.name}</option>
+              ))}
             </select>
           </div>
           <div className="space-y-1">
@@ -436,8 +441,8 @@ export const PartForm: React.FC<PartFormProps> = ({
             onChange={e => handleCategoryChange(e.target.value)}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
           >
-            {['Oli', 'Rem', 'Busi', 'Filter', 'Kelistrikan', 'Ban', 'Mesin', 'CVT', 'Aksesoris'].map(c => (
-              <option key={c} value={c}>{c}</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.name}>{c.name} ({c.skuPrefix || c.name.slice(0, 3).toUpperCase()})</option>
             ))}
           </select>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { 
   AlertTriangle, 
@@ -20,37 +20,51 @@ import {
   Image as ImageIcon,
   ZoomIn,
   Eye,
-  PackageX
+  PackageX,
+  ChevronDown,
+  Sliders,
+  Tag,
+  Settings,
+  Check,
+  X,
+  RotateCcw
 } from 'lucide-react';
-import { SparePart, Supplier, PurchaseRecord } from '../types';
+import { SparePart, Supplier, PurchaseRecord, PartCategory, WarehouseRack, WarehouseZone } from '../types';
 import { cn } from '../lib/utils';
-import { formatPartLocation, groupPartsByRack, DEFAULT_RACK_LIST } from '../utils/inventory';
+import { formatPartLocation, groupPartsByRack, DEFAULT_RACK_LIST, DEFAULT_PART_CATEGORIES } from '../utils/inventory';
 import { Modal } from './Modal';
-
 import { LowStockModal } from './LowStockModal';
 
 interface InventoryViewProps {
   parts: SparePart[];
   suppliers: Supplier[];
   purchases: PurchaseRecord[];
+  categories?: PartCategory[];
+  racks?: WarehouseRack[];
+  zones?: WarehouseZone[];
   onAdd: () => void;
   onAddStock: (partId?: string) => void;
   onEdit: (p: SparePart) => void;
   onDelete: (id: string) => void;
   initialShowLowStockModal?: boolean;
   onOpenLowStockModal?: () => void;
+  onOpenMasterDataModal?: () => void;
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
   parts, 
   suppliers, 
   purchases, 
+  categories: masterCategories,
+  racks: masterRacks,
+  zones: masterZones,
   onAdd, 
   onAddStock, 
   onEdit, 
   onDelete,
   initialShowLowStockModal = false,
-  onOpenLowStockModal
+  onOpenLowStockModal,
+  onOpenMasterDataModal
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'stock' | 'rack_locator' | 'purchases'>('stock');
@@ -81,25 +95,45 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   // Locator search term in Rack Locator tab
   const [locatorSearch, setLocatorSearch] = useState('');
 
-  // Distinct rack list for filtering
+  // Modern Dropdown Filter States
+  const [openDropdown, setOpenDropdown] = useState<'status' | 'category' | 'rack' | null>(null);
+  const filterToolbarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterToolbarRef.current && !filterToolbarRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Distinct rack list for filtering (master racks + part racks)
   const availableRacks = useMemo(() => {
     const set = new Set<string>();
+    if (masterRacks) {
+      masterRacks.forEach(r => set.add(r.code));
+    }
     parts.forEach(p => {
       if (p.rackCode && p.rackCode.trim() !== '') {
         set.add(p.rackCode.trim());
       }
     });
     return Array.from(set).sort();
-  }, [parts]);
+  }, [parts, masterRacks]);
 
-  // Distinct categories
+  // Distinct categories (master categories + part categories)
   const categories = useMemo(() => {
     const set = new Set<string>();
+    if (masterCategories) {
+      masterCategories.forEach(c => set.add(c.name));
+    }
     parts.forEach(p => {
       if (p.category) set.add(p.category);
     });
     return Array.from(set).sort();
-  }, [parts]);
+  }, [parts, masterCategories]);
 
   // Filtered parts for the stock list tab
   const filteredParts = useMemo(() => {
@@ -307,143 +341,302 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             </button>
           </div>
 
-          {/* Status Quick Filter Chips (Semua / Stok Menipis / Stok Habis) */}
-          <div className="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
-              Filter Status:
-            </span>
-            <button
-              onClick={() => setStockStatusFilter('all')}
-              className={cn(
-                "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0",
-                stockStatusFilter === 'all'
-                  ? "bg-slate-900 text-white shadow-2xs"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+          {/* Modern Dropdown Filters Toolbar */}
+          <div ref={filterToolbarRef} className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3 relative z-30 shadow-2xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 mr-1">
+                <Sliders className="w-3.5 h-3.5 text-blue-600" /> Filter:
+              </span>
+
+              {/* Dropdown 1: Status Stok */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'status' ? null : 'status')}
+                  className={cn(
+                    "h-10 px-3.5 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all shadow-2xs",
+                    stockStatusFilter !== 'all'
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  {stockStatusFilter === 'all' && <span>Semua Status</span>}
+                  {stockStatusFilter === 'low_stock' && (
+                    <span className="flex items-center gap-1 text-amber-300 font-black">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Stok Menipis ({lowStockCount})
+                    </span>
+                  )}
+                  {stockStatusFilter === 'out_of_stock' && (
+                    <span className="flex items-center gap-1 text-rose-300 font-black">
+                      <PackageX className="w-3.5 h-3.5" /> Stok Habis ({parts.filter(p => p.stock === 0).length})
+                    </span>
+                  )}
+                  <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === 'status' && "rotate-180")} />
+                </button>
+
+                {openDropdown === 'status' && (
+                  <div className="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95">
+                    <div className="px-2.5 py-1 text-[10px] font-black uppercase text-slate-400 tracking-wider">Pilih Status Stok</div>
+                    <button
+                      type="button"
+                      onClick={() => { setStockStatusFilter('all'); setOpenDropdown(null); }}
+                      className={cn(
+                        "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                        stockStatusFilter === 'all' ? "bg-slate-100 text-slate-900 font-black" : "text-slate-700 hover:bg-slate-50"
+                      )}
+                    >
+                      <span>Semua Status</span>
+                      <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded-full text-slate-700">{parts.length}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setStockStatusFilter('low_stock'); setOpenDropdown(null); }}
+                      className={cn(
+                        "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                        stockStatusFilter === 'low_stock' ? "bg-amber-100 text-amber-900 font-black" : "text-amber-700 hover:bg-amber-50"
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                        Stok Menipis
+                      </span>
+                      <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full text-amber-900 font-black">{lowStockCount}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setStockStatusFilter('out_of_stock'); setOpenDropdown(null); }}
+                      className={cn(
+                        "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                        stockStatusFilter === 'out_of_stock' ? "bg-rose-100 text-rose-900 font-black" : "text-rose-700 hover:bg-rose-50"
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <PackageX className="w-3.5 h-3.5 text-rose-600" />
+                        Stok Habis / 0 Pcs
+                      </span>
+                      <span className="text-[10px] bg-rose-200 px-2 py-0.5 rounded-full text-rose-900 font-black">{parts.filter(p => p.stock === 0).length}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Dropdown 2: Kategori Barang */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}
+                  className={cn(
+                    "h-10 px-3.5 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all shadow-2xs",
+                    selectedCategoryFilter !== 'all'
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  <Tag className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {selectedCategoryFilter === 'all' ? 'Semua Kategori' : `Kategori: ${selectedCategoryFilter}`}
+                  </span>
+                  <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === 'category' && "rotate-180")} />
+                </button>
+
+                {openDropdown === 'category' && (
+                  <div className="absolute left-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95 max-h-72 overflow-y-auto">
+                    <div className="px-2.5 py-1 text-[10px] font-black uppercase text-slate-400 tracking-wider flex justify-between items-center">
+                      <span>Kategori Barang</span>
+                      <span className="text-[9px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded">{categories.length} tipe</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedCategoryFilter('all'); setOpenDropdown(null); }}
+                      className={cn(
+                        "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                        selectedCategoryFilter === 'all' ? "bg-blue-50 text-blue-700 font-black" : "text-slate-700 hover:bg-slate-50"
+                      )}
+                    >
+                      <span>Semua Kategori</span>
+                      <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-600">{parts.length}</span>
+                    </button>
+
+                    {categories.map(cat => {
+                      const count = parts.filter(p => p.category === cat).length;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => { setSelectedCategoryFilter(cat); setOpenDropdown(null); }}
+                          className={cn(
+                            "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                            selectedCategoryFilter === cat ? "bg-blue-600 text-white font-black" : "text-slate-700 hover:bg-slate-50"
+                          )}
+                        >
+                          <span className="truncate pr-2">{cat}</span>
+                          <span className={cn(
+                            "text-[10px] px-2 py-0.5 rounded-full shrink-0 font-bold",
+                            selectedCategoryFilter === cat ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-600"
+                          )}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+
+                    {onOpenMasterDataModal && (
+                      <div className="pt-2 border-t border-slate-100 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => { setOpenDropdown(null); onOpenMasterDataModal(); }}
+                          className="w-full py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Settings className="w-3.5 h-3.5" />
+                          <span>Kelola Master Kategori</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Dropdown 3: Rak & Gudang */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'rack' ? null : 'rack')}
+                  className={cn(
+                    "h-10 px-3.5 rounded-xl text-xs font-bold border flex items-center gap-2 transition-all shadow-2xs",
+                    selectedRackFilter !== 'all'
+                      ? "bg-amber-600 text-white border-amber-600"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {selectedRackFilter === 'all' 
+                      ? 'Semua Rak & Gudang' 
+                      : selectedRackFilter === 'unassigned'
+                      ? '⚠️ Belum Ada Rak'
+                      : `Rak: ${selectedRackFilter}`}
+                  </span>
+                  <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === 'rack' && "rotate-180")} />
+                </button>
+
+                {openDropdown === 'rack' && (
+                  <div className="absolute left-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95 max-h-80 overflow-y-auto">
+                    <div className="px-2.5 py-1 text-[10px] font-black uppercase text-slate-400 tracking-wider flex justify-between items-center">
+                      <span>Letak Rak & Gudang</span>
+                      <span className="text-[9px] bg-amber-50 text-amber-700 font-bold px-1.5 py-0.5 rounded">{availableRacks.length} rak</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedRackFilter('all'); setOpenDropdown(null); }}
+                      className={cn(
+                        "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                        selectedRackFilter === 'all' ? "bg-amber-50 text-amber-800 font-black" : "text-slate-700 hover:bg-slate-50"
+                      )}
+                    >
+                      <span>Semua Rak & Gudang</span>
+                      <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-600">{parts.length}</span>
+                    </button>
+
+                    {parts.some(p => !p.rackCode) && (
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedRackFilter('unassigned'); setOpenDropdown(null); }}
+                        className={cn(
+                          "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                          selectedRackFilter === 'unassigned' ? "bg-rose-600 text-white font-black" : "text-rose-700 hover:bg-rose-50"
+                        )}
+                      >
+                        <span className="flex items-center gap-1">⚠️ Belum Ada Rak</span>
+                        <span className={cn(
+                          "text-[10px] px-2 py-0.5 rounded-full shrink-0 font-bold",
+                          selectedRackFilter === 'unassigned' ? "bg-rose-700 text-white" : "bg-rose-100 text-rose-800"
+                        )}>
+                          {parts.filter(p => !p.rackCode).length}
+                        </span>
+                      </button>
+                    )}
+
+                    {availableRacks.map(rack => {
+                      const count = parts.filter(p => p.rackCode === rack).length;
+                      const masterMeta = masterRacks?.find(r => r.code === rack);
+                      return (
+                        <button
+                          key={rack}
+                          type="button"
+                          onClick={() => { setSelectedRackFilter(rack); setOpenDropdown(null); }}
+                          className={cn(
+                            "w-full px-3 py-2 rounded-xl text-xs font-bold text-left flex items-center justify-between transition-colors",
+                            selectedRackFilter === rack ? "bg-amber-600 text-white font-black" : "text-slate-700 hover:bg-slate-50"
+                          )}
+                        >
+                          <div className="truncate pr-2">
+                            <span className="block truncate">{rack}</span>
+                            {masterMeta && (
+                              <span className={cn(
+                                "text-[9px] block font-medium truncate",
+                                selectedRackFilter === rack ? "text-amber-100" : "text-slate-400"
+                              )}>
+                                📍 {masterMeta.zone}
+                              </span>
+                            )}
+                          </div>
+                          <span className={cn(
+                            "text-[10px] px-2 py-0.5 rounded-full shrink-0 font-bold",
+                            selectedRackFilter === rack ? "bg-amber-700 text-white" : "bg-slate-100 text-slate-600"
+                          )}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+
+                    {onOpenMasterDataModal && (
+                      <div className="pt-2 border-t border-slate-100 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => { setOpenDropdown(null); onOpenMasterDataModal(); }}
+                          className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Settings className="w-3.5 h-3.5" />
+                          <span>Kelola Rak & Gudang</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Reset Filter Button */}
+              {(stockStatusFilter !== 'all' || selectedCategoryFilter !== 'all' || selectedRackFilter !== 'all' || searchTerm) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStockStatusFilter('all');
+                    setSelectedCategoryFilter('all');
+                    setSelectedRackFilter('all');
+                    setSearchTerm('');
+                  }}
+                  className="px-3 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Filter</span>
+                </button>
               )}
-            >
-              Semua Barang ({parts.length})
-            </button>
-            <button
-              onClick={() => setStockStatusFilter('low_stock')}
-              className={cn(
-                "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0 flex items-center gap-1.5",
-                stockStatusFilter === 'low_stock'
-                  ? "bg-amber-500 text-white shadow-2xs"
-                  : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
-              )}
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Stok Menipis ({lowStockCount})</span>
-            </button>
-            <button
-              onClick={() => setStockStatusFilter('out_of_stock')}
-              className={cn(
-                "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0 flex items-center gap-1.5",
-                stockStatusFilter === 'out_of_stock'
-                  ? "bg-rose-600 text-white shadow-2xs"
-                  : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
-              )}
-            >
-              <PackageX className="w-3.5 h-3.5" />
-              <span>Stok Habis / 0 Pcs ({parts.filter(p => p.stock === 0).length})</span>
-            </button>
-            {stockStatusFilter !== 'all' && (
+            </div>
+
+            {/* Manage Master Data Button */}
+            {onOpenMasterDataModal && (
               <button
-                onClick={() => setStockStatusFilter('all')}
-                className="text-[11px] font-bold text-blue-600 hover:underline px-2"
+                type="button"
+                onClick={onOpenMasterDataModal}
+                className="px-3.5 py-2 bg-white border border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-slate-800 hover:text-blue-700 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-2xs active:scale-95 shrink-0"
               >
-                Reset Filter
+                <Settings className="w-4 h-4 text-blue-600" />
+                <span>Master Kategori & Gudang</span>
               </button>
             )}
-          </div>
-
-          {/* Filter by Rak & Kategori */}
-          <div className="space-y-2">
-            {/* Filter Rak Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-amber-500" /> Rak:
-              </span>
-              <button
-                onClick={() => setSelectedRackFilter('all')}
-                className={cn(
-                  "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0",
-                  selectedRackFilter === 'all'
-                    ? "bg-amber-600 text-white shadow-2xs"
-                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                )}
-              >
-                Semua Rak ({parts.length})
-              </button>
-              {availableRacks.map(rack => {
-                const count = parts.filter(p => p.rackCode === rack).length;
-                return (
-                  <button
-                    key={rack}
-                    onClick={() => setSelectedRackFilter(rack)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0 flex items-center gap-1",
-                      selectedRackFilter === rack
-                        ? "bg-amber-600 text-white shadow-2xs"
-                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                    )}
-                  >
-                    <span>{rack}</span>
-                    <span className={cn(
-                      "text-[9px] px-1 rounded-md",
-                      selectedRackFilter === rack ? "bg-amber-700 text-white" : "bg-slate-100 text-slate-500"
-                    )}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-              {parts.some(p => !p.rackCode) && (
-                <button
-                  onClick={() => setSelectedRackFilter('unassigned')}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl font-bold whitespace-nowrap text-xs transition-colors shrink-0",
-                    selectedRackFilter === 'unassigned'
-                      ? "bg-rose-600 text-white shadow-2xs"
-                      : "bg-white text-rose-600 border border-rose-200 hover:bg-rose-50"
-                  )}
-                >
-                  Belum Ada Rak ({parts.filter(p => !p.rackCode).length})
-                </button>
-              )}
-            </div>
-
-            {/* Filter Kategori Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
-                <Filter className="w-3 h-3 text-blue-500" /> Kategori:
-              </span>
-              <button
-                onClick={() => setSelectedCategoryFilter('all')}
-                className={cn(
-                  "px-2.5 py-1 rounded-lg font-bold whitespace-nowrap text-[11px] transition-colors shrink-0",
-                  selectedCategoryFilter === 'all'
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                Semua
-              </button>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategoryFilter(cat)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-lg font-bold whitespace-nowrap text-[11px] transition-colors shrink-0",
-                    selectedCategoryFilter === cat
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* List of Spare Parts with SKU & Rack details */}

@@ -15,7 +15,10 @@ import {
   Smartphone,
   Eye,
   Sliders,
-  DollarSign
+  DollarSign,
+  Package,
+  Layers,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { CompanySettings, Mechanic, UserRole } from '../types';
 
@@ -26,6 +29,7 @@ interface SettingsViewProps {
   onUpdateSettings: (newSettings: CompanySettings) => void;
   onBatchUpdateMechanicBonus?: (newPercent: number) => void;
   onSwitchRole?: (newRole: UserRole) => void;
+  onOpenMasterDataModal?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -34,7 +38,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   currentUserRole = 'Owner',
   onUpdateSettings,
   onBatchUpdateMechanicBonus,
-  onSwitchRole
+  onSwitchRole,
+  onOpenMasterDataModal
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'bonus' | 'receipt'>('profile');
   const [formData, setFormData] = useState<CompanySettings>(settings);
@@ -86,23 +91,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </p>
           </div>
 
-          {onSwitchRole && (
-            <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-3 rounded-2xl flex items-center gap-3 shrink-0">
-              <div className="text-right">
-                <span className="text-[10px] text-slate-300 uppercase block font-bold">Ganti Peran Aktif:</span>
-                <span className="text-xs font-black text-white">
-                  {currentUserRole === 'Owner' ? 'Superadmin / Owner' : 'Admin / PIC'}
-                </span>
-              </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {onOpenMasterDataModal && (
               <button
                 type="button"
-                onClick={() => onSwitchRole(currentUserRole === 'Owner' ? 'Admin' : 'Owner')}
-                className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-md"
+                onClick={onOpenMasterDataModal}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-1.5"
               >
-                Ganti ke {currentUserRole === 'Owner' ? 'Admin/PIC' : 'Owner'}
+                <Layers className="w-4 h-4" />
+                <span>Manajemen Kategori & Rak</span>
               </button>
-            </div>
-          )}
+            )}
+
+            {onSwitchRole && (
+              <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-2.5 rounded-2xl flex items-center gap-3">
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-300 uppercase block font-bold">Ganti Peran:</span>
+                  <span className="text-xs font-black text-white">
+                    {currentUserRole === 'Owner' ? 'Owner' : 'Admin'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onSwitchRole(currentUserRole === 'Owner' ? 'Admin' : 'Owner')}
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-md"
+                >
+                  Ke {currentUserRole === 'Owner' ? 'Admin' : 'Owner'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
