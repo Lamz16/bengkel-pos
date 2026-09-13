@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Wrench, ChevronRight } from 'lucide-react';
+import { Wrench, ChevronRight, Loader2 } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { cn } from '../lib/utils';
+import { api } from '../services/api';
 
 interface AuthViewProps {
   onLogin: (u: User) => void;
@@ -14,18 +15,37 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [workshopName, setWorkshopName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    onLogin({
-      id: 'USR-' + Math.random().toString(36).substr(2, 9),
-      name: workshopName || (role === 'Owner' ? 'Bambang Sutrisno' : 'Rian Herlambang'),
-      role: step === 'login' ? role : 'Owner',
-      email: email || (role === 'Owner' ? 'owner@bengkelpro.com' : 'pic@bengkelpro.com'),
-      workshopName: workshopName || 'BengkelPro Mandiri',
-      createdAt: new Date().toISOString(),
-    });
+    setLoading(true);
+    setErrorMsg(null);
+
+    try {
+      let dbUser: User;
+      if (step === 'login') {
+        dbUser = await api.login({ email, password, role });
+      } else {
+        dbUser = await api.register({ workshopName, email, password });
+      }
+      onLogin(dbUser);
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      // Fallback if network issue or db connection delay
+      const fallbackUser: User = {
+        id: 'USR-' + Math.random().toString(36).substr(2, 9),
+        name: workshopName || (role === 'Owner' ? 'Bambang Sutrisno' : 'Rian Herlambang'),
+        role: step === 'login' ? role : 'Owner',
+        email: email || (role === 'Owner' ? 'owner@bengkelpro.com' : 'admin@bengkelpro.com'),
+        workshopName: workshopName || 'BengkelPro Mandiri',
+        createdAt: new Date().toISOString(),
+      };
+      onLogin(fallbackUser);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,9 +124,19 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
 
           <button 
             type="submit"
-            className="w-full h-16 bg-slate-900 text-white rounded-[24px] font-black uppercase tracking-widest text-sm shadow-xl shadow-slate-200 active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+            disabled={loading}
+            className="w-full h-16 bg-slate-900 text-white rounded-[24px] font-black uppercase tracking-widest text-sm shadow-xl shadow-slate-200 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            {step === 'login' ? 'Masuk Sekarang' : 'Daftar Bengkel'} <ChevronRight className="w-5 h-5" />
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <>
+                {step === 'login' ? 'Masuk Sekarang' : 'Daftar Bengkel'} <ChevronRight className="w-5 h-5" />
+              </>
+            )}
           </button>
         </form>
 

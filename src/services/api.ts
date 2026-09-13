@@ -10,6 +10,7 @@ import {
   PurchaseRecord,
   Expense,
   User,
+  UserRole,
   ServiceStatus
 } from '../types';
 
@@ -377,5 +378,20 @@ export const api = {
       console.error('Failed to get AI diagnosis from backend:', err);
       return `Pemeriksaan mekanik langsung disarankan untuk keluhan "${complaint}" pada ${vehicleModel}.`;
     }
+  },
+
+  // Auth
+  async login(credentials: { email?: string; password?: string; role?: UserRole }): Promise<User> {
+    return request<User>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  async register(data: { workshopName: string; email: string; password?: string }): Promise<User> {
+    return request<User>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 };
