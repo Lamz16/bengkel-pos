@@ -38,6 +38,7 @@ interface InventoryViewProps {
   onEdit: (p: SparePart) => void;
   onDelete: (id: string) => void;
   initialShowLowStockModal?: boolean;
+  onOpenLowStockModal?: () => void;
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
@@ -48,7 +49,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onAddStock, 
   onEdit, 
   onDelete,
-  initialShowLowStockModal = false
+  initialShowLowStockModal = false,
+  onOpenLowStockModal
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'stock' | 'rack_locator' | 'purchases'>('stock');
@@ -56,6 +58,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [stockStatusFilter, setStockStatusFilter] = useState<'all' | 'low_stock' | 'out_of_stock'>('all');
   const [showLowStockModal, setShowLowStockModal] = useState(initialShowLowStockModal);
+
+  const handleOpenLowStock = () => {
+    if (onOpenLowStockModal) {
+      onOpenLowStockModal();
+    } else {
+      setShowLowStockModal(true);
+    }
+  };
   
   // Enlarged Image preview modal state
   const [selectedImagePart, setSelectedImagePart] = useState<SparePart | null>(null);
@@ -230,7 +240,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <p className="text-lg font-black text-amber-600 mt-0.5">{availableRacks.length} Rak</p>
             </div>
             <div 
-              onClick={() => setShowLowStockModal(true)}
+              onClick={handleOpenLowStock}
               className={cn(
                 "p-3 rounded-2xl border shadow-2xs flex items-center justify-between cursor-pointer transition-all hover:scale-[1.02] group",
                 lowStockCount > 0 
@@ -273,7 +283,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             {lowStockCount > 0 && (
               <button
                 type="button"
-                onClick={() => setShowLowStockModal(true)}
+                onClick={handleOpenLowStock}
                 className="flex items-center gap-2 h-12 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-rose-200 transition-all shrink-0 active:scale-95"
               >
                 <AlertTriangle className="w-4 h-4 text-amber-300 animate-pulse" />
@@ -1009,21 +1019,23 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         </Modal>
       )}
 
-      {/* Low Stock Monitoring Modal */}
-      <LowStockModal
-        isOpen={showLowStockModal}
-        onClose={() => setShowLowStockModal(false)}
-        parts={parts}
-        suppliers={suppliers}
-        onAddStock={(partId) => {
-          setShowLowStockModal(false);
-          onAddStock(partId);
-        }}
-        onEditPart={(p) => {
-          setShowLowStockModal(false);
-          onEdit(p);
-        }}
-      />
+      {/* Low Stock Monitoring Modal (Fallback if not passed from parent) */}
+      {showLowStockModal && (
+        <LowStockModal
+          isOpen={showLowStockModal}
+          onClose={() => setShowLowStockModal(false)}
+          parts={parts}
+          suppliers={suppliers}
+          onAddStock={(partId) => {
+            setShowLowStockModal(false);
+            onAddStock(partId);
+          }}
+          onEditPart={(p) => {
+            setShowLowStockModal(false);
+            onEdit(p);
+          }}
+        />
+      )}
     </div>
   );
 };

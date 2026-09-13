@@ -80,6 +80,8 @@ export const LowStockModal: React.FC<LowStockModalProps> = ({
     return s ? s.name : 'Supplier Lain';
   };
 
+  if (!isOpen) return null;
+
   return (
     <Modal
       isOpen={isOpen}

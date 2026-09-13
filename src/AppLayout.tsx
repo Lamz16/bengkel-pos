@@ -928,6 +928,7 @@ export default function AppLayout() {
                   }}
                   onEdit={(p) => setEditingPart(p)}
                   onDelete={handleDeletePart}
+                  onOpenLowStockModal={() => setShowLowStockModal(true)}
                 />
               </motion.div>
             )}
@@ -1082,25 +1083,27 @@ export default function AppLayout() {
           )}
 
           {/* Global Low Stock Monitoring Modal */}
-          <LowStockModal
-            isOpen={showLowStockModal}
-            onClose={() => setShowLowStockModal(false)}
-            parts={parts}
-            suppliers={suppliers}
-            onAddStock={(partId) => {
-              setShowLowStockModal(false);
-              setAddStockInitialPartId(partId);
-              setShowAddStock(true);
-            }}
-            onEditPart={(p) => {
-              setShowLowStockModal(false);
-              setEditingPart(p);
-            }}
-            onGoToInventory={() => {
-              setShowLowStockModal(false);
-              setActiveTab('inventory');
-            }}
-          />
+          {showLowStockModal && (
+            <LowStockModal
+              isOpen={showLowStockModal}
+              onClose={() => setShowLowStockModal(false)}
+              parts={parts}
+              suppliers={suppliers}
+              onAddStock={(partId) => {
+                setShowLowStockModal(false);
+                setAddStockInitialPartId(partId);
+                setShowAddStock(true);
+              }}
+              onEditPart={(p) => {
+                setShowLowStockModal(false);
+                setEditingPart(p);
+              }}
+              onGoToInventory={() => {
+                setShowLowStockModal(false);
+                setActiveTab('inventory');
+              }}
+            />
+          )}
 
           {editingPart && (
             <Modal title={editingPart.name ? "Edit Part & Lokasi Rak" : "Tambah Part & Atur Lokasi Rak"} onClose={() => setEditingPart(null)}>
