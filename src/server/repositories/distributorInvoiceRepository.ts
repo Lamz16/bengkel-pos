@@ -20,9 +20,9 @@ export class DistributorInvoiceRepository {
           supplierName: inv.supplierName,
           branchName: inv.branchName,
           branchType: inv.branchType as any,
-          totalAmount: inv.totalAmount,
-          paidAmount: inv.paidAmount,
-          remainingAmount: inv.remainingAmount,
+          totalAmount: Number(inv.totalAmount),
+          paidAmount: Number(inv.paidAmount),
+          remainingAmount: Number(inv.remainingAmount),
           issueDate: inv.issueDate.toISOString(),
           dueDate: inv.dueDate.toISOString(),
           status: inv.status as any,
@@ -34,13 +34,13 @@ export class DistributorInvoiceRepository {
             partId: i.partId || undefined,
             partName: i.partName,
             quantity: i.quantity,
-            unitPrice: i.unitPrice,
-            totalPrice: i.totalPrice,
+            unitPrice: Number(i.unitPrice),
+            totalPrice: Number(i.totalPrice),
           })),
           payments: inv.payments.map(p => ({
             id: p.id,
             invoiceId: p.invoiceId,
-            amount: p.amount,
+            amount: Number(p.amount),
             paymentDate: p.paymentDate.toISOString(),
             paymentMethod: p.paymentMethod,
             referenceNo: p.referenceNo || undefined,
@@ -72,9 +72,9 @@ export class DistributorInvoiceRepository {
             supplierName: inv.supplierName,
             branchName: inv.branchName,
             branchType: inv.branchType as any,
-            totalAmount: inv.totalAmount,
-            paidAmount: inv.paidAmount,
-            remainingAmount: inv.remainingAmount,
+            totalAmount: Number(inv.totalAmount),
+            paidAmount: Number(inv.paidAmount),
+            remainingAmount: Number(inv.remainingAmount),
             issueDate: inv.issueDate.toISOString(),
             dueDate: inv.dueDate.toISOString(),
             status: inv.status as any,
@@ -86,13 +86,13 @@ export class DistributorInvoiceRepository {
               partId: i.partId || undefined,
               partName: i.partName,
               quantity: i.quantity,
-              unitPrice: i.unitPrice,
-              totalPrice: i.totalPrice,
+              unitPrice: Number(i.unitPrice),
+              totalPrice: Number(i.totalPrice),
             })),
             payments: inv.payments.map(p => ({
               id: p.id,
               invoiceId: p.invoiceId,
-              amount: p.amount,
+              amount: Number(p.amount),
               paymentDate: p.paymentDate.toISOString(),
               paymentMethod: p.paymentMethod,
               referenceNo: p.referenceNo || undefined,
@@ -170,9 +170,9 @@ export class DistributorInvoiceRepository {
           supplierName: created.supplierName,
           branchName: created.branchName,
           branchType: created.branchType as any,
-          totalAmount: created.totalAmount,
-          paidAmount: created.paidAmount,
-          remainingAmount: created.remainingAmount,
+          totalAmount: Number(created.totalAmount),
+          paidAmount: Number(created.paidAmount),
+          remainingAmount: Number(created.remainingAmount),
           issueDate: created.issueDate.toISOString(),
           dueDate: created.dueDate.toISOString(),
           status: created.status as any,
@@ -184,8 +184,8 @@ export class DistributorInvoiceRepository {
             partId: i.partId || undefined,
             partName: i.partName,
             quantity: i.quantity,
-            unitPrice: i.unitPrice,
-            totalPrice: i.totalPrice,
+            unitPrice: Number(i.unitPrice),
+            totalPrice: Number(i.totalPrice),
           })),
           payments: [],
           createdAt: created.createdAt.toISOString(),
@@ -232,15 +232,14 @@ export class DistributorInvoiceRepository {
 
     if (isDbConnected()) {
       try {
-        const inv = await prisma.distributorInvoice.findUnique({ where: { id: invoiceId } });
-        if (!inv) return null;
-
-        const newPaid = inv.paidAmount + paymentData.amount;
-        const newRemaining = Math.max(0, inv.totalAmount - newPaid);
-        const newStatus = newRemaining === 0 ? 'Paid' : 'Partial';
-
-        await prisma.distributorPayment.create({
-          data: {
+        await prisma.$transaction(async tx => {
+          const inv = await tx.distributorInvoice.findUnique({ where: { id: invoiceId } });
+          if (!inv) throw new Error('NOT_FOUND');
+          const newPaid = Number(inv.paidAmount) + paymentData.amount;
+          if (paymentData.amount <= 0 || newPaid > Number(inv.totalAmount)) throw new Error('INVALID_PAYMENT');
+          const newRemaining = Number(inv.totalAmount) - newPaid;
+          const newStatus = newRemaining === 0 ? 'Paid' : 'Partial';
+          await tx.distributorPayment.create({ data: {
             id: paymentId,
             invoiceId,
             amount: paymentData.amount,
@@ -248,21 +247,22 @@ export class DistributorInvoiceRepository {
             paymentMethod: paymentData.paymentMethod || 'Transfer',
             referenceNo: paymentData.referenceNo || null,
             notes: paymentData.notes || null,
-          }
-        });
-
-        await prisma.distributorInvoice.update({
+          }});
+          await tx.distributorInvoice.update({
           where: { id: invoiceId },
           data: {
             paidAmount: newPaid,
             remainingAmount: newRemaining,
             status: newStatus,
           }
-        });
+          });
+        }, { isolationLevel: 'Serializable' });
 
         return this.getById(invoiceId);
       } catch (err) {
+        if ((err as Error).message === 'NOT_FOUND') return null;
         console.error('[DistributorInvoiceRepo] Prisma addPayment error:', err);
+        throw err;
       }
     }
 

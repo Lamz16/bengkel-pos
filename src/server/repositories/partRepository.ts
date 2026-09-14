@@ -7,8 +7,8 @@ type PartWithMasterData = any;
 const includeMasterData = { category: true, rack: { include: { zone: true } } } as const;
 const toSparePart = (p: PartWithMasterData): SparePart => ({
   id: p.id, sku: p.sku || undefined, barcode: p.barcode || undefined, name: p.name,
-  categoryId: p.categoryId, category: p.category.name, price: p.price,
-  purchasePrice: p.purchasePrice, stock: p.stock, minStock: p.minStock,
+  categoryId: p.categoryId, category: p.category.name, price: Number(p.price),
+  purchasePrice: Number(p.purchasePrice), stock: p.stock, minStock: p.minStock,
   supplierId: p.supplierId || undefined, imageUrl: p.imageUrl || undefined,
   rackId: p.rackId || undefined, rackCode: p.rack?.code || undefined,
   shelfLevel: p.shelfLevel || undefined, binNumber: p.binNumber || undefined,

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -40,18 +41,19 @@ export async function seedDatabase() {
     },
   });
 
-  // 2. Users / Staff
+  // 2. Users / Staff (bcrypt, tidak pernah simpan password plaintext)
+  const demoPasswordHash = await bcrypt.hash('akundemo', 12);
   await prisma.user.upsert({
     where: { email: 'owner@bengkelpro.com' },
     update: {
-      password: 'akundemo',
+      password: demoPasswordHash,
     },
     create: {
       id: 'USR-01',
       name: 'Pemilik Bengkel',
       role: 'Owner',
       email: 'owner@bengkelpro.com',
-      password: 'akundemo',
+      password: demoPasswordHash,
       workshopName: 'BengkelPro Mandiri',
       status: 'Active',
       shifts: 'Pagi',
@@ -61,14 +63,14 @@ export async function seedDatabase() {
   await prisma.user.upsert({
     where: { email: 'admin@bengkelpro.com' },
     update: {
-      password: 'akundemo',
+      password: demoPasswordHash,
     },
     create: {
       id: 'USR-02',
       name: 'Rian Herlambang',
       role: 'Admin',
       email: 'admin@bengkelpro.com',
-      password: 'akundemo',
+      password: demoPasswordHash,
       workshopName: 'BengkelPro Mandiri',
       status: 'Active',
       shifts: 'Pagi',

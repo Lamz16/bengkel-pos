@@ -20,7 +20,8 @@ export class ServiceController {
       const service = await workshopService.createService(req.body);
       res.status(201).json(service);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal membuat order servis' });
+      const status = String(err.message).includes('tidak mencukupi') ? 409 : 500;
+      res.status(status).json({ error: err.message || 'Gagal membuat order servis' });
     }
   }
 

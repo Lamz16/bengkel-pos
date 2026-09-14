@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { WorkshopService, User, UserRole, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
+import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
 import { INITIAL_PARTS } from './constants';
 import { DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_RACKS, DEFAULT_WAREHOUSE_ZONES } from './utils/inventory';
 
@@ -52,7 +52,7 @@ import { SupplierForm } from './components/forms/SupplierForm';
 import { PartForm } from './components/forms/PartForm';
 import { CustomerForm } from './components/forms/CustomerForm';
 import { AddStockForm } from './components/forms/AddStockForm';
-import { api } from './services/api';
+import { api, clearAuthToken, getAuthToken } from './services/api';
 
 export default function AppLayout() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -71,7 +71,7 @@ export default function AppLayout() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('bengkelpro_user');
-      return saved ? JSON.parse(saved) : null;
+      return saved && getAuthToken() ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
@@ -818,17 +818,9 @@ export default function AppLayout() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    clearAuthToken();
     try {
       localStorage.removeItem('bengkelpro_user');
-    } catch {}
-  };
-
-  const handleSwitchRole = (nextRole: UserRole) => {
-    if (!currentUser) return;
-    const updatedUser: User = { ...currentUser, role: nextRole };
-    setCurrentUser(updatedUser);
-    try {
-      localStorage.setItem('bengkelpro_user', JSON.stringify(updatedUser));
     } catch {}
   };
 
@@ -865,7 +857,6 @@ export default function AppLayout() {
           onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
           onClosePOSForm={() => setShowPOSForm(false)}
           onOpenPOSForm={() => setShowPOSForm(true)}
-          onSwitchRole={handleSwitchRole}
         />
 
         {/* Scrollable Viewport */}
@@ -1078,7 +1069,6 @@ export default function AppLayout() {
                     setMechanics(prev => prev.map(m => ({ ...m, defaultBonusPercent: newPercent })));
                     setCompanySettings(prev => ({ ...prev, defaultMechanicBonusPercent: newPercent }));
                   }}
-                  onSwitchRole={handleSwitchRole}
                   onOpenMasterDataModal={() => setShowMasterDataModal(true)}
                 />
                 {currentUser.role === 'Owner' && currentUser.email && (

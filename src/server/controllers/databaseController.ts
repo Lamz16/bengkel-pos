@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { spawn } from 'node:child_process';
 import { staffRepository } from '../container';
+import { verifyPassword } from '../auth';
 
 const MAX_BACKUP_BYTES = 100 * 1024 * 1024;
 
@@ -33,7 +34,7 @@ export class DatabaseController {
   async downloadBackup(req: Request, res: Response) {
     const { email, password } = req.body;
     const user = email ? await staffRepository.findByEmail(String(email).trim()) : null;
-    if (!user || user.role !== 'Owner' || !password || password !== user.password) {
+    if (!user || user.id !== req.authUser?.id || user.role !== 'Owner' || !password || !(await verifyPassword(password, user.password))) {
       return res.status(401).json({ error: 'Email atau password Owner tidak valid.' });
     }
     const connectionString = process.env.DATABASE_URL;

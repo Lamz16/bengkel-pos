@@ -77,6 +77,9 @@ Buka file `.env` dan sesuaikan nilainya:
 # Database Connection URL untuk PostgreSQL lokal
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/bengkelpro?schema=public"
 
+# Rahasia untuk menandatangani JWT (minimal 32 karakter, wajib diganti)
+JWT_SECRET="ganti-dengan-rahasia-acak-minimal-32-karakter"
+
 # Port Server Express Backend (default: 3000)
 PORT=3000
 
@@ -85,6 +88,7 @@ GEMINI_API_KEY="your_google_gemini_api_key_here"
 ```
 
 > **Catatan:** Sesuaikan `postgres:postgres` dengan *username* & *password* PostgreSQL lokal Anda.
+> Jangan memakai nilai `JWT_SECRET` contoh di produksi dan jangan memasukkan file `.env` ke Git.
 
 ---
 

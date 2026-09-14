@@ -18,8 +18,8 @@ model CompanySettings {
   ownerName                      String?  @default("Pemilik Bengkel")
   picName                        String?  @default("Rian Herlambang")
   defaultMechanicBonusPercent    Float    @default(15)
-  defaultAbsencePenalty          Float    @default(50000)
-  defaultWarrantyPenalty         Float    @default(75000)
+  defaultAbsencePenalty          Decimal  @default(50000) @db.Decimal(18, 2)
+  defaultWarrantyPenalty         Decimal  @default(75000) @db.Decimal(18, 2)
   allowCustomBonusPerTransaction Boolean  @default(true)
   receiptHeader                  String?  @default("NOTA RESMI & RINCIAN SERVIS")
   footerNote                     String   @default("Barang yang sudah dibeli tidak dapat ditukar kecuali perjanjian. Terima kasih atas kepercayaan Anda merawat kendaraan bersama kami.")
@@ -43,7 +43,7 @@ model User {
   name         String
   role         String   @default("Admin") // "Owner" | "Admin"
   email        String   @unique
-  password     String   @default("akundemo")
+  password     String
   workshopName String   @default("BengkelPro Mandiri")
   status       String   @default("Active")
   shifts       String?  @default("Pagi")
@@ -56,7 +56,7 @@ model Customer {
   name              String
   phone             String
   totalServiceCount Int               @default(0)
-  totalSpent        Float             @default(0)
+  totalSpent        Decimal           @default(0) @db.Decimal(18, 2)
   lastVisitDate     DateTime?
   loyaltyTier       String?           @default("Bronze")
   notes             String?
@@ -83,8 +83,8 @@ model SparePart {
   barcode          String?
   name             String
   categoryId       String
-  price            Float
-  purchasePrice    Float                    @default(0)
+  price            Decimal                  @db.Decimal(18, 2)
+  purchasePrice    Decimal                  @default(0) @db.Decimal(18, 2)
   stock            Int                      @default(0)
   minStock         Int                      @default(5)
   supplierId       String?
@@ -154,20 +154,20 @@ model WorkshopService {
   complaint               String
   diagnosis               String?
   status                  String            @default("In Progress") // "Pending" | "In Progress" | "Ready" | "Done"
-  laborFee                Float             @default(0)
-  totalAmount             Float             @default(0)
+  laborFee                Decimal           @default(0) @db.Decimal(18, 2)
+  totalAmount             Decimal           @default(0) @db.Decimal(18, 2)
   paymentStatus           String            @default("Unpaid") // "Unpaid" | "Paid"
-  discountAmount          Float?            @default(0)
+  discountAmount          Decimal?          @default(0) @db.Decimal(18, 2)
   discountReason          String?
   mechanicId              String?
   mechanicName            String?
   mechanicBonusPercent    Float?            @default(0)
-  mechanicBonusAmount     Float?            @default(0)
+  mechanicBonusAmount     Decimal?          @default(0) @db.Decimal(18, 2)
   hasWarrantyClaim        Boolean           @default(false)
   warrantyClaimDate       DateTime?
   warrantyClaimReason     String?
   isMechanicAbsentOnClaim Boolean?          @default(false)
-  warrantyDeductionAmount Float?            @default(0)
+  warrantyDeductionAmount Decimal?          @default(0) @db.Decimal(18, 2)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
   customer                Customer?         @relation(fields: [customerId], references: [id])
@@ -182,7 +182,7 @@ model ServicePartItem {
   partId      String
   name        String
   quantity    Int             @default(1)
-  priceAtTime Float
+  priceAtTime Decimal         @db.Decimal(18, 2)
   service     WorkshopService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   part        SparePart       @relation(fields: [partId], references: [id])
 }
@@ -194,9 +194,9 @@ model Mechanic {
   specialty             String
   status                String               @default("Active")
   defaultBonusPercent   Float                @default(15)
-  dailySalary           Float                @default(100000)
-  warrantyPenaltyAmount Float                @default(75000)
-  absencePenaltyAmount  Float                @default(50000)
+  dailySalary           Decimal              @default(100000) @db.Decimal(18, 2)
+  warrantyPenaltyAmount Decimal              @default(75000) @db.Decimal(18, 2)
+  absencePenaltyAmount  Decimal              @default(50000) @db.Decimal(18, 2)
   joinedAt              String               @default("2024-01-10")
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
@@ -214,7 +214,7 @@ model MechanicDeduction {
   date            DateTime @default(now())
   reason          String
   type            String   @default("Warranty_Complaint")
-  amount          Float
+  amount          Decimal  @db.Decimal(18, 2)
   isAbsentNextDay Boolean  @default(false)
   mechanic        Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
 }
@@ -245,7 +245,7 @@ model PurchaseRecord {
   partId     String
   supplierId String
   quantity   Int
-  costPrice  Float
+  costPrice  Decimal   @db.Decimal(18, 2)
   date       DateTime  @default(now())
   part       SparePart @relation(fields: [partId], references: [id])
   supplier   Supplier  @relation(fields: [supplierId], references: [id])
@@ -254,7 +254,7 @@ model PurchaseRecord {
 model Expense {
   id        String   @id @default(uuid())
   category  String
-  amount    Float
+  amount    Decimal  @db.Decimal(18, 2)
   note      String
   date      DateTime @default(now())
   createdAt DateTime @default(now())
@@ -278,9 +278,9 @@ model DistributorInvoice {
   supplierName    String
   branchName      String                   @default("Bengkel Pusat")
   branchType      String                   @default("Pusat") // "Pusat" | "Cabang"
-  totalAmount     Float
-  paidAmount      Float                    @default(0)
-  remainingAmount Float
+  totalAmount     Decimal                  @db.Decimal(18, 2)
+  paidAmount      Decimal                  @default(0) @db.Decimal(18, 2)
+  remainingAmount Decimal                  @db.Decimal(18, 2)
   issueDate       DateTime                 @default(now())
   dueDate         DateTime
   status          String                   @default("Unpaid") // "Unpaid" | "Partial" | "Paid" | "Overdue"
@@ -304,8 +304,8 @@ model DistributorInvoiceItem {
   partId     String?
   partName   String
   quantity   Int                @default(1)
-  unitPrice  Float
-  totalPrice Float
+  unitPrice  Decimal            @db.Decimal(18, 2)
+  totalPrice Decimal            @db.Decimal(18, 2)
   invoice    DistributorInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   part       SparePart?         @relation(fields: [partId], references: [id])
 
@@ -316,7 +316,7 @@ model DistributorInvoiceItem {
 model DistributorPayment {
   id            String             @id @default(uuid())
   invoiceId     String
-  amount        Float
+  amount        Decimal            @db.Decimal(18, 2)
   paymentDate   DateTime           @default(now())
   paymentMethod String             @default("Transfer")
   referenceNo   String?

@@ -72,6 +72,10 @@ export function setAuthToken(token: string): void {
   }
 }
 
+export function clearAuthToken(): void {
+  if (typeof window !== 'undefined') localStorage.removeItem(API_TOKEN_KEY);
+}
+
 export interface ApiHealthStatus {
   online: boolean;
   url: string;
@@ -168,9 +172,10 @@ export const api = {
   },
 
   async downloadDatabaseBackup(credentials: { email: string; password: string }): Promise<string> {
+    const token = getAuthToken();
     const response = await fetch('/api/database/backup', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(credentials),
     });
     if (!response.ok) {
@@ -449,18 +454,22 @@ export const api = {
   },
 
   // Auth
-  async login(credentials: { email?: string; password?: string; role?: UserRole }): Promise<User> {
-    return request<User>('/api/auth/login', {
+  async login(credentials: { email: string; password: string }): Promise<User> {
+    const result = await request<{ user: User; token: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+    setAuthToken(result.token);
+    return result.user;
   },
 
   async register(data: { workshopName: string; email: string; password?: string }): Promise<User> {
-    return request<User>('/api/auth/register', {
+    const result = await request<{ user: User; token: string }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    setAuthToken(result.token);
+    return result.user;
   },
 
   // Distributor Invoices (Nota Tempo)

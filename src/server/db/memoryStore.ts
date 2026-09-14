@@ -72,7 +72,7 @@ export const memoryStore: MemoryStore = {
       name: 'Pemilik Bengkel',
       role: 'Owner',
       email: 'owner@bengkelpro.com',
-      password: 'akundemo',
+      password: '$2b$12$nTt2yiemzgd0PdZSJyXKU.UjszwhcrO2L6j115lJDc6.iL0nrY5wS',
       workshopName: 'BengkelPro Mandiri',
       createdAt: new Date().toISOString(),
     },
@@ -81,7 +81,7 @@ export const memoryStore: MemoryStore = {
       name: 'Rian Herlambang',
       role: 'Admin',
       email: 'admin@bengkelpro.com',
-      password: 'akundemo',
+      password: '$2b$12$nTt2yiemzgd0PdZSJyXKU.UjszwhcrO2L6j115lJDc6.iL0nrY5wS',
       workshopName: 'BengkelPro Mandiri',
       createdAt: new Date().toISOString(),
     }

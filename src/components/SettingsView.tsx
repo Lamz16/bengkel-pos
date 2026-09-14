@@ -28,7 +28,6 @@ interface SettingsViewProps {
   currentUserRole?: UserRole;
   onUpdateSettings: (newSettings: CompanySettings) => void;
   onBatchUpdateMechanicBonus?: (newPercent: number) => void;
-  onSwitchRole?: (newRole: UserRole) => void;
   onOpenMasterDataModal?: () => void;
 }
 
@@ -38,7 +37,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   currentUserRole = 'Owner',
   onUpdateSettings,
   onBatchUpdateMechanicBonus,
-  onSwitchRole,
   onOpenMasterDataModal
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'bonus' | 'receipt'>('profile');
@@ -103,23 +101,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             )}
 
-            {onSwitchRole && (
-              <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-2.5 rounded-2xl flex items-center gap-3">
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-300 uppercase block font-bold">Ganti Peran:</span>
-                  <span className="text-xs font-black text-white">
-                    {currentUserRole === 'Owner' ? 'Owner' : 'Admin'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onSwitchRole(currentUserRole === 'Owner' ? 'Admin' : 'Owner')}
-                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-md"
-                >
-                  Ke {currentUserRole === 'Owner' ? 'Admin' : 'Owner'}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -146,7 +127,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <Building2 className="w-4 h-4" />
           <span>1. Profil Bengkel</span>
         </button>
-
         <button
           type="button"
           onClick={() => setActiveSubTab('bonus')}
@@ -172,6 +152,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <FileText className="w-4 h-4" />
           <span>3. Isi Nota & Struk</span>
         </button>
+
       </div>
 
       {/* --- SUBTAB 1: FITUR PROFIL BENGKEL --- */}

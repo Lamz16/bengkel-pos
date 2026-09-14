@@ -13,7 +13,7 @@ export class FinanceRepository implements IFinanceRepository {
         return list.map(e => ({
           id: e.id,
           category: e.category,
-          amount: e.amount,
+          amount: Number(e.amount),
           note: e.note,
           date: e.date.toISOString(),
         }));
@@ -42,7 +42,7 @@ export class FinanceRepository implements IFinanceRepository {
         const exp: Expense = {
           id: created.id,
           category: created.category,
-          amount: created.amount,
+          amount: Number(created.amount),
           note: created.note,
           date: created.date.toISOString(),
         };
@@ -80,7 +80,7 @@ export class FinanceRepository implements IFinanceRepository {
           partId: p.partId,
           supplierId: p.supplierId,
           quantity: p.quantity,
-          costPrice: p.costPrice,
+          costPrice: Number(p.costPrice),
           date: p.date.toISOString(),
         }));
       } catch (err) {
@@ -111,7 +111,7 @@ export class FinanceRepository implements IFinanceRepository {
           partId: created.partId,
           supplierId: created.supplierId,
           quantity: created.quantity,
-          costPrice: created.costPrice,
+          costPrice: Number(created.costPrice),
           date: created.date.toISOString(),
         };
         memoryStore.purchases.unshift(pr);
