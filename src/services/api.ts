@@ -167,6 +167,30 @@ export const api = {
     return request<BootstrapResponse>('/api/bootstrap');
   },
 
+  async downloadDatabaseBackup(credentials: { email: string; password: string }): Promise<string> {
+    const response = await fetch('/api/database/backup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || error.error || 'Gagal membuat backup database.');
+    }
+
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `bengkel-pos-backup-${Date.now()}.sql`;
+    const url = URL.createObjectURL(await response.blob());
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    return filename;
+  },
+
   async createCategory(data: Omit<PartCategory, 'id'>): Promise<PartCategory> {
     return request('/api/master-data/categories', { method: 'POST', body: JSON.stringify(data) });
   },

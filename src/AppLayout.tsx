@@ -38,6 +38,7 @@ import { ExpenseView } from './components/ExpenseView';
 import { ReportsView } from './components/ReportsView';
 import { StaffView } from './components/StaffView';
 import { SettingsView } from './components/SettingsView';
+import { DatabaseBackupPanel } from './components/DatabaseBackupPanel';
 import { MechanicsView } from './components/MechanicsView';
 import { MechanicForm } from './components/MechanicForm';
 import { WarrantyClaimModal } from './components/WarrantyClaimModal';
@@ -1063,7 +1064,11 @@ export default function AppLayout() {
                     setCompanySettings(prev => ({ ...prev, defaultMechanicBonusPercent: newPercent }));
                   }}
                   onSwitchRole={handleSwitchRole}
+                  onOpenMasterDataModal={() => setShowMasterDataModal(true)}
                 />
+                {currentUser.role === 'Owner' && currentUser.email && (
+                  <DatabaseBackupPanel ownerEmail={currentUser.email} />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -1189,6 +1194,7 @@ export default function AppLayout() {
               categories={masterCategories}
               racks={masterRacks}
               zones={masterZones}
+              parts={parts}
               onSaveCategories={handleSaveMasterCategories}
               onSaveRacks={handleSaveMasterRacks}
               onSaveZones={handleSaveMasterZones}

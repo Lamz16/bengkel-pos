@@ -13,6 +13,7 @@ import { authRouter } from './authRoutes';
 import { distributorInvoiceRouter } from './distributorInvoiceRoutes';
 import { uploadRouter } from './uploadRoutes';
 import { masterDataRouter } from './masterDataRoutes';
+import { databaseRouter } from './databaseRoutes';
 
 export const apiRouter = Router();
 
@@ -47,3 +48,4 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/distributor-invoices', distributorInvoiceRouter);
 apiRouter.use('/upload', uploadRouter);
 apiRouter.use('/master-data', masterDataRouter);
+apiRouter.use('/database', databaseRouter);
