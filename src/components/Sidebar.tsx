@@ -79,6 +79,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="mt-auto p-6 border-t border-slate-100">
+          <div 
+            onClick={() => onSelectTab('settings')}
+            className="flex items-center gap-3 mb-6 p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors"
+            title="Buka Menu Pengaturan"
+          >
+            <div className={cn(
+              "w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shadow-sm",
+              currentUser.role === 'Owner' ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+            )}>
+              {currentUser.role === 'Owner' ? '👑' : '🛠️'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-900 truncate">{currentUser.name}</p>
+              <p className="text-[10px] text-slate-500 truncate uppercase tracking-tight font-bold">
+                {currentUser.role === 'Owner' ? 'Superadmin / Owner' : 'Admin / PIC'}
+              </p>
+            </div>
+            <Settings className="w-4 h-4 text-slate-400" />
+          </div>
           <button 
             onClick={onLogout}
             className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-widest"
