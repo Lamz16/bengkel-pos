@@ -55,6 +55,19 @@ import { AddStockForm } from './components/forms/AddStockForm';
 import { api } from './services/api';
 
 export default function AppLayout() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const stored = localStorage.getItem('bengkelpro_theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch {}
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('bengkelpro_theme', theme); } catch {}
+  }, [theme]);
+
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('bengkelpro_user');
@@ -848,6 +861,8 @@ export default function AppLayout() {
           lowStockCount={lowStockCount}
           onOpenLowStockModal={() => setShowLowStockModal(true)}
           onOpenMobileMenu={() => setIsSidebarOpen(true)}
+          theme={theme}
+          onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
           onClosePOSForm={() => setShowPOSForm(false)}
           onOpenPOSForm={() => setShowPOSForm(true)}
           onSwitchRole={handleSwitchRole}

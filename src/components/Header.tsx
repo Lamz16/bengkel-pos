@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Menu, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
+import { Menu, ArrowLeft, Plus, AlertTriangle, Moon, Sun } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { cn } from '../lib/utils';
 
@@ -15,6 +15,8 @@ interface HeaderProps {
   onClosePOSForm: () => void;
   onOpenPOSForm: () => void;
   onSwitchRole: (nextRole: UserRole) => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,7 +29,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   onClosePOSForm,
   onOpenPOSForm,
-  onSwitchRole
+  onSwitchRole,
+  theme,
+  onToggleTheme
 }) => {
   const getTitle = () => {
     if (showPOSForm) return 'Kasir Baru';
@@ -76,6 +80,16 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          aria-label={theme === 'dark' ? 'Aktifkan mode terang' : 'Aktifkan mode malam'}
+          title={theme === 'dark' ? 'Beralih ke mode terang' : 'Beralih ke mode malam'}
+          className="theme-toggle h-9 w-9 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-all active:scale-95"
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
+        </button>
+
         {lowStockCount > 0 && onOpenLowStockModal && (
           <button
             onClick={onOpenLowStockModal}

@@ -1,6 +1,13 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (() => {
+        const saved = localStorage.getItem('bengkelpro_theme');
+        const theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BengkelPro POS</title>
@@ -13,4 +20,3 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
