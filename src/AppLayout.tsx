@@ -17,7 +17,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { WorkshopService, User, UserRole, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
 import { INITIAL_PARTS } from './constants';
-import { getStoredCategories, saveStoredCategories, getStoredRacks, saveStoredRacks, getStoredZones, saveStoredZones } from './utils/inventory';
+import { DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_RACKS, DEFAULT_WAREHOUSE_ZONES } from './utils/inventory';
 
 // UI and Feature Components
 import { Modal } from './components/Modal';
@@ -255,24 +255,70 @@ export default function AppLayout() {
   const [posInitialPromoPercent, setPosInitialPromoPercent] = useState<number | null>(null);
 
   // Master Data States (Categories, Racks & Warehouse Zones)
-  const [masterCategories, setMasterCategories] = useState<PartCategory[]>(() => getStoredCategories());
-  const [masterRacks, setMasterRacks] = useState<WarehouseRack[]>(() => getStoredRacks());
-  const [masterZones, setMasterZones] = useState<WarehouseZone[]>(() => getStoredZones());
+  const [masterCategories, setMasterCategories] = useState<PartCategory[]>(DEFAULT_PART_CATEGORIES);
+  const [masterRacks, setMasterRacks] = useState<WarehouseRack[]>(DEFAULT_WAREHOUSE_RACKS);
+  const [masterZones, setMasterZones] = useState<WarehouseZone[]>(DEFAULT_WAREHOUSE_ZONES);
   const [showMasterDataModal, setShowMasterDataModal] = useState(false);
 
-  const handleSaveMasterCategories = (cats: PartCategory[]) => {
-    setMasterCategories(cats);
-    saveStoredCategories(cats);
+  const handleSaveMasterCategories = async (cats: PartCategory[]) => {
+    const added = cats.find(c => !masterCategories.some(old => old.id === c.id));
+    const removed = masterCategories.find(c => !cats.some(next => next.id === c.id));
+    if (added) {
+      const saved = await api.createCategory(added);
+      setMasterCategories(prev => [...prev, saved]);
+    } else if (removed) {
+      await api.deleteCategory(removed.id);
+      setMasterCategories(prev => prev.filter(c => c.id !== removed.id));
+    } else {
+      const changed = cats.find(c => JSON.stringify(c) !== JSON.stringify(masterCategories.find(old => old.id === c.id)));
+      if (changed) {
+        const saved = await api.updateCategory(changed.id, changed);
+        setMasterCategories(prev => prev.map(c => c.id === saved.id ? saved : c));
+        setParts(prev => prev.map(p => p.categoryId === saved.id ? { ...p, category: saved.name } : p));
+      }
+    }
   };
 
-  const handleSaveMasterRacks = (racks: WarehouseRack[]) => {
-    setMasterRacks(racks);
-    saveStoredRacks(racks);
+  const handleSaveMasterRacks = async (racks: WarehouseRack[]) => {
+    const added = racks.find(r => !masterRacks.some(old => old.id === r.id));
+    const removed = masterRacks.find(r => !racks.some(next => next.id === r.id));
+    if (added) {
+      const saved = await api.createRack(added);
+      setMasterRacks(prev => [...prev, saved]);
+    } else if (removed) {
+      await api.deleteRack(removed.id);
+      setMasterRacks(prev => prev.filter(r => r.id !== removed.id));
+    } else {
+      const changed = racks.find(r => JSON.stringify(r) !== JSON.stringify(masterRacks.find(old => old.id === r.id)));
+      if (changed) {
+        const saved = await api.updateRack(changed.id, changed);
+        setMasterRacks(prev => prev.map(r => r.id === saved.id ? saved : r));
+        setParts(prev => prev.map(p => p.rackId === saved.id ? { ...p, rackCode: saved.code, rackZone: saved.zone } : p));
+      }
+    }
   };
 
-  const handleSaveMasterZones = (zones: WarehouseZone[]) => {
-    setMasterZones(zones);
-    saveStoredZones(zones);
+  const handleSaveMasterZones = async (zones: WarehouseZone[]) => {
+    const added = zones.find(z => !masterZones.some(old => old.id === z.id));
+    const removed = masterZones.find(z => !zones.some(next => next.id === z.id));
+    if (added) {
+      const saved = await api.createZone(added);
+      setMasterZones(prev => [...prev, saved]);
+    } else if (removed) {
+      await api.deleteZone(removed.id);
+      setMasterZones(prev => prev.filter(z => z.id !== removed.id));
+    } else {
+      const changed = zones.find(z => JSON.stringify(z) !== JSON.stringify(masterZones.find(old => old.id === z.id)));
+      if (changed) {
+        const saved = await api.updateZone(changed.id, changed);
+        setMasterZones(prev => prev.map(z => z.id === saved.id ? saved : z));
+        setMasterRacks(prev => prev.map(r => r.zoneId === saved.id ? { ...r, zone: saved.name } : r));
+        setParts(prev => prev.map(p => {
+          const rack = masterRacks.find(r => r.id === p.rackId);
+          return rack?.zoneId === saved.id ? { ...p, rackZone: saved.name } : p;
+        }));
+      }
+    }
   };
 
   // Low stock calculation for badges and global alerts
@@ -325,6 +371,9 @@ export default function AppLayout() {
         if (data.expenses && data.expenses.length > 0) setExpenses(data.expenses);
         if (data.staff && data.staff.length > 0) setStaff(data.staff);
         if (data.distributorInvoices && data.distributorInvoices.length > 0) setDistributorInvoices(data.distributorInvoices);
+        if (data.categories?.length) setMasterCategories(data.categories);
+        if (data.racks?.length) setMasterRacks(data.racks);
+        if (data.zones?.length) setMasterZones(data.zones);
         setPostgresConnected(data.postgresConnected);
       } catch (err) {
         console.warn('Backend bootstrap fallback to local initial state:', err);

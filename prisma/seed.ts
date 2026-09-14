@@ -87,7 +87,45 @@ export async function seedDatabase() {
     },
   });
 
-  // 4. SpareParts
+  // 4. Normalized inventory master data
+  const categorySeeds = [
+    ['cat-1', 'Oli', 'OLI'], ['cat-2', 'Rem', 'REM'], ['cat-3', 'Busi', 'BSI'],
+    ['cat-4', 'Filter', 'FLT'], ['cat-5', 'Kelistrikan', 'ELK'], ['cat-6', 'Ban', 'BAN'],
+    ['cat-7', 'Mesin', 'MSN'], ['cat-8', 'CVT', 'CVT'], ['cat-9', 'Suspensi', 'SUS'],
+    ['cat-10', 'Aksesoris', 'AKS'], ['cat-11', 'Baut & Nut', 'BAU'],
+  ] as const;
+  const categories = await Promise.all(categorySeeds.map(([id, name, skuPrefix]) =>
+    prisma.partCategory.upsert({ where: { name }, update: { skuPrefix }, create: { id, name, skuPrefix } })
+  ));
+  const categoryByName = Object.fromEntries(categories.map(category => [category.name, category]));
+
+  const zoneSeeds = [
+    ['zone-1', 'Gudang Utama'], ['zone-2', 'Gudang Belakang'],
+    ['zone-3', 'Toko Kasir'], ['zone-4', 'Area Servis Luar'],
+  ] as const;
+  const zones = await Promise.all(zoneSeeds.map(([id, name]) =>
+    prisma.warehouseZone.upsert({ where: { name }, update: {}, create: { id, name } })
+  ));
+  const zoneByName = Object.fromEntries(zones.map(zone => [zone.name, zone]));
+
+  const rackSeeds = [
+    ['rack-1', 'Rak A', 'Rak A - Oli & Pelumas', 'Gudang Utama'],
+    ['rack-2', 'Rak B', 'Rak B - Sistem Pengereman', 'Gudang Utama'],
+    ['rack-3', 'Rak C', 'Rak C - Filter & Busi', 'Gudang Utama'],
+    ['rack-4', 'Rak D', 'Rak D - Kelistrikan & Aki', 'Gudang Utama'],
+    ['rack-5', 'Rak E', 'Rak E - Ban & Roda', 'Gudang Belakang'],
+    ['rack-6', 'Etalase Depan', 'Etalase Depan - Fast Moving', 'Toko Kasir'],
+    ['rack-7', 'Gudang Belakang', 'Gudang Belakang - Stok Dus Besar', 'Gudang Belakang'],
+  ] as const;
+  const racks = await Promise.all(rackSeeds.map(([id, code, name, zoneName]) =>
+    prisma.warehouseRack.upsert({
+      where: { code }, update: { name, zoneId: zoneByName[zoneName].id },
+      create: { id, code, name, zoneId: zoneByName[zoneName].id },
+    })
+  ));
+  const rackByCode = Object.fromEntries(racks.map(rack => [rack.code, rack]));
+
+  // 5. SpareParts
   const partsData = [
     { 
       id: 'P001', 
@@ -191,14 +229,19 @@ export async function seedDatabase() {
   ];
 
   for (const p of partsData) {
+    const { category, rackCode, rackZone: _rackZone, ...partData } = p;
     await prisma.sparePart.upsert({
       where: { id: p.id },
       update: {},
-      create: p,
+      create: {
+        ...partData,
+        categoryId: categoryByName[category].id,
+        rackId: rackByCode[rackCode].id,
+      },
     });
   }
 
-  // 5. Mechanics
+  // 6. Mechanics
   const mechanic1 = await prisma.mechanic.upsert({
     where: { id: 'MEC-1' },
     update: {},

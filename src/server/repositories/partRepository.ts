@@ -3,36 +3,44 @@ import { SparePart } from '../../types';
 import { prisma, isDbConnected } from '../db/connection';
 import { memoryStore } from '../db/memoryStore';
 
+type PartWithMasterData = any;
+const includeMasterData = { category: true, rack: { include: { zone: true } } } as const;
+const toSparePart = (p: PartWithMasterData): SparePart => ({
+  id: p.id, sku: p.sku || undefined, barcode: p.barcode || undefined, name: p.name,
+  categoryId: p.categoryId, category: p.category.name, price: p.price,
+  purchasePrice: p.purchasePrice, stock: p.stock, minStock: p.minStock,
+  supplierId: p.supplierId || undefined, imageUrl: p.imageUrl || undefined,
+  rackId: p.rackId || undefined, rackCode: p.rack?.code || undefined,
+  shelfLevel: p.shelfLevel || undefined, binNumber: p.binNumber || undefined,
+  rackLocation: p.rack?.code || undefined, rackZone: p.rack?.zone?.name || undefined,
+  locationNotes: p.locationNotes || undefined, lastUpdated: p.updatedAt.toISOString(),
+});
+
 export class PartRepository implements IPartRepository {
+  private async resolveMasterIds(data: Partial<SparePart>) {
+    let categoryId = data.categoryId;
+    let rackId = data.rackId;
+    if (!categoryId && data.category) {
+      categoryId = (await prisma.partCategory.findFirst({
+        where: { name: { equals: data.category, mode: 'insensitive' } }, select: { id: true },
+      }))?.id;
+    }
+    if (!categoryId) throw new Error('Kategori barang tidak valid. Pilih kategori dari data master.');
+    if (!rackId && data.rackCode) {
+      rackId = (await prisma.warehouseRack.findFirst({
+        where: { code: { equals: data.rackCode, mode: 'insensitive' } }, select: { id: true },
+      }))?.id;
+    }
+    if ((data.rackId || data.rackCode) && !rackId) throw new Error('Rak tidak valid. Pilih rak dari data master.');
+    return { categoryId, rackId: rackId || null };
+  }
+
   async getAll(): Promise<SparePart[]> {
     if (isDbConnected()) {
       try {
-        const list = await prisma.sparePart.findMany({
-          orderBy: { name: 'asc' }
-        });
-        return list.map(p => ({
-          id: p.id,
-          sku: p.sku || undefined,
-          barcode: p.barcode || undefined,
-          name: p.name,
-          category: p.category,
-          price: p.price,
-          purchasePrice: p.purchasePrice,
-          stock: p.stock,
-          minStock: p.minStock,
-          supplierId: p.supplierId || undefined,
-          imageUrl: p.imageUrl || undefined,
-          rackCode: p.rackCode || undefined,
-          shelfLevel: p.shelfLevel || undefined,
-          binNumber: p.binNumber || undefined,
-          rackLocation: p.rackLocation || undefined,
-          rackZone: p.rackZone || undefined,
-          locationNotes: p.locationNotes || undefined,
-          lastUpdated: p.updatedAt.toISOString(),
-        }));
-      } catch (err) {
-        console.error('[PartRepo] Prisma getAll error:', err);
-      }
+        const list = await prisma.sparePart.findMany({ include: includeMasterData, orderBy: { name: 'asc' } });
+        return list.map(toSparePart);
+      } catch (err) { console.error('[PartRepo] Prisma getAll error:', err); }
     }
     return memoryStore.parts;
   }
@@ -40,210 +48,83 @@ export class PartRepository implements IPartRepository {
   async getById(id: string): Promise<SparePart | null> {
     if (isDbConnected()) {
       try {
-        const p = await prisma.sparePart.findUnique({ where: { id } });
-        if (p) {
-          return {
-            id: p.id,
-            sku: p.sku || undefined,
-            barcode: p.barcode || undefined,
-            name: p.name,
-            category: p.category,
-            price: p.price,
-            purchasePrice: p.purchasePrice,
-            stock: p.stock,
-            minStock: p.minStock,
-            supplierId: p.supplierId || undefined,
-            imageUrl: p.imageUrl || undefined,
-            rackCode: p.rackCode || undefined,
-            shelfLevel: p.shelfLevel || undefined,
-            binNumber: p.binNumber || undefined,
-            rackLocation: p.rackLocation || undefined,
-            rackZone: p.rackZone || undefined,
-            locationNotes: p.locationNotes || undefined,
-            lastUpdated: p.updatedAt.toISOString(),
-          };
-        }
-      } catch (err) {
-        console.error('[PartRepo] Prisma getById error:', err);
-      }
+        const part = await prisma.sparePart.findUnique({ where: { id }, include: includeMasterData });
+        return part ? toSparePart(part) : null;
+      } catch (err) { console.error('[PartRepo] Prisma getById error:', err); }
     }
     return memoryStore.parts.find(p => p.id === id) || null;
   }
 
   async create(data: Omit<SparePart, 'id' | 'lastUpdated'>): Promise<SparePart> {
-    const id = `P${Date.now().toString().slice(-4)}`;
-    const now = new Date().toISOString();
+    const id = `P${Date.now().toString().slice(-8)}`;
     if (isDbConnected()) {
-      try {
-        const created = await prisma.sparePart.create({
-          data: {
-            id,
-            sku: data.sku,
-            barcode: data.barcode,
-            name: data.name,
-            category: data.category,
-            price: data.price,
-            purchasePrice: data.purchasePrice || 0,
-            stock: data.stock || 0,
-            minStock: data.minStock || 5,
-            supplierId: data.supplierId,
-            imageUrl: data.imageUrl,
-            rackCode: data.rackCode,
-            shelfLevel: data.shelfLevel,
-            binNumber: data.binNumber,
-            rackLocation: data.rackLocation,
-            rackZone: data.rackZone,
-            locationNotes: data.locationNotes,
-          }
-        });
-        const part: SparePart = {
-          id: created.id,
-          sku: created.sku || undefined,
-          barcode: created.barcode || undefined,
-          name: created.name,
-          category: created.category,
-          price: created.price,
-          purchasePrice: created.purchasePrice,
-          stock: created.stock,
-          minStock: created.minStock,
-          supplierId: created.supplierId || undefined,
-          imageUrl: created.imageUrl || undefined,
-          rackCode: created.rackCode || undefined,
-          shelfLevel: created.shelfLevel || undefined,
-          binNumber: created.binNumber || undefined,
-          rackLocation: created.rackLocation || undefined,
-          rackZone: created.rackZone || undefined,
-          locationNotes: created.locationNotes || undefined,
-          lastUpdated: created.updatedAt.toISOString(),
-        };
-        memoryStore.parts.unshift(part);
-        return part;
-      } catch (err) {
-        console.error('[PartRepo] Prisma create error:', err);
-      }
+      const { categoryId, rackId } = await this.resolveMasterIds(data);
+      const created = await prisma.sparePart.create({
+        data: {
+          id, sku: data.sku, barcode: data.barcode, name: data.name, categoryId,
+          price: data.price, purchasePrice: data.purchasePrice || 0, stock: data.stock || 0,
+          minStock: data.minStock ?? 5, supplierId: data.supplierId || null, imageUrl: data.imageUrl,
+          rackId, shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
+        }, include: includeMasterData,
+      });
+      const part = toSparePart(created);
+      memoryStore.parts.unshift(part);
+      return part;
     }
-    const part: SparePart = { id, lastUpdated: now, ...data };
+    const part: SparePart = { id, lastUpdated: new Date().toISOString(), ...data };
     memoryStore.parts.unshift(part);
     return part;
   }
 
   async update(id: string, data: Partial<SparePart>): Promise<SparePart | null> {
-    const now = new Date().toISOString();
     if (isDbConnected()) {
-      try {
-        const updated = await prisma.sparePart.update({
-          where: { id },
-          data: {
-            sku: data.sku,
-            barcode: data.barcode,
-            name: data.name,
-            category: data.category,
-            price: data.price,
-            purchasePrice: data.purchasePrice,
-            stock: data.stock,
-            minStock: data.minStock,
-            supplierId: data.supplierId,
-            imageUrl: data.imageUrl,
-            rackCode: data.rackCode,
-            shelfLevel: data.shelfLevel,
-            binNumber: data.binNumber,
-            rackLocation: data.rackLocation,
-            rackZone: data.rackZone,
-            locationNotes: data.locationNotes,
-          }
-        });
-        const part: SparePart = {
-          id: updated.id,
-          sku: updated.sku || undefined,
-          barcode: updated.barcode || undefined,
-          name: updated.name,
-          category: updated.category,
-          price: updated.price,
-          purchasePrice: updated.purchasePrice,
-          stock: updated.stock,
-          minStock: updated.minStock,
-          supplierId: updated.supplierId || undefined,
-          imageUrl: updated.imageUrl || undefined,
-          rackCode: updated.rackCode || undefined,
-          shelfLevel: updated.shelfLevel || undefined,
-          binNumber: updated.binNumber || undefined,
-          rackLocation: updated.rackLocation || undefined,
-          rackZone: updated.rackZone || undefined,
-          locationNotes: updated.locationNotes || undefined,
-          lastUpdated: updated.updatedAt.toISOString(),
-        };
-        const idx = memoryStore.parts.findIndex(p => p.id === id);
-        if (idx !== -1) memoryStore.parts[idx] = part;
-        return part;
-      } catch (err) {
-        console.error('[PartRepo] Prisma update error:', err);
-      }
+      const masterIds = data.categoryId || data.category || data.rackId || data.rackCode
+        ? await this.resolveMasterIds(data) : undefined;
+      const updated = await prisma.sparePart.update({
+        where: { id },
+        data: {
+          sku: data.sku, barcode: data.barcode, name: data.name, categoryId: masterIds?.categoryId,
+          price: data.price, purchasePrice: data.purchasePrice, stock: data.stock, minStock: data.minStock,
+          supplierId: data.supplierId, imageUrl: data.imageUrl, rackId: masterIds?.rackId,
+          shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
+        }, include: includeMasterData,
+      });
+      const part = toSparePart(updated);
+      const index = memoryStore.parts.findIndex(p => p.id === id);
+      if (index >= 0) memoryStore.parts[index] = part;
+      return part;
     }
-    const idx = memoryStore.parts.findIndex(p => p.id === id);
-    if (idx === -1) return null;
-    memoryStore.parts[idx] = { ...memoryStore.parts[idx], ...data, lastUpdated: now };
-    return memoryStore.parts[idx];
+    const index = memoryStore.parts.findIndex(p => p.id === id);
+    if (index < 0) return null;
+    memoryStore.parts[index] = { ...memoryStore.parts[index], ...data, lastUpdated: new Date().toISOString() };
+    return memoryStore.parts[index];
   }
 
   async delete(id: string): Promise<boolean> {
-    if (isDbConnected()) {
-      try {
-        await prisma.sparePart.delete({ where: { id } });
-      } catch (err) {
-        console.error('[PartRepo] Prisma delete error:', err);
-      }
-    }
+    if (isDbConnected()) await prisma.sparePart.delete({ where: { id } });
     memoryStore.parts = memoryStore.parts.filter(p => p.id !== id);
     return true;
   }
 
   async adjustStock(id: string, delta: number, newPurchasePrice?: number): Promise<SparePart | null> {
-    const now = new Date();
     if (isDbConnected()) {
-      try {
-        const updated = await prisma.sparePart.update({
-          where: { id },
-          data: {
-            stock: { increment: delta },
-            purchasePrice: newPurchasePrice && newPurchasePrice > 0 ? newPurchasePrice : undefined,
-          }
-        });
-        const part: SparePart = {
-          id: updated.id,
-          sku: updated.sku || undefined,
-          barcode: updated.barcode || undefined,
-          name: updated.name,
-          category: updated.category,
-          price: updated.price,
-          purchasePrice: updated.purchasePrice,
-          stock: updated.stock,
-          minStock: updated.minStock,
-          supplierId: updated.supplierId || undefined,
-          imageUrl: updated.imageUrl || undefined,
-          rackCode: updated.rackCode || undefined,
-          shelfLevel: updated.shelfLevel || undefined,
-          binNumber: updated.binNumber || undefined,
-          rackLocation: updated.rackLocation || undefined,
-          rackZone: updated.rackZone || undefined,
-          locationNotes: updated.locationNotes || undefined,
-          lastUpdated: updated.updatedAt.toISOString(),
-        };
-        const idx = memoryStore.parts.findIndex(p => p.id === id);
-        if (idx !== -1) memoryStore.parts[idx] = part;
-        return part;
-      } catch (err) {
-        console.error('[PartRepo] Prisma adjustStock error:', err);
-      }
+      const updated = await prisma.sparePart.update({
+        where: { id },
+        data: { stock: { increment: delta }, purchasePrice: newPurchasePrice && newPurchasePrice > 0 ? newPurchasePrice : undefined },
+        include: includeMasterData,
+      });
+      const part = toSparePart(updated);
+      const index = memoryStore.parts.findIndex(p => p.id === id);
+      if (index >= 0) memoryStore.parts[index] = part;
+      return part;
     }
-
-    const idx = memoryStore.parts.findIndex(p => p.id === id);
-    if (idx === -1) return null;
-    memoryStore.parts[idx] = {
-      ...memoryStore.parts[idx],
-      stock: Math.max(0, memoryStore.parts[idx].stock + delta),
-      purchasePrice: newPurchasePrice && newPurchasePrice > 0 ? newPurchasePrice : memoryStore.parts[idx].purchasePrice,
-      lastUpdated: now.toISOString()
+    const index = memoryStore.parts.findIndex(p => p.id === id);
+    if (index < 0) return null;
+    memoryStore.parts[index] = {
+      ...memoryStore.parts[index], stock: Math.max(0, memoryStore.parts[index].stock + delta),
+      purchasePrice: newPurchasePrice && newPurchasePrice > 0 ? newPurchasePrice : memoryStore.parts[index].purchasePrice,
+      lastUpdated: new Date().toISOString(),
     };
-    return memoryStore.parts[idx];
+    return memoryStore.parts[index];
   }
 }

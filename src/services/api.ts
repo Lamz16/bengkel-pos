@@ -12,7 +12,10 @@ import {
   User,
   UserRole,
   ServiceStatus,
-  DistributorInvoice
+  DistributorInvoice,
+  PartCategory,
+  WarehouseRack,
+  WarehouseZone
 } from '../types';
 
 export interface BootstrapResponse {
@@ -28,6 +31,9 @@ export interface BootstrapResponse {
   expenses: Expense[];
   staff: any[];
   distributorInvoices?: DistributorInvoice[];
+  categories: PartCategory[];
+  racks: WarehouseRack[];
+  zones: WarehouseZone[];
   postgresConnected: boolean;
 }
 
@@ -159,6 +165,34 @@ export const api = {
   // Bootstrap
   async getBootstrap(): Promise<BootstrapResponse> {
     return request<BootstrapResponse>('/api/bootstrap');
+  },
+
+  async createCategory(data: Omit<PartCategory, 'id'>): Promise<PartCategory> {
+    return request('/api/master-data/categories', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async updateCategory(id: string, data: Partial<PartCategory>): Promise<PartCategory> {
+    return request(`/api/master-data/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async deleteCategory(id: string): Promise<void> {
+    await request(`/api/master-data/categories/${id}`, { method: 'DELETE' });
+  },
+  async createRack(data: Omit<WarehouseRack, 'id'>): Promise<WarehouseRack> {
+    return request('/api/master-data/racks', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async updateRack(id: string, data: Partial<WarehouseRack>): Promise<WarehouseRack> {
+    return request(`/api/master-data/racks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async deleteRack(id: string): Promise<void> {
+    await request(`/api/master-data/racks/${id}`, { method: 'DELETE' });
+  },
+  async createZone(data: Omit<WarehouseZone, 'id'>): Promise<WarehouseZone> {
+    return request('/api/master-data/zones', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async updateZone(id: string, data: Partial<WarehouseZone>): Promise<WarehouseZone> {
+    return request(`/api/master-data/zones/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async deleteZone(id: string): Promise<void> {
+    await request(`/api/master-data/zones/${id}`, { method: 'DELETE' });
   },
 
   // Settings
@@ -430,4 +464,3 @@ export const api = {
     });
   }
 };
-

@@ -9,6 +9,8 @@ import {
   financeService,
 } from '../container';
 import { distributorInvoiceRepository } from '../repositories/distributorInvoiceRepository';
+import { masterDataRepository } from '../repositories/masterDataRepository';
+import { isDbConnected } from '../db/connection';
 
 export class BootstrapController {
   async getBootstrapData(_req: Request, res: Response) {
@@ -26,6 +28,9 @@ export class BootstrapController {
         expenses,
         staff,
         distributorInvoices,
+        categories,
+        racks,
+        zones,
       ] = await Promise.all([
         settingsService.getSettings(),
         customerService.getCustomers(),
@@ -39,6 +44,9 @@ export class BootstrapController {
         financeService.getExpenses(),
         settingsService.getStaff(),
         distributorInvoiceRepository.getAll(),
+        masterDataRepository.getCategories(),
+        masterDataRepository.getRacks(),
+        masterDataRepository.getZones(),
       ]);
 
       res.json({
@@ -54,6 +62,10 @@ export class BootstrapController {
         expenses,
         staff,
         distributorInvoices,
+        categories,
+        racks,
+        zones,
+        postgresConnected: isDbConnected(),
       });
 
     } catch (err: any) {
