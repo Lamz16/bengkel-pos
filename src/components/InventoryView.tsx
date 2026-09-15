@@ -1041,6 +1041,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         <Modal 
           title={`Atur Letak Rak: ${quickRackPart.name}`} 
           onClose={() => setQuickRackPart(null)}
+          maxWidth="3xl"
         >
           <div className="space-y-4">
             <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 space-y-1">

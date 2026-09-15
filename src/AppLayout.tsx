@@ -1179,7 +1179,11 @@ export default function AppLayout() {
           )}
 
           {editingPart && (
-            <Modal title={editingPart.name ? "Edit Part & Lokasi Rak" : "Tambah Part & Atur Lokasi Rak"} onClose={() => setEditingPart(null)}>
+            <Modal 
+              title={editingPart.name ? "Edit Part & Lokasi Rak" : "Tambah Part & Atur Lokasi Rak"} 
+              onClose={() => setEditingPart(null)}
+              maxWidth="4xl"
+            >
               <PartForm 
                 part={editingPart.name ? editingPart : undefined} 
                 suppliers={suppliers}

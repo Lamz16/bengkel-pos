@@ -87,6 +87,7 @@ export const LowStockModal: React.FC<LowStockModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="⚠️ Monitoring Stok Menipis & Habis"
+      maxWidth="4xl"
     >
       <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
         {/* Top Summary Banner */}

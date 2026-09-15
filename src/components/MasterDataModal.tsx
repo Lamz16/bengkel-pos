@@ -264,7 +264,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
   };
 
   return (
-    <Modal title="Manajemen Master Data Kategori & Gudang" onClose={onClose} isOpen={isOpen}>
+    <Modal title="Manajemen Master Data Kategori & Gudang" onClose={onClose} isOpen={isOpen} maxWidth="4xl">
       <div className="space-y-5">
         {/* Notification Toast */}
         {notification && (
