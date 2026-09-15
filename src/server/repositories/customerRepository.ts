@@ -1,5 +1,5 @@
-import { ICustomerRepository } from './interfaces';
-import { Customer } from '../../types';
+import { ICustomerRepository, PaginationParams } from './interfaces';
+import { Customer, PaginatedResult } from '../../types';
 import { prisma, isDbConnected } from '../db/connection';
 import { memoryStore } from '../db/memoryStore';
 
@@ -19,12 +19,74 @@ export class CustomerRepository implements ICustomerRepository {
           lastVisitDate: c.lastVisitDate ? c.lastVisitDate.toISOString() : undefined,
           loyaltyTier: (c.loyaltyTier as any) || 'Bronze',
           notes: c.notes || undefined,
+          version: c.version || 1,
         }));
       } catch (err) {
         console.error('[CustomerRepo] Prisma getAll error:', err);
       }
     }
     return memoryStore.customers;
+  }
+
+  async getPaginated(params: PaginationParams): Promise<PaginatedResult<Customer>> {
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.max(1, params.limit || 10);
+    const search = params.search?.trim().toLowerCase() || '';
+
+    if (isDbConnected()) {
+      try {
+        const where = search ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { phone: { contains: search, mode: 'insensitive' as const } },
+            { notes: { contains: search, mode: 'insensitive' as const } },
+          ],
+        } : {};
+
+        const total = await prisma.customer.count({ where });
+        const list = await prisma.customer.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        });
+
+        return {
+          data: list.map(c => ({
+            id: c.id,
+            name: c.name,
+            phone: c.phone,
+            totalServiceCount: c.totalServiceCount,
+            totalSpent: Number(c.totalSpent),
+            lastVisitDate: c.lastVisitDate ? c.lastVisitDate.toISOString() : undefined,
+            loyaltyTier: (c.loyaltyTier as any) || 'Bronze',
+            notes: c.notes || undefined,
+            version: c.version || 1,
+          })),
+          pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+        };
+      } catch (err) {
+        console.error('[CustomerRepo] Prisma getPaginated error:', err);
+      }
+    }
+
+    let filtered = memoryStore.customers;
+    if (search) {
+      filtered = filtered.filter(c =>
+        c.name.toLowerCase().includes(search) ||
+        c.phone.toLowerCase().includes(search) ||
+        (c.notes && c.notes.toLowerCase().includes(search))
+      );
+    }
+
+    const total = filtered.length;
+    const startIndex = (page - 1) * limit;
+    const paginatedData = filtered.slice(startIndex, startIndex + limit);
+
+    return {
+      data: paginatedData,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+    };
   }
 
   async getById(id: string): Promise<Customer | null> {
@@ -41,6 +103,7 @@ export class CustomerRepository implements ICustomerRepository {
             lastVisitDate: c.lastVisitDate ? c.lastVisitDate.toISOString() : undefined,
             loyaltyTier: (c.loyaltyTier as any) || 'Bronze',
             notes: c.notes || undefined,
+            version: c.version || 1,
           };
         }
       } catch (err) {
@@ -63,6 +126,7 @@ export class CustomerRepository implements ICustomerRepository {
             totalSpent: data.totalSpent || 0,
             loyaltyTier: data.loyaltyTier || 'Bronze',
             notes: data.notes,
+            version: 1,
           }
         });
         const cust: Customer = {
@@ -73,6 +137,7 @@ export class CustomerRepository implements ICustomerRepository {
           totalSpent: Number(created.totalSpent),
           loyaltyTier: (created.loyaltyTier as any) || 'Bronze',
           notes: created.notes || undefined,
+          version: 1,
         };
         memoryStore.customers.unshift(cust);
         return cust;
@@ -80,14 +145,21 @@ export class CustomerRepository implements ICustomerRepository {
         console.error('[CustomerRepo] Prisma create error:', err);
       }
     }
-    const newCust: Customer = { id, ...data };
+    const newCust: Customer = { id, version: 1, ...data };
     memoryStore.customers.unshift(newCust);
     return newCust;
   }
 
-  async update(id: string, data: Partial<Customer>): Promise<Customer | null> {
+  async update(id: string, data: Partial<Customer>, expectedVersion?: number): Promise<Customer | null> {
     if (isDbConnected()) {
       try {
+        const current = await prisma.customer.findUnique({ where: { id } });
+        if (!current) return null;
+
+        if (expectedVersion !== undefined && current.version !== expectedVersion) {
+          throw new Error(`Data pelanggan '${current.name}' telah diperbarui oleh pengguna lain (Versi DB: ${current.version}, versi Anda: ${expectedVersion}). Silakan muat ulang data.`);
+        }
+
         const updated = await prisma.customer.update({
           where: { id },
           data: {
@@ -97,6 +169,7 @@ export class CustomerRepository implements ICustomerRepository {
             totalSpent: data.totalSpent,
             loyaltyTier: data.loyaltyTier,
             notes: data.notes,
+            version: { increment: 1 },
           }
         });
         const cust: Customer = {
@@ -107,18 +180,32 @@ export class CustomerRepository implements ICustomerRepository {
           totalSpent: Number(updated.totalSpent),
           loyaltyTier: (updated.loyaltyTier as any) || 'Bronze',
           notes: updated.notes || undefined,
+          version: updated.version,
         };
         const idx = memoryStore.customers.findIndex(c => c.id === id);
         if (idx !== -1) memoryStore.customers[idx] = cust;
         return cust;
-      } catch (err) {
+      } catch (err: any) {
         console.error('[CustomerRepo] Prisma update error:', err);
+        throw err;
       }
     }
+
     const idx = memoryStore.customers.findIndex(c => c.id === id);
     if (idx === -1) return null;
-    memoryStore.customers[idx] = { ...memoryStore.customers[idx], ...data };
-    return memoryStore.customers[idx];
+    const current = memoryStore.customers[idx];
+
+    if (expectedVersion !== undefined && (current.version || 1) !== expectedVersion) {
+      throw new Error(`Data pelanggan '${current.name}' telah diperbarui oleh pengguna lain. Silakan muat ulang data.`);
+    }
+
+    const updatedCust: Customer = {
+      ...current,
+      ...data,
+      version: (current.version || 1) + 1,
+    };
+    memoryStore.customers[idx] = updatedCust;
+    return updatedCust;
   }
 
   async delete(id: string): Promise<boolean> {

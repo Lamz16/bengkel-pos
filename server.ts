@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { checkDbConnection, isDbConnected } from './src/server/db/connection';
 import { apiRouter } from './src/server/routes';
+import { performanceMonitoringMiddleware, errorMonitoringMiddleware } from './src/server/middleware/monitoring';
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
@@ -16,7 +17,10 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Middleware
+  // Performance Monitoring Middleware
+  app.use(performanceMonitoringMiddleware);
+
+  // Body parser Middleware
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -39,6 +43,7 @@ async function startServer() {
   // MODULAR REST API ROUTES (SOLID Architecture)
   // ==========================================
   app.use('/api', apiRouter);
+  app.use(errorMonitoringMiddleware);
 
   // ==========================================
   // VITE MIDDLEWARE (Dev) or STATIC SERVING (Prod)

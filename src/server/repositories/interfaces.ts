@@ -8,14 +8,24 @@ import {
   Supplier, 
   PurchaseRecord, 
   Expense, 
-  CompanySettings 
+  CompanySettings,
+  PaginatedResult,
+  StockHistory
 } from '../../types';
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}
 
 export interface ICustomerRepository {
   getAll(): Promise<Customer[]>;
+  getPaginated(params: PaginationParams): Promise<PaginatedResult<Customer>>;
   getById(id: string): Promise<Customer | null>;
   create(data: Omit<Customer, 'id'>): Promise<Customer>;
-  update(id: string, data: Partial<Customer>): Promise<Customer | null>;
+  update(id: string, data: Partial<Customer>, expectedVersion?: number): Promise<Customer | null>;
   delete(id: string): Promise<boolean>;
   incrementStats(id: string, serviceAmount: number): Promise<void>;
 }
@@ -29,18 +39,21 @@ export interface IVehicleRepository {
 
 export interface IPartRepository {
   getAll(): Promise<SparePart[]>;
+  getPaginated(params: PaginationParams): Promise<PaginatedResult<SparePart>>;
   getById(id: string): Promise<SparePart | null>;
   create(data: Omit<SparePart, 'id' | 'lastUpdated'>): Promise<SparePart>;
-  update(id: string, data: Partial<SparePart>): Promise<SparePart | null>;
+  update(id: string, data: Partial<SparePart>, expectedVersion?: number): Promise<SparePart | null>;
   delete(id: string): Promise<boolean>;
   adjustStock(id: string, delta: number, newPurchasePrice?: number): Promise<SparePart | null>;
+  getStockHistoryPaginated(params: PaginationParams): Promise<PaginatedResult<StockHistory>>;
 }
 
 export interface IServiceRepository {
   getAll(): Promise<WorkshopService[]>;
+  getPaginated(params: PaginationParams): Promise<PaginatedResult<WorkshopService>>;
   getById(id: string): Promise<WorkshopService | null>;
   create(data: WorkshopService): Promise<WorkshopService>;
-  updateStatus(id: string, status: string): Promise<WorkshopService | null>;
+  updateStatus(id: string, status: string, expectedVersion?: number): Promise<WorkshopService | null>;
   updateWarrantyClaim(data: {
     serviceId: string;
     reason: string;

@@ -2,8 +2,18 @@ import { Request, Response } from 'express';
 import { workshopService } from '../container';
 
 export class ServiceController {
-  async getServices(_req: Request, res: Response) {
+  async getServices(req: Request, res: Response) {
     try {
+      const page = req.query.page ? Number(req.query.page) : undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const search = req.query.search as string | undefined;
+      const status = req.query.status as string | undefined;
+
+      if (page || limit || search || status) {
+        const paginated = await (workshopService as any).serviceRepo.getPaginated({ page, limit, search, status });
+        return res.json(paginated);
+      }
+
       const services = await workshopService.getServices();
       res.json(services);
     } catch (err: any) {
@@ -27,17 +37,19 @@ export class ServiceController {
 
   async updateStatus(req: Request, res: Response) {
     try {
-      const { status } = req.body;
+      const { status, version, expectedVersion } = req.body;
       if (!status) {
         return res.status(400).json({ error: 'Status pengerjaan servis wajib diisi.' });
       }
-      const updated = await workshopService.updateStatus(req.params.id, status);
+      const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      const updated = await (workshopService as any).serviceRepo.updateStatus(req.params.id, status, expVer);
       if (!updated) {
         return res.status(404).json({ error: 'Order servis tidak ditemukan' });
       }
       res.json(updated);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal memperbarui status servis' });
+      const isConflict = String(err.message).includes('Optimistic Lock') || String(err.message).includes('telah diubah oleh kasir');
+      res.status(isConflict ? 409 : 500).json({ error: err.message || 'Gagal memperbarui status servis' });
     }
   }
 

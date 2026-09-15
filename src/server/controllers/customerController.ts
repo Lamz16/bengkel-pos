@@ -2,8 +2,17 @@ import { Request, Response } from 'express';
 import { customerService } from '../container';
 
 export class CustomerController {
-  async getCustomers(_req: Request, res: Response) {
+  async getCustomers(req: Request, res: Response) {
     try {
+      const page = req.query.page ? Number(req.query.page) : undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const search = req.query.search as string | undefined;
+
+      if (page || limit || search) {
+        const paginated = await (customerService as any).customerRepo.getPaginated({ page, limit, search });
+        return res.json(paginated);
+      }
+
       const customers = await customerService.getCustomers();
       res.json(customers);
     } catch (err: any) {
@@ -26,13 +35,16 @@ export class CustomerController {
 
   async updateCustomer(req: Request, res: Response) {
     try {
-      const updated = await customerService.updateCustomer(req.params.id, req.body);
+      const { version, expectedVersion } = req.body;
+      const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      const updated = await (customerService as any).customerRepo.update(req.params.id, req.body, expVer);
       if (!updated) {
         return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
       }
       res.json(updated);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal memperbarui pelanggan' });
+      const isConflict = String(err.message).includes('Optimistic Lock') || String(err.message).includes('telah diperbarui oleh pengguna lain');
+      res.status(isConflict ? 409 : 500).json({ error: err.message || 'Gagal memperbarui pelanggan' });
     }
   }
 

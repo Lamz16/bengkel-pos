@@ -4,6 +4,7 @@ import { partController } from '../controllers/partController';
 export const partRouter = Router();
 
 partRouter.get('/', (req, res) => partController.getParts(req, res));
+partRouter.get('/history', (req, res) => partController.getStockHistory(req, res));
 partRouter.post('/', (req, res) => partController.createPart(req, res));
 partRouter.put('/:id', (req, res) => partController.updatePart(req, res));
 partRouter.delete('/:id', (req, res) => partController.deletePart(req, res));

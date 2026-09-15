@@ -15,10 +15,12 @@ import { uploadRouter } from './uploadRoutes';
 import { masterDataRouter } from './masterDataRoutes';
 import { databaseRouter } from './databaseRoutes';
 import { authorize, requireAuth } from '../auth';
+import { idempotencyMiddleware } from '../middleware/idempotency';
+import { systemMonitor } from '../middleware/monitoring';
 
 export const apiRouter = Router();
 
-// Health Check
+// Health Check & Monitoring
 apiRouter.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -29,9 +31,16 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
   });
 });
 
+apiRouter.get('/monitoring/metrics', (_req: Request, res: Response) => {
+  res.json(systemMonitor.getMetrics());
+});
+
 // Authentication is public; every business endpoint below requires a valid Owner/Admin JWT.
 apiRouter.use('/auth', authRouter);
 apiRouter.use(requireAuth, authorize('Owner', 'Admin'));
+
+// Apply idempotency check for POST/PUT/PATCH write requests
+apiRouter.use(idempotencyMiddleware);
 
 // Bootstrap initial data
 apiRouter.get('/bootstrap', (req, res) => bootstrapController.getBootstrapData(req, res));
@@ -53,3 +62,4 @@ apiRouter.use('/distributor-invoices', distributorInvoiceRouter);
 apiRouter.use('/upload', uploadRouter);
 apiRouter.use('/master-data', masterDataRouter);
 apiRouter.use('/database', databaseRouter);
+

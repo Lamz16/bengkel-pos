@@ -61,6 +61,7 @@ model Customer {
   lastVisitDate     DateTime?
   loyaltyTier       String?           @default("Bronze")
   notes             String?
+  version           Int               @default(1)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   vehicles          Vehicle[]
@@ -94,6 +95,7 @@ model SparePart {
   shelfLevel       String?
   binNumber        String?
   locationNotes    String?
+  version          Int                      @default(1)
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   supplier         Supplier?                @relation(fields: [supplierId], references: [id])
@@ -169,6 +171,7 @@ model WorkshopService {
   warrantyClaimReason     String?
   isMechanicAbsentOnClaim Boolean?          @default(false)
   warrantyDeductionAmount Decimal?          @default(0) @db.Decimal(18, 2)
+  version                 Int               @default(1)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
   customer                Customer?         @relation(fields: [customerId], references: [id])
@@ -327,3 +330,15 @@ model DistributorPayment {
 
   @@index([invoiceId])
 }
+
+model IdempotencyRecord {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  path       String
+  statusCode Int
+  response   String   @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([key])
+}
+

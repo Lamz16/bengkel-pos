@@ -94,6 +94,7 @@ export interface Customer {
   lastVisitDate?: string;
   loyaltyTier?: CustomerTier;
   notes?: string;
+  version?: number;
 }
 
 export interface Vehicle {
@@ -127,6 +128,7 @@ export interface SparePart {
   rackLocation?: string;   // Ringkasan label lokasi (e.g. "Rak A - Tingkat 2 - Kotak 04")
   rackZone?: string;       // Area/Gudang (e.g. "Gudang Utama", "Toko Depan", "Gudang B")
   locationNotes?: string;  // Petunjuk posisi (e.g. "Dekat pintu kiri, susunan paling depan")
+  version?: number;
 }
 
 export interface WarehouseRack {
@@ -188,6 +190,7 @@ export interface WorkshopService {
   warrantyClaimReason?: string;
   isMechanicAbsentOnClaim?: boolean;
   warrantyDeductionAmount?: number;
+  version?: number;
 }
 
 export interface StockHistory {
@@ -268,3 +271,38 @@ export interface DistributorInvoice {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
+export interface SystemMetrics {
+  uptimeSeconds: number;
+  memoryUsageMb: {
+    rss: number;
+    heapTotal: number;
+    heapUsed: number;
+  };
+  requestsTotal: number;
+  errorCount5xx: number;
+  errorCount4xx: number;
+  avgResponseTimeMs: number;
+  dbStatus: string;
+  recentErrors: Array<{
+    timestamp: string;
+    method: string;
+    path: string;
+    statusCode: number;
+    message: string;
+    stack?: string;
+  }>;
+}
+

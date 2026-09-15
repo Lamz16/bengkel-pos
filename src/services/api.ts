@@ -142,12 +142,19 @@ export const healthApi = {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getAuthToken();
+  const method = (options?.method || 'GET').toUpperCase();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options?.headers as Record<string, string>),
   };
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Automatically attach idempotency key for write requests
+  if (['POST', 'PUT', 'PATCH'].includes(method) && !headers['x-idempotency-key']) {
+    headers['x-idempotency-key'] = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 
   const url = path.startsWith('/api') ? path : `/api${path}`;
