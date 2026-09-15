@@ -40,6 +40,7 @@ export interface MemoryStore {
 export const memoryStore: MemoryStore = {
   settings: {
     name: "BengkelPro Mandiri",
+    logoUrl: undefined,
     slogan: "Solusi Perawatan & Servis Terpercaya",
     address: "Jl. Otomotif Raya No. 123, Blok B4, Jakarta Selatan",
     phone: "0812-3456-7890",

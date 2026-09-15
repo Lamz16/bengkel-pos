@@ -18,6 +18,9 @@ import {
   DollarSign,
   Package,
   Layers,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
   Settings as SettingsIcon
 } from 'lucide-react';
 import { CompanySettings, Mechanic, UserRole } from '../types';
@@ -54,6 +57,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const handleSave = () => {
     onUpdateSettings(formData);
     showNotification('Pengaturan berhasil disimpan!');
+  };
+
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Ukuran file logo terlalu besar. Harap gunakan file gambar di bawah 2MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setFormData(prev => ({ ...prev, logoUrl: result }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleBatchApplyBonus = () => {
@@ -171,23 +192,153 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </span>
             </div>
 
+            {/* BRANDING & LOGO PLATFORM SECTION */}
+            <div className="p-5 bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 rounded-2xl border border-blue-100/80 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                      Manajemen Branding & Logo Aplikasi
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Ubah nama platform/aplikasi dan upload logo kustom yang akan tampil di sidebar, header, dan nota resmi.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Preview Badge */}
+                <div className="flex items-center gap-3 bg-white px-3.5 py-2 rounded-xl border border-blue-200/80 shadow-xs shrink-0">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Preview Sidebar:</span>
+                  <div className="flex items-center gap-2">
+                    {formData.logoUrl ? (
+                      <img 
+                        src={formData.logoUrl} 
+                        alt="Logo Preview" 
+                        className="w-7 h-7 object-contain rounded-lg border border-slate-200 bg-slate-50" 
+                      />
+                    ) : (
+                      <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-xs">
+                        {(formData.name || 'W').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-xs font-black text-slate-900 max-w-[120px] truncate">
+                      {formData.name || 'WorkshopPro'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Input Nama Platform */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider ml-1 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-blue-600" /> Nama Platform / Aplikasi & Bengkel
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Contoh: AutoCare Pro / Bengkel Mandiri Jaya"
+                    className="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-2xs"
+                  />
+                  <p className="text-[10px] text-slate-500 ml-1">Nama ini akan digunakan di seluruh header aplikasi dan cetakan nota.</p>
+                </div>
+
+                {/* Upload & URL Logo */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider ml-1 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-blue-600" /> Logo Aplikasi / Bengkel
+                  </label>
+                  
+                  <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                    {/* File Upload Button */}
+                    <label className="flex-1 cursor-pointer h-12 px-4 bg-white border border-dashed border-blue-300 hover:border-blue-500 hover:bg-blue-50/50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-blue-700 transition-all shadow-2xs group">
+                      <Upload className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                      <span>{formData.logoUrl ? 'Ganti Logo (File)' : 'Upload Gambar Logo'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleLogoFileUpload} 
+                        className="hidden" 
+                      />
+                    </label>
+
+                    {/* Clear Logo Button if exists */}
+                    {formData.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, logoUrl: undefined })}
+                        className="px-3.5 h-12 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0"
+                        title="Hapus Logo Custom"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">Hapus Logo</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Input Direct Image URL */}
+                  <div className="pt-1">
+                    <input
+                      type="url"
+                      value={formData.logoUrl || ''}
+                      onChange={e => setFormData({ ...formData, logoUrl: e.target.value || undefined })}
+                      placeholder="Atau masukkan URL Gambar Logo (https://... atau Data URI)"
+                      className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[11px] font-medium text-slate-800 focus:border-blue-500 outline-none transition-all shadow-2xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Preset Icons / Badges */}
+              <div className="pt-2 border-t border-blue-100/60 flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider mr-1">Preset Logo Cepat:</span>
+                
+                <button
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'
+                  })}
+                  className="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 flex items-center gap-1.5 transition-all shadow-2xs"
+                >
+                  <Wrench className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Kunci Pas Blue</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%23059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>'
+                  })}
+                  className="px-2.5 py-1 bg-white hover:bg-emerald-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 flex items-center gap-1.5 transition-all shadow-2xs"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Perisai Emerald</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%23d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>'
+                  })}
+                  className="px-2.5 py-1 bg-white hover:bg-amber-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 flex items-center gap-1.5 transition-all shadow-2xs"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Mobil Amber</span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-1">
-                  Nama Bengkel
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Contoh: BengkelPro Motor Mandiri"
-                  className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-1">
-                  Slogan / Tagline
+                  Slogan / Tagline Bengkel
                 </label>
                 <input
                   type="text"

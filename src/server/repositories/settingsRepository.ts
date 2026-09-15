@@ -11,6 +11,7 @@ export class SettingsRepository implements ISettingsRepository {
         if (found) {
           return {
             name: found.name,
+            logoUrl: found.logoUrl || undefined,
             slogan: found.slogan,
             address: found.address,
             phone: found.phone,
@@ -66,6 +67,7 @@ export class SettingsRepository implements ISettingsRepository {
           ...memoryStore.settings,
           ...data,
           name: updated.name,
+          logoUrl: updated.logoUrl || undefined,
           slogan: updated.slogan,
           address: updated.address,
           phone: updated.phone,

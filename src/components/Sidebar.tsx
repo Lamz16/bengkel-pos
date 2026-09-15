@@ -23,6 +23,8 @@ interface SidebarProps {
   currentUser: User;
   isMobileOpen: boolean;
   lowStockCount?: number;
+  platformName?: string;
+  logoUrl?: string;
   onSelectTab: (tabId: string) => void;
   onCloseMobile: () => void;
   onLogout: () => void;
@@ -35,18 +37,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
   isMobileOpen,
   lowStockCount = 0,
+  platformName = 'WorkshopPro',
+  logoUrl,
   onSelectTab,
   onCloseMobile,
   onLogout
 }) => {
+  const displayTitle = platformName || 'WorkshopPro';
+  const displayInitial = displayTitle.charAt(0).toUpperCase();
+
   return (
     <>
       {/* Sidebar for Desktop (Hidden on Mobile) */}
       <aside className="w-64 bg-white border-r border-slate-200 flex-col hidden lg:flex shrink-0">
         <div className="p-6">
-          <div className="flex items-center gap-3 text-blue-600 mb-8">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">W</div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">WorkshopPro</span>
+          <div className="flex items-center gap-3 text-blue-600 mb-8 min-w-0">
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={displayTitle} 
+                className="w-9 h-9 object-contain rounded-xl border border-slate-200 shrink-0 bg-slate-50" 
+              />
+            ) : (
+              <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shrink-0 shadow-sm shadow-blue-200">
+                {displayInitial}
+              </div>
+            )}
+            <span className="text-lg font-black tracking-tight text-slate-900 truncate" title={displayTitle}>
+              {displayTitle}
+            </span>
           </div>
           <nav className="space-y-1">
             {navItems.map((item) => (
@@ -75,9 +94,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCloseMobile} className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[100] lg:hidden" />
             <motion.aside initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[101] shadow-2xl flex flex-col lg:hidden">
               <div className="p-6 border-b border-slate-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white"><Wrench className="w-6 h-6" /></div>
-                  <div><h2 className="font-black text-slate-900 leading-none">WorkshopPro</h2><p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">Smart System</p></div>
+                <div className="flex items-center gap-3 mb-6 min-w-0">
+                  {logoUrl ? (
+                    <img 
+                      src={logoUrl} 
+                      alt={displayTitle} 
+                      className="w-10 h-10 object-contain rounded-xl border border-slate-200 shrink-0 bg-slate-50" 
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shrink-0 font-black shadow-sm">
+                      {displayInitial}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h2 className="font-black text-slate-900 leading-none truncate" title={displayTitle}>{displayTitle}</h2>
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">Smart System</p>
+                  </div>
                 </div>
               </div>
               <nav className="flex-1 overflow-y-auto p-4 space-y-1">

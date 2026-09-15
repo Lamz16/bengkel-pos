@@ -3,8 +3,9 @@ export type ServiceStatus = 'Pending' | 'In Progress' | 'Ready' | 'Done';
 export type UserRole = 'Owner' | 'Admin';
 
 export interface CompanySettings {
-  // Fitur Profil Bengkel
+  // Fitur Profil Bengkel & Branding Platform
   name: string;
+  logoUrl?: string;
   slogan: string;
   address: string;
   phone: string;

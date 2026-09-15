@@ -36,19 +36,28 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
 
         {/* Invoice Body */}
         <div className="flex-1 overflow-y-auto p-8 sm:p-10 font-sans bg-white printable-area space-y-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-black text-blue-600 tracking-tighter uppercase italic leading-none mb-1">{settings.name}</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{settings.slogan}</p>
-              {settings.address && <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">{settings.address}</p>}
-              {settings.phone && <p className="text-[8px] font-bold text-slate-400 uppercase">Telp: {settings.phone}</p>}
-              {settings.receiptHeader && (
-                <div className="pt-2">
-                  <span className="px-2.5 py-0.5 bg-slate-100 rounded text-[9px] font-black uppercase text-slate-700 inline-block">
-                    {settings.receiptHeader}
-                  </span>
-                </div>
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex items-start gap-3">
+              {settings.logoUrl && (
+                <img 
+                  src={settings.logoUrl} 
+                  alt={settings.name} 
+                  className="w-12 h-12 object-contain rounded-xl border border-slate-200 p-1 shrink-0 bg-slate-50" 
+                />
               )}
+              <div>
+                <h1 className="text-2xl font-black text-blue-600 tracking-tighter uppercase italic leading-none mb-1">{settings.name}</h1>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{settings.slogan}</p>
+                {settings.address && <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">{settings.address}</p>}
+                {settings.phone && <p className="text-[8px] font-bold text-slate-400 uppercase">Telp: {settings.phone}</p>}
+                {settings.receiptHeader && (
+                  <div className="pt-2">
+                    <span className="px-2.5 py-0.5 bg-slate-100 rounded text-[9px] font-black uppercase text-slate-700 inline-block">
+                      {settings.receiptHeader}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="text-right">
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">INV#{service.id.slice(0, 8)}</h3>

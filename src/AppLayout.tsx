@@ -834,6 +834,8 @@ export default function AppLayout() {
         currentUser={currentUser}
         isMobileOpen={isSidebarOpen}
         lowStockCount={lowStockCount}
+        platformName={companySettings.name}
+        logoUrl={companySettings.logoUrl}
         onSelectTab={(tabId) => {
           setActiveTab(tabId);
           setShowPOSForm(false);
