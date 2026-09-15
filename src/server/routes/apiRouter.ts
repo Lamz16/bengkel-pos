@@ -12,6 +12,9 @@ import { aiRouter } from './aiRoutes';
 import { authRouter } from './authRoutes';
 import { distributorInvoiceRouter } from './distributorInvoiceRoutes';
 import { uploadRouter } from './uploadRoutes';
+import { masterDataRouter } from './masterDataRoutes';
+import { databaseRouter } from './databaseRoutes';
+import { authorize, requireAuth } from '../auth';
 
 export const apiRouter = Router();
 
@@ -25,6 +28,10 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
     postgresConnected: isDbConnected(),
   });
 });
+
+// Authentication is public; every business endpoint below requires a valid Owner/Admin JWT.
+apiRouter.use('/auth', authRouter);
+apiRouter.use(requireAuth, authorize('Owner', 'Admin'));
 
 // Bootstrap initial data
 apiRouter.get('/bootstrap', (req, res) => bootstrapController.getBootstrapData(req, res));
@@ -42,7 +49,7 @@ apiRouter.use('/purchases', purchaseRouter);
 apiRouter.use('/settings', settingsRouter);
 apiRouter.use('/staff', staffRouter);
 apiRouter.use('/ai', aiRouter);
-apiRouter.use('/auth', authRouter);
 apiRouter.use('/distributor-invoices', distributorInvoiceRouter);
 apiRouter.use('/upload', uploadRouter);
-
+apiRouter.use('/master-data', masterDataRouter);
+apiRouter.use('/database', databaseRouter);

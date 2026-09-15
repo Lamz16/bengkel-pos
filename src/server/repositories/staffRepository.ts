@@ -1,8 +1,14 @@
 import { IStaffRepository } from './interfaces';
 import { prisma, isDbConnected } from '../db/connection';
 import { memoryStore } from '../db/memoryStore';
+import { hashPassword } from '../auth';
 
 export class StaffRepository implements IStaffRepository {
+  async hasAnyUser(): Promise<boolean> {
+    if (isDbConnected()) return (await prisma.user.count()) > 0;
+    return memoryStore.users.length > 0;
+  }
+
   async getAll(): Promise<any[]> {
     if (isDbConnected()) {
       try {
@@ -38,7 +44,7 @@ export class StaffRepository implements IStaffRepository {
             name: u.name,
             role: u.role,
             email: u.email,
-            password: u.password || 'akundemo',
+            password: u.password,
             workshopName: u.workshopName,
             createdAt: u.createdAt.toISOString ? u.createdAt.toISOString() : u.createdAt,
           };
@@ -51,34 +57,9 @@ export class StaffRepository implements IStaffRepository {
     return memUser || null;
   }
 
-  async findByRole(role: string): Promise<any | null> {
-    if (isDbConnected()) {
-      try {
-        const u = await prisma.user.findFirst({
-          where: { role }
-        });
-        if (u) {
-          return {
-            id: u.id,
-            name: u.name,
-            role: u.role,
-            email: u.email,
-            password: u.password || 'akundemo',
-            workshopName: u.workshopName,
-            createdAt: u.createdAt.toISOString ? u.createdAt.toISOString() : u.createdAt,
-          };
-        }
-      } catch (err) {
-        console.error('[StaffRepo] findByRole error:', err);
-      }
-    }
-    const memUser = memoryStore.users.find(u => u.role === role);
-    return memUser || null;
-  }
-
   async createUser(data: { name: string; email: string; role: string; password?: string; workshopName?: string }): Promise<any> {
     const id = `USR-${Date.now().toString().slice(-4)}`;
-    const userPassword = data.password || 'akundemo';
+    const userPassword = data.password || await hashPassword('akundemo');
     if (isDbConnected()) {
       try {
         const created = await prisma.user.create({
@@ -125,6 +106,7 @@ export class StaffRepository implements IStaffRepository {
             email: data.email || `${id.toLowerCase()}@bengkelpro.com`,
             status: data.status || 'Active',
             shifts: data.shifts || 'Pagi',
+            password: await hashPassword(data.password || 'akundemo'),
           }
         });
         const userObj = {

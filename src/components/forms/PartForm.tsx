@@ -33,8 +33,9 @@ export const PartForm: React.FC<PartFormProps> = ({
 
   const [formData, setFormData] = useState<SparePart>(() => {
     if (part && part.id) return part;
-    const initialCategory = 'Oli';
-    const autoSku = generatePartSKU(initialCategory, existingParts);
+    const initialCategory = categories[0] || DEFAULT_PART_CATEGORIES[0];
+    const initialRack = racks?.[0];
+    const autoSku = generatePartSKU(initialCategory.name, existingParts, categories);
     return {
       id: 'P' + Math.floor(Math.random() * 1000),
       sku: autoSku,
@@ -44,11 +45,13 @@ export const PartForm: React.FC<PartFormProps> = ({
       purchasePrice: 0,
       stock: 0,
       minStock: 5,
-      category: initialCategory,
-      rackCode: 'Rak A',
+      category: initialCategory.name,
+      categoryId: initialCategory.id,
+      rackCode: initialRack?.code,
+      rackId: initialRack?.id,
       shelfLevel: 'Tingkat 1',
       binNumber: 'Kotak 01',
-      rackZone: 'Gudang Utama',
+      rackZone: initialRack?.zone,
       locationNotes: '',
       lastUpdated: new Date().toISOString(),
       supplierId: '',
@@ -56,13 +59,15 @@ export const PartForm: React.FC<PartFormProps> = ({
     };
   });
 
-  const handleCategoryChange = (newCategory: string) => {
+  const handleCategoryChange = (categoryId: string) => {
+    const selected = categories.find(category => category.id === categoryId);
+    if (!selected) return;
     // If SKU is empty or follows the standard prefix pattern, update it automatically
     let updatedSku = formData.sku;
     if (!formData.sku || formData.sku.includes('-')) {
-      updatedSku = generatePartSKU(newCategory, existingParts, categories);
+      updatedSku = generatePartSKU(selected.name, existingParts, categories);
     }
-    setFormData({ ...formData, category: newCategory, sku: updatedSku });
+    setFormData({ ...formData, categoryId: selected.id, category: selected.name, sku: updatedSku });
   };
 
   const handleGenerateSku = () => {
@@ -322,18 +327,19 @@ export const PartForm: React.FC<PartFormProps> = ({
             <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">
               Kode Rak *
             </label>
-            <input 
-              list="rack-presets"
-              placeholder="e.g. Rak A, Rak B..."
-              value={formData.rackCode || ''}
-              onChange={e => setFormData({ ...formData, rackCode: e.target.value })}
+            <select
+              value={formData.rackId || ''}
+              onChange={e => {
+                const selected = (racks || []).find(r => r.id === e.target.value);
+                setFormData({ ...formData, rackId: selected?.id, rackCode: selected?.code, rackZone: selected?.zone });
+              }}
               className="w-full h-10 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-bold text-slate-900"
-            />
-            <datalist id="rack-presets">
-              {(racks || DEFAULT_RACK_LIST).map(r => (
-                <option key={r.code} value={r.code}>{r.name} ({r.zone})</option>
+            >
+              <option value="">-- Tanpa Rak --</option>
+              {(racks || []).map(r => (
+                <option key={r.id} value={r.id}>{r.code} — {r.name} ({r.zone})</option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           {/* Tingkat / Ambalan */}
@@ -378,15 +384,9 @@ export const PartForm: React.FC<PartFormProps> = ({
             <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">
               Zona / Ruang Gudang
             </label>
-            <select
-              value={formData.rackZone || (zones[0]?.name || 'Gudang Utama')}
-              onChange={e => setFormData({ ...formData, rackZone: e.target.value })}
-              className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl outline-none text-xs font-bold text-slate-700"
-            >
-              {zones.map(z => (
-                <option key={z.id} value={z.name}>{z.name}</option>
-              ))}
-            </select>
+            <div className="w-full h-9 px-3 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center">
+              {formData.rackZone || 'Mengikuti gudang dari rak'}
+            </div>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">
@@ -437,12 +437,12 @@ export const PartForm: React.FC<PartFormProps> = ({
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Kategori Barang</label>
           <select 
-            value={formData.category}
+            value={formData.categoryId || categories.find(c => c.name === formData.category)?.id || ''}
             onChange={e => handleCategoryChange(e.target.value)}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
           >
             {categories.map(c => (
-              <option key={c.id} value={c.name}>{c.name} ({c.skuPrefix || c.name.slice(0, 3).toUpperCase()})</option>
+              <option key={c.id} value={c.id}>{c.name} ({c.skuPrefix || c.name.slice(0, 3).toUpperCase()})</option>
             ))}
           </select>
         </div>
@@ -481,4 +481,3 @@ export const PartForm: React.FC<PartFormProps> = ({
     </div>
   );
 };
-

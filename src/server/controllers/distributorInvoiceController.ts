@@ -32,7 +32,8 @@ export class DistributorInvoiceController {
       res.json(updated);
     } catch (err: any) {
       console.error('[DistributorInvoiceController] addPayment error:', err);
-      res.status(500).json({ error: 'Gagal mencatat pembayaran cicilan' });
+      const invalid = err?.message === 'INVALID_PAYMENT';
+      res.status(invalid ? 400 : 500).json({ error: invalid ? 'Nominal pembayaran tidak valid atau melebihi sisa tagihan.' : 'Gagal mencatat pembayaran cicilan' });
     }
   }
 

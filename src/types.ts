@@ -109,6 +109,7 @@ export interface SparePart {
   barcode?: string;        // Barcode / No. Seri (opsional)
   name: string;
   category: string;
+  categoryId?: string;
   price: number;
   purchasePrice: number;
   stock: number;
@@ -119,6 +120,7 @@ export interface SparePart {
 
   // Letak Barang di Rak & Gudang
   rackCode?: string;       // Kode Rak (e.g. "Rak A", "Rak B", "Etalase 1")
+  rackId?: string;
   shelfLevel?: string;     // Tingkat/Ambalan (e.g. "Tingkat 1", "Tingkat 2", "Atas", "Bawah")
   binNumber?: string;      // Kotak/Slot/Bin (e.g. "Kotak 01", "Slot A", "Bin 12")
   rackLocation?: string;   // Ringkasan label lokasi (e.g. "Rak A - Tingkat 2 - Kotak 04")
@@ -131,6 +133,7 @@ export interface WarehouseRack {
   code: string;          // Kode Rak (e.g. "Rak A", "Rak F1")
   name: string;          // Nama Keterangan (e.g. "Rak A - Pelumas & Oli")
   zone: string;          // Nama Gudang/Zona (e.g. "Gudang Utama", "Gudang Belakang")
+  zoneId?: string;
   description?: string;
 }
 
@@ -264,4 +267,3 @@ export interface DistributorInvoice {
   createdAt?: string;
   updatedAt?: string;
 }
-

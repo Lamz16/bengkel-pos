@@ -77,6 +77,9 @@ Buka file `.env` dan sesuaikan nilainya:
 # Database Connection URL untuk PostgreSQL lokal
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/bengkelpro?schema=public"
 
+# Rahasia untuk menandatangani JWT (minimal 32 karakter, wajib diganti)
+JWT_SECRET="ganti-dengan-rahasia-acak-minimal-32-karakter"
+
 # Port Server Express Backend (default: 3000)
 PORT=3000
 
@@ -85,6 +88,7 @@ GEMINI_API_KEY="your_google_gemini_api_key_here"
 ```
 
 > **Catatan:** Sesuaikan `postgres:postgres` dengan *username* & *password* PostgreSQL lokal Anda.
+> Jangan memakai nilai `JWT_SECRET` contoh di produksi dan jangan memasukkan file `.env` ke Git.
 
 ---
 
@@ -122,10 +126,16 @@ Setelah PostgreSQL berjalan dan file `.env` siap, jalankan urutan perintah Prism
    npm run db:generate
    ```
 
-2. **Push Schema ke Database (Membuat Tabel):**
+2. **Database baru/kosong — push schema untuk membuat seluruh tabel:**
    ```bash
    npm run db:push
    ```
+
+   **Database lama yang sudah berisi barang — jalankan migration normalisasi:**
+   ```bash
+   npm run db:migrate
+   ```
+   Migration akan memindahkan nilai kategori, gudang, dan rak lama ke tabel master serta foreign key tanpa menghapus data barang.
 
 3. **Seeding Data Awal (Memasukkan data sampel awal):**
    ```bash
@@ -173,6 +183,7 @@ Berikut daftar perintah npm yang dapat digunakan dalam proyek ini:
 | `npm run start` | Menjalankan server produksi terkompilasi (`dist/server.cjs`) |
 | `npm run db:generate` | Menghasilkan kode Prisma Client berdasarkan `prisma/schema.prisma` |
 | `npm run db:push` | Menyinkronkan struktur schema Prisma ke PostgreSQL tanpa file migrasi |
+| `npm run db:migrate` | Menerapkan migration produksi, termasuk normalisasi master kategori/rak/gudang |
 | `npm run db:seed` | Menjalankan file `prisma/seed.ts` untuk mengisi data sampel awal |
 | `npm run lint` | Memeriksa validasi tipe data TypeScript (`tsc --noEmit`) |
 

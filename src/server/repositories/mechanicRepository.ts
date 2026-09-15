@@ -17,9 +17,9 @@ export class MechanicRepository implements IMechanicRepository {
           specialty: m.specialty,
           status: m.status as any,
           defaultBonusPercent: m.defaultBonusPercent,
-          dailySalary: m.dailySalary,
-          warrantyPenaltyAmount: m.warrantyPenaltyAmount,
-          absencePenaltyAmount: m.absencePenaltyAmount,
+          dailySalary: Number(m.dailySalary),
+          warrantyPenaltyAmount: Number(m.warrantyPenaltyAmount),
+          absencePenaltyAmount: Number(m.absencePenaltyAmount),
           joinedAt: m.joinedAt,
         }));
       } catch (err) {
@@ -41,9 +41,9 @@ export class MechanicRepository implements IMechanicRepository {
             specialty: m.specialty,
             status: m.status as any,
             defaultBonusPercent: m.defaultBonusPercent,
-            dailySalary: m.dailySalary,
-            warrantyPenaltyAmount: m.warrantyPenaltyAmount,
-            absencePenaltyAmount: m.absencePenaltyAmount,
+            dailySalary: Number(m.dailySalary),
+            warrantyPenaltyAmount: Number(m.warrantyPenaltyAmount),
+            absencePenaltyAmount: Number(m.absencePenaltyAmount),
             joinedAt: m.joinedAt,
           };
         }
@@ -79,9 +79,9 @@ export class MechanicRepository implements IMechanicRepository {
           specialty: created.specialty,
           status: created.status as any,
           defaultBonusPercent: created.defaultBonusPercent,
-          dailySalary: created.dailySalary,
-          warrantyPenaltyAmount: created.warrantyPenaltyAmount,
-          absencePenaltyAmount: created.absencePenaltyAmount,
+          dailySalary: Number(created.dailySalary),
+          warrantyPenaltyAmount: Number(created.warrantyPenaltyAmount),
+          absencePenaltyAmount: Number(created.absencePenaltyAmount),
           joinedAt: created.joinedAt,
         };
         memoryStore.mechanics.push(mec);
@@ -118,9 +118,9 @@ export class MechanicRepository implements IMechanicRepository {
           specialty: updated.specialty,
           status: updated.status as any,
           defaultBonusPercent: updated.defaultBonusPercent,
-          dailySalary: updated.dailySalary,
-          warrantyPenaltyAmount: updated.warrantyPenaltyAmount,
-          absencePenaltyAmount: updated.absencePenaltyAmount,
+          dailySalary: Number(updated.dailySalary),
+          warrantyPenaltyAmount: Number(updated.warrantyPenaltyAmount),
+          absencePenaltyAmount: Number(updated.absencePenaltyAmount),
           joinedAt: updated.joinedAt,
         };
         const idx = memoryStore.mechanics.findIndex(m => m.id === id);
@@ -165,7 +165,7 @@ export class DeductionRepository implements IDeductionRepository {
           date: d.date.toISOString(),
           reason: d.reason,
           type: d.type as any,
-          amount: d.amount,
+          amount: Number(d.amount),
           isAbsentNextDay: d.isAbsentNextDay,
         }));
       } catch (err) {
@@ -204,7 +204,7 @@ export class DeductionRepository implements IDeductionRepository {
           date: created.date.toISOString(),
           reason: created.reason,
           type: created.type as any,
-          amount: created.amount,
+          amount: Number(created.amount),
           isAbsentNextDay: created.isAbsentNextDay,
         };
         memoryStore.deductions.unshift(ded);

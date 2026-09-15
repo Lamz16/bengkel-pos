@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Wrench, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
-import { User, UserRole } from '../types';
-import { cn } from '../lib/utils';
+import { User } from '../types';
 import { api } from '../services/api';
 
 interface AuthViewProps {
@@ -11,7 +10,6 @@ interface AuthViewProps {
 
 export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   const [step, setStep] = useState<'login' | 'register'>('login');
-  const [role, setRole] = useState<UserRole>('Owner');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [workshopName, setWorkshopName] = useState('');
@@ -26,7 +24,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     try {
       let dbUser: User;
       if (step === 'login') {
-        dbUser = await api.login({ email, password, role });
+        dbUser = await api.login({ email, password });
       } else {
         dbUser = await api.register({ workshopName, email, password });
       }
@@ -93,7 +91,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-              {role === 'Owner' ? 'Password Superadmin / Owner' : 'Password Admin / PIC'}
+              Password
             </label>
             <input 
               required type="password" placeholder="••••••••"
@@ -104,20 +102,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
 
           {step === 'login' && (
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 block text-center">Pilih Peran Masuk</label>
-              <div className="p-1.5 bg-slate-50 rounded-2xl flex gap-1 border border-slate-100">
-                {(['Owner', 'Admin'] as UserRole[]).map((r) => (
-                  <button
-                    key={r} type="button" onClick={() => setRole(r)}
-                    className={cn(
-                      "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                      role === r ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-100" : "text-slate-400"
-                    )}
-                  >
-                    {r === 'Owner' ? '👑 Superadmin / Owner' : '🛠️ Admin / PIC'}
-                  </button>
-                ))}
-              </div>
               <div className="p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl text-[10px] text-blue-800 text-center font-medium leading-relaxed">
                 💡 <strong>Kredensial Demo:</strong> Email: <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">owner@bengkelpro.com</code> atau <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">admin@bengkelpro.com</code> | Password: <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">akundemo</code>
               </div>
@@ -142,14 +126,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        <div className="mt-8 text-center">
-          <button 
-            onClick={() => setStep(step === 'login' ? 'register' : 'login')}
-            className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
-          >
-            {step === 'login' ? "Belum punya akun? Buat Akun Bengkel" : "Sudah punya akun? Masuk di sini"}
-          </button>
-        </div>
+        {step === 'register' && (
+          <div className="mt-8 text-center">
+            <button onClick={() => setStep('login')} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">
+              Sudah punya akun? Masuk di sini
+            </button>
+          </div>
+        )}
       </motion.div>
       <p className="mt-8 text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">WorkshopPro v3.1.0 • Built for Success</p>
     </div>

@@ -1,17 +1,12 @@
 import { Request, Response } from 'express';
 import { staffRepository, settingsRepository } from '../container';
+import { hashPassword, issueAccessToken, verifyPassword } from '../auth';
 
 export class AuthController {
   async login(req: Request, res: Response) {
     try {
-      const { email, password, role } = req.body;
-      
-      let user = null;
-      if (email && email.trim()) {
-        user = await staffRepository.findByEmail(email.trim());
-      } else if (role) {
-        user = await staffRepository.findByRole(role);
-      }
+      const { email, password } = req.body;
+      const user = email?.trim() ? await staffRepository.findByEmail(email.trim()) : null;
 
       // 1. Apabila user tidak ada -> fallback "Email tidak terdaftar."
       if (!user) {
@@ -21,15 +16,15 @@ export class AuthController {
       }
 
       // 2. Apabila password salah -> fallback "Password salah."
-      const expectedPassword = user.password || 'akundemo';
-      if (!password || password !== expectedPassword) {
+      if (!password || !(await verifyPassword(password, user.password))) {
         return res.status(401).json({ 
           error: 'Password salah.' 
         });
       }
 
       const { password: _, ...userSafe } = user;
-      res.json(userSafe);
+      const token = issueAccessToken(userSafe);
+      res.json({ user: userSafe, token });
     } catch (err: any) {
       console.error('[AuthController] login error:', err);
       res.status(500).json({ error: 'Gagal melakukan otentikasi server' });
@@ -38,10 +33,16 @@ export class AuthController {
 
   async register(req: Request, res: Response) {
     try {
+      if (await staffRepository.hasAnyUser()) {
+        return res.status(403).json({ error: 'Pendaftaran Owner hanya tersedia saat instalasi awal. Tambahkan akun dari menu Pengguna.' });
+      }
       const { workshopName, email, password } = req.body;
       
       if (!email || !email.trim()) {
         return res.status(400).json({ error: 'Email wajib diisi untuk pendaftaran.' });
+      }
+      if (!password || password.length < 8) {
+        return res.status(400).json({ error: 'Password wajib minimal 8 karakter.' });
       }
 
       const existingUser = await staffRepository.findByEmail(email.trim());
@@ -52,7 +53,7 @@ export class AuthController {
       const user = await staffRepository.createUser({
         name: workshopName ? `Pemilik ${workshopName}` : 'Pemilik Bengkel',
         email: email.trim(),
-        password: password || 'akundemo',
+        password: await hashPassword(password),
         role: 'Owner',
         workshopName: workshopName || 'BengkelPro Mandiri'
       });
@@ -62,7 +63,8 @@ export class AuthController {
       }
 
       const { password: _, ...userSafe } = user;
-      res.json(userSafe);
+      const token = issueAccessToken(userSafe);
+      res.status(201).json({ user: userSafe, token });
     } catch (err: any) {
       console.error('[AuthController] register error:', err);
       res.status(500).json({ error: 'Gagal mendaftarkan akun bengkel' });
@@ -71,4 +73,3 @@ export class AuthController {
 }
 
 export const authController = new AuthController();
-

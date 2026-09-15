@@ -1,4 +1,5 @@
 import { INITIAL_PARTS } from '../../constants';
+import { DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_RACKS, DEFAULT_WAREHOUSE_ZONES } from '../../utils/inventory';
 import { 
   CompanySettings, 
   SparePart, 
@@ -11,7 +12,10 @@ import {
   PurchaseRecord, 
   Expense,
   User,
-  DistributorInvoice
+  DistributorInvoice,
+  PartCategory,
+  WarehouseRack,
+  WarehouseZone
 } from '../../types';
 
 export interface MemoryStore {
@@ -20,6 +24,9 @@ export interface MemoryStore {
   customers: Customer[];
   vehicles: Vehicle[];
   parts: SparePart[];
+  categories: PartCategory[];
+  racks: WarehouseRack[];
+  zones: WarehouseZone[];
   services: WorkshopService[];
   mechanics: Mechanic[];
   deductions: MechanicDeduction[];
@@ -65,7 +72,7 @@ export const memoryStore: MemoryStore = {
       name: 'Pemilik Bengkel',
       role: 'Owner',
       email: 'owner@bengkelpro.com',
-      password: 'akundemo',
+      password: '$2b$12$nTt2yiemzgd0PdZSJyXKU.UjszwhcrO2L6j115lJDc6.iL0nrY5wS',
       workshopName: 'BengkelPro Mandiri',
       createdAt: new Date().toISOString(),
     },
@@ -74,7 +81,7 @@ export const memoryStore: MemoryStore = {
       name: 'Rian Herlambang',
       role: 'Admin',
       email: 'admin@bengkelpro.com',
-      password: 'akundemo',
+      password: '$2b$12$nTt2yiemzgd0PdZSJyXKU.UjszwhcrO2L6j115lJDc6.iL0nrY5wS',
       workshopName: 'BengkelPro Mandiri',
       createdAt: new Date().toISOString(),
     }
@@ -93,6 +100,12 @@ export const memoryStore: MemoryStore = {
     { id: 'VH-4', customerId: 'CUST-4', plateNumber: 'B 4321 DEF', model: 'Yamaha NMAX 155', brand: 'Yamaha' }
   ],
   parts: INITIAL_PARTS.map((p, index) => index % 2 === 0 ? { ...p, supplierId: 'SUP-1' } : p),
+  categories: DEFAULT_PART_CATEGORIES,
+  racks: DEFAULT_WAREHOUSE_RACKS.map(r => ({
+    ...r,
+    zoneId: DEFAULT_WAREHOUSE_ZONES.find(z => z.name === r.zone)?.id,
+  })),
+  zones: DEFAULT_WAREHOUSE_ZONES,
   services: [
     {
       id: 'SRV-001',
@@ -295,4 +308,3 @@ export const memoryStore: MemoryStore = {
     }
   ]
 };
-

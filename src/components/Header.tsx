@@ -1,7 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Menu, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
-import { User, UserRole } from '../types';
+import { Menu, ArrowLeft, Plus, AlertTriangle, Moon, Sun } from 'lucide-react';
+import { User } from '../types';
 import { cn } from '../lib/utils';
 
 interface HeaderProps {
@@ -14,7 +14,8 @@ interface HeaderProps {
   onOpenMobileMenu: () => void;
   onClosePOSForm: () => void;
   onOpenPOSForm: () => void;
-  onSwitchRole: (nextRole: UserRole) => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,7 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   onClosePOSForm,
   onOpenPOSForm,
-  onSwitchRole
+  theme,
+  onToggleTheme
 }) => {
   const getTitle = () => {
     if (showPOSForm) return 'Kasir Baru';
@@ -76,6 +78,16 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          aria-label={theme === 'dark' ? 'Aktifkan mode terang' : 'Aktifkan mode malam'}
+          title={theme === 'dark' ? 'Beralih ke mode terang' : 'Beralih ke mode malam'}
+          className="theme-toggle h-9 w-9 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-all active:scale-95"
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
+        </button>
+
         {lowStockCount > 0 && onOpenLowStockModal && (
           <button
             onClick={onOpenLowStockModal}
@@ -96,23 +108,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span>PostgreSQL (Prisma)</span>
           </div>
         )}
-
-        <button
-          onClick={() => {
-            const nextRole: UserRole = currentUser.role === 'Owner' ? 'Admin' : 'Owner';
-            onSwitchRole(nextRole);
-          }}
-          className={cn(
-            "hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider border transition-all shadow-sm active:scale-95",
-            currentUser.role === 'Owner'
-              ? "bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100"
-              : "bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100"
-          )}
-          title="Ganti peran instan untuk pengujian (Superadmin/Owner <-> Admin/PIC)"
-        >
-          <span>{currentUser.role === 'Owner' ? '👑 Superadmin' : '🛠️ Admin PIC'}</span>
-          <span className="text-[9px] opacity-60 font-semibold">(Ganti)</span>
-        </button>
 
         <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden hidden sm:block">
            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`} alt="avatar" />

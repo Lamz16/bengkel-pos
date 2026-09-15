@@ -26,9 +26,9 @@ interface MasterDataModalProps {
   racks: WarehouseRack[];
   zones: WarehouseZone[];
   parts: SparePart[];
-  onSaveCategories: (categories: PartCategory[]) => void;
-  onSaveRacks: (racks: WarehouseRack[]) => void;
-  onSaveZones: (zones: WarehouseZone[]) => void;
+  onSaveCategories: (categories: PartCategory[]) => Promise<void>;
+  onSaveRacks: (racks: WarehouseRack[]) => Promise<void>;
+  onSaveZones: (zones: WarehouseZone[]) => Promise<void>;
 }
 
 export const MasterDataModal: React.FC<MasterDataModalProps> = ({
@@ -85,7 +85,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
     }
   };
 
-  const handleSaveCategory = (e: React.FormEvent) => {
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catName.trim()) {
       alert('Nama kategori tidak boleh kosong');
@@ -102,7 +102,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
           ? { ...c, name: catName.trim(), skuPrefix: autoPrefix, description: catDesc.trim() }
           : c
       );
-      onSaveCategories(updated);
+      try { await onSaveCategories(updated); } catch (error: any) { alert(error.message); return; }
       showSuccess(`Kategori "${catName.trim()}" berhasil diperbarui!`);
     } else {
       // Create new
@@ -112,14 +112,14 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
         skuPrefix: autoPrefix,
         description: catDesc.trim()
       };
-      onSaveCategories([...categories, newCat]);
+      try { await onSaveCategories([...categories, newCat]); } catch (error: any) { alert(error.message); return; }
       showSuccess(`Kategori baru "${catName.trim()}" berhasil ditambahkan!`);
     }
 
     setEditingCategory(null);
   };
 
-  const handleDeleteCategory = (cat: PartCategory) => {
+  const handleDeleteCategory = async (cat: PartCategory) => {
     const usageCount = parts.filter(p => p.category.toLowerCase() === cat.name.toLowerCase()).length;
     if (usageCount > 0) {
       if (!confirm(`Kategori "${cat.name}" saat ini digunakan oleh ${usageCount} barang sparepart. Yakin ingin menghapus kategori ini?`)) {
@@ -130,8 +130,10 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
     }
 
     const updated = categories.filter(c => c.id !== cat.id);
-    onSaveCategories(updated);
-    showSuccess(`Kategori "${cat.name}" berhasil dihapus.`);
+    try {
+      await onSaveCategories(updated);
+      showSuccess(`Kategori "${cat.name}" berhasil dihapus.`);
+    } catch (error: any) { alert(error.message); }
   };
 
   // --- Rack Handlers ---
@@ -151,7 +153,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
     }
   };
 
-  const handleSaveRack = (e: React.FormEvent) => {
+  const handleSaveRack = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rackCode.trim()) {
       alert('Kode Rak tidak boleh kosong (contoh: Rak A, Rak F)');
@@ -165,10 +167,10 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
       // Update
       const updated = racks.map(r => 
         r.id === editingRack.id
-          ? { ...r, code, name, zone: rackZone || 'Gudang Utama', description: rackDesc.trim() }
+          ? { ...r, code, name, zone: rackZone || 'Gudang Utama', zoneId: zones.find(z => z.name === rackZone)?.id, description: rackDesc.trim() }
           : r
       );
-      onSaveRacks(updated);
+      try { await onSaveRacks(updated); } catch (error: any) { alert(error.message); return; }
       showSuccess(`Data "${code}" berhasil diperbarui!`);
     } else {
       // Create
@@ -177,16 +179,17 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
         code,
         name,
         zone: rackZone || 'Gudang Utama',
+        zoneId: zones.find(z => z.name === rackZone)?.id,
         description: rackDesc.trim()
       };
-      onSaveRacks([...racks, newRack]);
+      try { await onSaveRacks([...racks, newRack]); } catch (error: any) { alert(error.message); return; }
       showSuccess(`Rak baru "${code}" berhasil ditambahkan!`);
     }
 
     setEditingRack(null);
   };
 
-  const handleDeleteRack = (r: WarehouseRack) => {
+  const handleDeleteRack = async (r: WarehouseRack) => {
     const usageCount = parts.filter(p => p.rackCode === r.code).length;
     if (usageCount > 0) {
       if (!confirm(`Rak "${r.code}" saat ini memuat ${usageCount} jenis barang. Yakin ingin menghapus rak ini?`)) {
@@ -197,8 +200,10 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
     }
 
     const updated = racks.filter(item => item.id !== r.id);
-    onSaveRacks(updated);
-    showSuccess(`Rak "${r.code}" berhasil dihapus.`);
+    try {
+      await onSaveRacks(updated);
+      showSuccess(`Rak "${r.code}" berhasil dihapus.`);
+    } catch (error: any) { alert(error.message); }
   };
 
   // --- Zone Handlers ---
@@ -214,7 +219,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
     }
   };
 
-  const handleSaveZone = (e: React.FormEvent) => {
+  const handleSaveZone = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!zoneName.trim()) {
       alert('Nama Zona Gudang tidak boleh kosong');
@@ -227,7 +232,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
           ? { ...z, name: zoneName.trim(), description: zoneDesc.trim() }
           : z
       );
-      onSaveZones(updated);
+      try { await onSaveZones(updated); } catch (error: any) { alert(error.message); return; }
       showSuccess(`Gudang/Zona "${zoneName.trim()}" berhasil diperbarui!`);
     } else {
       const newZone: WarehouseZone = {
@@ -235,14 +240,14 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
         name: zoneName.trim(),
         description: zoneDesc.trim()
       };
-      onSaveZones([...zones, newZone]);
+      try { await onSaveZones([...zones, newZone]); } catch (error: any) { alert(error.message); return; }
       showSuccess(`Gudang/Zona baru "${zoneName.trim()}" berhasil ditambahkan!`);
     }
 
     setEditingZone(null);
   };
 
-  const handleDeleteZone = (z: WarehouseZone) => {
+  const handleDeleteZone = async (z: WarehouseZone) => {
     const rackCount = racks.filter(r => r.zone === z.name).length;
     if (rackCount > 0) {
       alert(`Gudang "${z.name}" tidak dapat dihapus karena masih memuat ${rackCount} rak terdaftar.`);
@@ -252,8 +257,10 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
     if (!confirm(`Hapus gudang/zona "${z.name}"?`)) return;
 
     const updated = zones.filter(item => item.id !== z.id);
-    onSaveZones(updated);
-    showSuccess(`Gudang/Zona "${z.name}" dihapus.`);
+    try {
+      await onSaveZones(updated);
+      showSuccess(`Gudang/Zona "${z.name}" dihapus.`);
+    } catch (error: any) { alert(error.message); }
   };
 
   return (
