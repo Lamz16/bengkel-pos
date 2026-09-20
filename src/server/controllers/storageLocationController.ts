@@ -23,7 +23,7 @@ export class StorageLocationController {
   };
 
   createRackLayout = async (req: Request, res: Response) => {
-    const { code, name, zoneId, description, levelCount, slotsPerLevel } = req.body;
+    const { code, name, zoneId, description, positionNote, levelCount, slotsPerLevel } = req.body;
     const levels = Number(levelCount);
     const slots = Number(slotsPerLevel);
     if (!code?.trim() || !zoneId || !Number.isInteger(levels) || levels < 1 || levels > 26 || !Number.isInteger(slots) || slots < 1 || slots > 99) {
@@ -66,6 +66,62 @@ export class StorageLocationController {
       const item = await (prisma as any).storageLocation.create({ data: { zoneId, type, code: code.trim().toUpperCase(), name: name?.trim() || code.trim().toUpperCase(), positionNote: positionNote || null, description: description || null } });
       res.status(201).json(asLocation(item));
     } catch (error: any) { res.status(error?.code === 'P2002' ? 409 : 500).json({ error: error.message || 'Gagal membuat lokasi.' }); }
+  };
+  updateRack = async (req: Request, res: Response) => {
+    const { name, description, positionNote } = req.body;
+    try {
+      if (!isDbConnected()) {
+        const locations = (memoryStore as any).storageLocations || [];
+        (memoryStore as any).storageLocations = locations.map((item: any) => item.rackId === req.params.rackId ? { ...item, name: name || item.name, description, positionNote } : item);
+        return res.json({ success: true });
+      }
+      const result = await (prisma as any).$transaction(async (tx: any) => {
+        const rack = await tx.warehouseRack.update({ where: { id: req.params.rackId }, data: { ...(name ? { name } : {}), description: description || null } });
+        await tx.storageLocation.updateMany({ where: { rackId: req.params.rackId }, data: { description: description || null, positionNote: positionNote || null } });
+        return rack;
+      });
+      res.json(result);
+    } catch (error: any) { res.status(error?.code === 'P2025' ? 404 : 500).json({ error: error.message || 'Gagal memperbarui rak.' }); }
+  };
+
+  deleteRack = async (req: Request, res: Response) => {
+    try {
+      if (!isDbConnected()) {
+        (memoryStore as any).storageLocations = ((memoryStore as any).storageLocations || []).filter((item: any) => item.rackId !== req.params.rackId);
+        return res.json({ success: true });
+      }
+      const stockCount = await (prisma as any).partLocationStock.count({ where: { location: { rackId: req.params.rackId }, quantity: { gt: 0 } } });
+      if (stockCount > 0) return res.status(409).json({ error: 'Rak tidak dapat dihapus karena masih memiliki stok. Pindahkan stok terlebih dahulu.' });
+      await (prisma as any).$transaction(async (tx: any) => {
+        await tx.sparePart.updateMany({ where: { rackId: req.params.rackId }, data: { rackId: null, shelfLevel: null, binNumber: null } });
+        await tx.warehouseRack.delete({ where: { id: req.params.rackId } });
+      });
+      res.json({ success: true });
+    } catch (error: any) { res.status(error?.code === 'P2025' ? 404 : 500).json({ error: error.message || 'Gagal menghapus rak.' }); }
+  };
+
+  updateNonRack = async (req: Request, res: Response) => {
+    try {
+      if (!isDbConnected()) {
+        (memoryStore as any).storageLocations = ((memoryStore as any).storageLocations || []).map((item: any) => item.id === req.params.id ? { ...item, ...req.body } : item);
+        return res.json({ success: true });
+      }
+      const item = await (prisma as any).storageLocation.update({ where: { id: req.params.id }, data: { name: req.body.name, positionNote: req.body.positionNote || null, description: req.body.description || null } });
+      res.json(asLocation(item));
+    } catch (error: any) { res.status(error?.code === 'P2025' ? 404 : 500).json({ error: error.message || 'Gagal memperbarui lokasi.' }); }
+  };
+
+  deleteNonRack = async (req: Request, res: Response) => {
+    try {
+      if (!isDbConnected()) {
+        (memoryStore as any).storageLocations = ((memoryStore as any).storageLocations || []).filter((item: any) => item.id !== req.params.id);
+        return res.json({ success: true });
+      }
+      const stockCount = await (prisma as any).partLocationStock.count({ where: { locationId: req.params.id, quantity: { gt: 0 } } });
+      if (stockCount > 0) return res.status(409).json({ error: 'Lokasi tidak dapat dihapus karena masih memiliki stok.' });
+      await (prisma as any).storageLocation.delete({ where: { id: req.params.id } });
+      res.json({ success: true });
+    } catch (error: any) { res.status(error?.code === 'P2025' ? 404 : 500).json({ error: error.message || 'Gagal menghapus lokasi.' }); }
   };
 }
 export const storageLocationController = new StorageLocationController();
