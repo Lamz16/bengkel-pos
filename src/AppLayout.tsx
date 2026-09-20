@@ -593,6 +593,10 @@ export default function AppLayout() {
       try {
         const created = await api.createPart(p);
         setParts(prev => [created, ...prev]);
+        // Initial stock for a new part is recorded as a PurchaseRecord by the
+        // backend. Refresh this ledger so "Transaksi Masuk" updates immediately.
+        const updatedPurchases = await api.getPurchases();
+        setPurchases(updatedPurchases);
       } catch (err) {
         console.error('Failed to create part:', err);
         setParts(prev => [p, ...prev]);
