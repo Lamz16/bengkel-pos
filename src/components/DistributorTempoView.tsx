@@ -30,6 +30,7 @@ interface DistributorTempoViewProps {
   onAddInvoice: (newInv: Partial<DistributorInvoice>) => Promise<void>;
   onAddPayment: (invoiceId: string, paymentData: { amount: number; paymentMethod: string; referenceNo?: string; notes?: string; paymentDate?: string }) => Promise<void>;
   onDeleteInvoice: (id: string) => Promise<void>;
+  initialStatusFilter?: 'all' | 'outstanding';
 }
 
 export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
@@ -38,13 +39,14 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
   parts,
   onAddInvoice,
   onAddPayment,
-  onDeleteInvoice
+  onDeleteInvoice,
+  initialStatusFilter = 'all'
 }) => {
   // View states
   const [viewMode, setViewMode] = useState<'calendar' | 'table'>('calendar');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>(initialStatusFilter);
   
   // Calendar Navigation State
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
@@ -97,7 +99,10 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
         return false;
       }
       // Status filter
-      if (selectedStatus !== 'all') {
+      if (selectedStatus === 'outstanding' && (inv.status === 'Paid' || inv.remainingAmount <= 0)) {
+        return false;
+      }
+      if (selectedStatus !== 'all' && selectedStatus !== 'outstanding') {
         const isOverdue = new Date(inv.dueDate) < new Date() && inv.remainingAmount > 0;
         const currentEffectiveStatus = isOverdue && inv.status !== 'Paid' ? 'Overdue' : inv.status;
         if (selectedStatus === 'Overdue' && currentEffectiveStatus !== 'Overdue') return false;
