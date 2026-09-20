@@ -1028,7 +1028,7 @@ export default function AppLayout() {
 
             {activeTab === 'reports' && !showPOSForm && (
               <motion.div key="reports" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <ReportsView services={services} expenses={expenses} />
+                <ReportsView services={services} expenses={expenses} parts={parts} />
               </motion.div>
             )}
 
