@@ -204,6 +204,17 @@ model WorkshopService {
   vehicle                 Vehicle?          @relation(fields: [vehicleId], references: [id])
   mechanic                Mechanic?         @relation(fields: [mechanicId], references: [id])
   partsUsed               ServicePartItem[]
+  serviceItems            ServiceLaborItem[]
+}
+
+model ServiceLaborItem {
+  id        String          @id @default(uuid())
+  serviceId String
+  name      String
+  price     Decimal         @db.Decimal(18, 2)
+  service   WorkshopService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
 }
 
 model ServicePartItem {
