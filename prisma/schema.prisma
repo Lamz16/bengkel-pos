@@ -224,6 +224,7 @@ model ServicePartItem {
   name        String
   quantity    Int             @default(1)
   priceAtTime Decimal         @db.Decimal(18, 2)
+  purchasePriceAtTime Decimal? @db.Decimal(18, 2)
   hasProductWarranty Boolean  @default(false)
   warrantyDurationDays Int    @default(0)
   warrantyTerms String?
