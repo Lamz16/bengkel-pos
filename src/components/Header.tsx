@@ -1,14 +1,13 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Menu, ArrowLeft, Plus, AlertTriangle, Moon, Sun } from 'lucide-react';
-import { User } from '../types';
+import { Menu, ArrowLeft, Plus, AlertTriangle, Moon, Sun, Printer } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface HeaderProps {
   activeTab: string;
   showPOSForm: boolean;
-  currentUser: User;
   dbStatus?: { connected: boolean; orm: string };
+  printerStatus?: { ready: boolean };
   lowStockCount?: number;
   onOpenLowStockModal?: () => void;
   onOpenMobileMenu: () => void;
@@ -21,8 +20,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   showPOSForm,
-  currentUser,
   dbStatus,
+  printerStatus,
   lowStockCount = 0,
   onOpenLowStockModal,
   onOpenMobileMenu,
@@ -109,9 +108,18 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden hidden sm:block">
-           <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`} alt="avatar" />
-        </div>
+        {printerStatus && (
+          <div
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide border border-slate-200 bg-slate-50 text-slate-700"
+            title={printerStatus.ready
+              ? 'Cetak nota siap. Pilih printer thermal USB, LAN, atau Bluetooth yang sudah terpasang pada dialog cetak.'
+              : 'Browser ini tidak mendukung layanan cetak.'}
+          >
+            <Printer className={cn('w-3.5 h-3.5', printerStatus.ready ? 'text-emerald-600' : 'text-rose-600')} />
+            <span className={cn('w-2 h-2 rounded-full', printerStatus.ready ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500')} />
+            <span>{printerStatus.ready ? 'Printer Siap Cetak' : 'Printer Tidak Siap'}</span>
+          </div>
+        )}
       </div>
     </header>
   );
