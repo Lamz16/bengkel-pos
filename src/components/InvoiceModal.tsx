@@ -15,6 +15,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
   const [isPrinting, setIsPrinting] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   if (!service) return null;
+  const productWarrantyItems = service.partsUsed.filter(item => item.hasProductWarranty && (item.warrantyDurationDays || 0) > 0);
 
   const handlePrint = () => {
     const receipt = receiptRef.current;
@@ -192,7 +193,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
           </div>
 
           {/* Garansi Servis */}
-          {settings.showWarrantyOnReceipt && settings.warrantyTerms && (
+          {settings.showWarrantyOnReceipt && service.serviceType !== 'Retail' && service.laborFee > 0 && settings.warrantyTerms && (
             <div className="p-3.5 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-1">
               <div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4 text-blue-600" />
@@ -201,6 +202,22 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
               <p className="text-[9px] text-blue-800 leading-relaxed font-medium">
                 {settings.warrantyTerms}
               </p>
+            </div>
+          )}
+
+          {productWarrantyItems.length > 0 && (
+            <div className="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-2xl space-y-2">
+              <div className="flex items-center gap-1.5 text-emerald-900 text-[10px] font-black uppercase tracking-wider">
+                <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                <span>Garansi Produk / Sparepart</span>
+              </div>
+              {productWarrantyItems.map((item, index) => (
+                <div key={`${item.partId}-${index}`} className="text-[9px] text-emerald-900 leading-relaxed border-t border-emerald-100 pt-2 first:border-t-0 first:pt-0">
+                  <p className="font-black uppercase">{item.name} — {item.warrantyDurationDays} hari</p>
+                  {item.warrantyExpiresAt && <p>Berlaku sampai: {format(new Date(item.warrantyExpiresAt), 'dd MMMM yyyy')}</p>}
+                  {item.warrantyTerms && <p className="font-medium">Syarat: {item.warrantyTerms}</p>}
+                </div>
+              ))}
             </div>
           )}
 
