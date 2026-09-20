@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { format } from 'date-fns';
 import { FileText, X, ShieldCheck, Share2, Printer } from 'lucide-react';
@@ -12,18 +12,51 @@ interface InvoiceModalProps {
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, onClose }) => {
   const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('80mm');
+  const [isPrinting, setIsPrinting] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
   if (!service) return null;
 
   const handlePrint = () => {
-    // Browser print dialog meneruskan output ke printer thermal USB/LAN/Bluetooth
-    // yang sudah terpasang sebagai printer sistem pada komputer kasir.
-    document.body.dataset.receiptPaper = paperWidth;
-    const clearPaper = () => {
-      delete document.body.dataset.receiptPaper;
-      window.removeEventListener('afterprint', clearPaper);
+    const receipt = receiptRef.current;
+    if (!receipt || isPrinting) return;
+
+    // Dokumen khusus menghindari race condition CSS modal/root React yang
+    // sebelumnya dapat menghasilkan halaman PDF putih kosong.
+    const printWindow = window.open('', '_blank', 'width=480,height=720');
+    if (!printWindow) {
+      alert('Popup cetak diblokir browser. Izinkan popup untuk aplikasi ini, lalu coba lagi.');
+      return;
+    }
+
+    setIsPrinting(true);
+    const assets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(element => element.outerHTML)
+      .join('\n');
+    const printStyle = `
+      <style>
+        @page { size: ${paperWidth} auto; margin: 0; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #fff !important; }
+        body { width: ${paperWidth}; color: #000 !important; font-family: Arial, sans-serif; }
+        .printable-area { width: ${paperWidth} !important; min-height: 0 !important; height: auto !important; padding: 4mm !important; color: #000 !important; background: #fff !important; }
+        .printable-area, .printable-area * { color: #000 !important; background-color: #fff !important; box-shadow: none !important; text-shadow: none !important; }
+        .printable-area img { filter: grayscale(1) contrast(2); }
+        .printable-area .text-white { color: #000 !important; }
+      </style>`;
+
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Nota ${service.id.slice(0, 8)}</title>${assets}${printStyle}</head><body>${receipt.outerHTML}</body></html>`);
+    printWindow.document.close();
+
+    const cleanup = () => {
+      setIsPrinting(false);
+      printWindow.close();
     };
-    window.addEventListener('afterprint', clearPaper);
-    window.setTimeout(() => window.print(), 50);
+    printWindow.addEventListener('afterprint', cleanup, { once: true });
+    window.setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
   };
 
   return (
@@ -44,7 +77,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         </div>
 
         {/* Invoice Body */}
-        <div className="flex-1 overflow-y-auto p-8 sm:p-10 font-sans bg-white printable-area space-y-6">
+        <div ref={receiptRef} className="flex-1 overflow-y-auto p-8 sm:p-10 font-sans bg-white printable-area space-y-6">
           <div className="flex justify-between items-start gap-4">
             <div className="flex items-start gap-3">
               {settings.logoUrl && (
@@ -205,9 +238,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
           </button>
           <button 
             onClick={handlePrint}
+            disabled={isPrinting}
             className="h-14 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-blue-100 hover:bg-blue-700 transition-colors"
           >
-            <Printer className="w-4 h-4" /> Cetak Nota
+            <Printer className="w-4 h-4" /> {isPrinting ? 'Menyiapkan Cetak…' : 'Cetak Nota'}
           </button>
         </div>
       </motion.div>
