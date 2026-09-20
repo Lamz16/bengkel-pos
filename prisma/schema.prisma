@@ -92,6 +92,9 @@ model SparePart {
   purchasePrice    Decimal                  @default(0) @db.Decimal(18, 2)
   stock            Int                      @default(0)
   minStock         Int                      @default(5)
+  hasProductWarranty Boolean                @default(false)
+  warrantyDurationDays Int                  @default(0)
+  warrantyTerms    String?
   supplierId       String?
   imageUrl         String?
   rackId           String?
@@ -210,8 +213,14 @@ model ServicePartItem {
   name        String
   quantity    Int             @default(1)
   priceAtTime Decimal         @db.Decimal(18, 2)
+  hasProductWarranty Boolean  @default(false)
+  warrantyDurationDays Int    @default(0)
+  warrantyTerms String?
+  warrantyExpiresAt DateTime?
   service     WorkshopService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   part        SparePart       @relation(fields: [partId], references: [id])
+
+  @@index([warrantyExpiresAt])
 }
 
 model Mechanic {
