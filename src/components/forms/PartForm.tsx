@@ -4,6 +4,7 @@ import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Image as ImageIcon, Upl
 import { generatePartSKU, DEFAULT_RACK_LIST, DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_ZONES } from '../../utils/inventory';
 import { compressAndConvertToWebP, formatBytes, CompressionResult } from '../../utils/imageCompressor';
 import { api } from '../../services/api';
+import { CurrencyInput } from '../CurrencyInput';
 
 interface PartFormProps {
   part?: SparePart;
@@ -466,19 +467,17 @@ export const PartForm: React.FC<PartFormProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Harga Jual (Rp) *</label>
-          <input 
-            type="number"
+          <CurrencyInput 
             value={formData.price}
-            onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
+            onValueChange={price => setFormData({ ...formData, price })}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
           />
         </div>
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Harga Modal / Beli (Rp)</label>
-          <input 
-            type="number"
+          <CurrencyInput 
             value={formData.purchasePrice}
-            onChange={e => setFormData({ ...formData, purchasePrice: Number(e.target.value) })}
+            onValueChange={purchasePrice => setFormData({ ...formData, purchasePrice })}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
           />
         </div>
