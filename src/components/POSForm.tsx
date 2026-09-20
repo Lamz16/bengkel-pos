@@ -72,7 +72,7 @@ export const POSForm: React.FC<POSFormProps> = ({
     mechanicBonusPercent: defaultMec ? defaultMec.defaultBonusPercent : 15
   });
   
-  const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
+  const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; purchasePriceAtTime?: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
   const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>([{ name: '', price: '' }]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [, setDiagnosis] = useState('');
@@ -179,7 +179,7 @@ export const POSForm: React.FC<POSFormProps> = ({
       if (existing) {
         return prev.map(p => p.partId === part.id ? { ...p, quantity: p.quantity + 1 } : p);
       }
-      return [...prev, { partId: part.id, name: `${part.name}${part.size ? ` (${part.variantName || 'Ukuran'}: ${part.size})` : ''}`, quantity: 1, priceAtTime: part.price, hasProductWarranty: part.hasProductWarranty, warrantyDurationDays: part.warrantyDurationDays, warrantyTerms: part.warrantyTerms }];
+      return [...prev, { partId: part.id, name: `${part.name}${part.size ? ` (${part.variantName || 'Ukuran'}: ${part.size})` : ''}`, quantity: 1, priceAtTime: part.price, purchasePriceAtTime: part.purchasePrice, hasProductWarranty: part.hasProductWarranty, warrantyDurationDays: part.warrantyDurationDays, warrantyTerms: part.warrantyTerms }];
     });
     setShowPartPicker(false);
   };
