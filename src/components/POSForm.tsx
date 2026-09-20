@@ -18,6 +18,7 @@ import {
   Hash
 } from 'lucide-react';
 import { WorkshopService, SparePart, Customer, Vehicle, Mechanic, CompanySettings } from '../types';
+import { CurrencyInput } from './CurrencyInput';
 import { getAIDiagnosis } from '../services/geminiService';
 import { getCustomerLoyaltyStats } from '../utils/loyalty';
 import { formatPartLocation } from '../utils/inventory';
@@ -62,9 +63,9 @@ export const POSForm: React.FC<POSFormProps> = ({
     vehiclePlate: '',
     vehicleModel: '',
     km: '',
-    serviceType: 'Ganti Oli',
+    serviceType: '',
     complaint: '',
-    laborFee: '50000',
+    laborFee: '0',
     type: 'Service' as 'Service' | 'Retail',
     mechanicId: defaultMec ? defaultMec.id : '',
     mechanicName: defaultMec ? defaultMec.name : '',
@@ -72,7 +73,7 @@ export const POSForm: React.FC<POSFormProps> = ({
   });
   
   const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
-  const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>([{ name: 'Jasa Servis', price: '50000' }]);
+  const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>([{ name: '', price: '' }]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [, setDiagnosis] = useState('');
   const [showPartPicker, setShowPartPicker] = useState(false);
@@ -451,7 +452,7 @@ export const POSForm: React.FC<POSFormProps> = ({
 
               <div className="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between"><label className="text-[10px] font-black text-emerald-900 uppercase">Rincian Jasa Servis</label><button type="button" onClick={() => setServiceItems(prev => [...prev, { name: '', price: '' }])} className="text-[10px] font-black text-emerald-700">+ Tambah Jasa</button></div>
-                {serviceItems.map((item, index) => <div key={index} className="flex gap-2"><input value={item.name} onChange={e => setServiceItems(prev => prev.map((v, i) => i === index ? { ...v, name: e.target.value } : v))} placeholder="Contoh: Servis Mesin" className="flex-1 h-10 px-3 bg-white border border-emerald-200 rounded-xl text-xs font-bold"/><input type="number" value={item.price} onChange={e => setServiceItems(prev => prev.map((v, i) => i === index ? { ...v, price: e.target.value } : v))} placeholder="Harga" className="w-28 h-10 px-3 bg-white border border-emerald-200 rounded-xl text-xs font-bold"/>{serviceItems.length > 1 && <button type="button" onClick={() => setServiceItems(prev => prev.filter((_, i) => i !== index))} className="text-rose-600 font-black px-1">×</button>}</div>)}
+                {serviceItems.map((item, index) => <div key={index} className="flex gap-2"><input value={item.name} onChange={e => setServiceItems(prev => prev.map((v, i) => i === index ? { ...v, name: e.target.value } : v))} placeholder="Contoh: Servis Mesin" className="flex-1 h-10 px-3 bg-white border border-emerald-200 rounded-xl text-xs font-bold"/><CurrencyInput value={item.price} onValueChange={value => setServiceItems(prev => prev.map((v, i) => i === index ? { ...v, price: String(value) } : v))} placeholder="Harga" className="w-28 h-10 px-3 bg-white border border-emerald-200 rounded-xl text-xs font-bold"/>{serviceItems.length > 1 && <button type="button" onClick={() => setServiceItems(prev => prev.filter((_, i) => i !== index))} className="text-rose-600 font-black px-1">×</button>}</div>)}
                 <div className="flex justify-between text-xs font-black text-emerald-800"><span>Total Jasa</span><span>Rp {laborFeeNum.toLocaleString()}</span></div>
               </div>
 
