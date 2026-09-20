@@ -129,7 +129,7 @@ export class PartRepository implements IPartRepository {
               update: {},
             });
         if (!product) throw new Error('Produk induk tidak ditemukan.');
-        return tx.sparePart.create({ data: {
+        const createdPart = await tx.sparePart.create({ data: {
           id, sku: data.sku, barcode: data.barcode, name: data.name, productId: product.id,
           variantName: data.variantName?.trim() || 'Standar', size: data.size?.trim() || '', categoryId,
           price: data.price, purchasePrice: data.purchasePrice || 0, stock: data.stock || 0,
@@ -140,6 +140,32 @@ export class PartRepository implements IPartRepository {
           rackId, shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
           version: 1,
         }, include: includeMasterData });
+
+        if (createdPart.stock > 0) {
+          await tx.stockHistory.create({ data: {
+            partId: createdPart.id,
+            partName: createdPart.name,
+            amount: createdPart.stock,
+            type: 'In',
+            reason: createdPart.supplierId ? 'Stok awal dari pemasok' : 'Stok awal saat membuat part',
+          }});
+        }
+
+        // PurchaseRecord is the data source for the "Transaksi Masuk" tab.
+        // Create it together with the initial stock so a new part is auditable
+        // in exactly the same way as a restock transaction.
+        if (createdPart.stock > 0 && createdPart.supplierId) {
+          await tx.purchaseRecord.create({ data: {
+            id: `PR-${Date.now().toString()}-${createdPart.id}`,
+            partId: createdPart.id,
+            supplierId: createdPart.supplierId,
+            quantity: createdPart.stock,
+            costPrice: createdPart.purchasePrice,
+            date: new Date(),
+          }});
+        }
+
+        return createdPart;
       });
       const part = toSparePart(created);
       memoryStore.parts.unshift(part);
