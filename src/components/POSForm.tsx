@@ -72,6 +72,7 @@ export const POSForm: React.FC<POSFormProps> = ({
   });
   
   const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
+  const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>([{ name: 'Jasa Servis', price: '50000' }]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [, setDiagnosis] = useState('');
   const [showPartPicker, setShowPartPicker] = useState(false);
@@ -127,7 +128,7 @@ export const POSForm: React.FC<POSFormProps> = ({
   const filteredVehicles = useMemo(() => vehicles.filter(v => v.customerId === formData.customerId), [vehicles, formData.customerId]);
 
   const totalParts = usedParts.reduce((acc, p) => acc + (p.priceAtTime * p.quantity), 0);
-  const laborFeeNum = formData.type === 'Service' ? Number(formData.laborFee || 0) : 0;
+  const laborFeeNum = formData.type === 'Service' ? serviceItems.reduce((total, item) => total + Number(item.price || 0), 0) : 0;
   const subtotal = totalParts + laborFeeNum;
 
   // Auto-calculate percentage discount if discountPercent is set
@@ -344,12 +345,12 @@ export const POSForm: React.FC<POSFormProps> = ({
                     Potongan Rp 25.000
                   </button>
 
-                  {formData.type === 'Service' && Number(formData.laborFee || 0) > 0 && (
+                  {formData.type === 'Service' && laborFeeNum > 0 && (
                     <button
                       type="button"
-                      onClick={() => handleApplyNominalDiscount(Number(formData.laborFee), 'Gratis Biaya Jasa Servis')}
+                      onClick={() => handleApplyNominalDiscount(laborFeeNum, 'Gratis Biaya Jasa Servis')}
                       className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                        discountAmount === Number(formData.laborFee) && discountReason === 'Gratis Biaya Jasa Servis'
+                        discountAmount === laborFeeNum && discountReason === 'Gratis Biaya Jasa Servis'
                           ? 'bg-purple-600 text-white shadow-sm'
                           : 'bg-white hover:bg-purple-50 text-purple-700 border border-purple-200'
                       }`}
@@ -446,15 +447,12 @@ export const POSForm: React.FC<POSFormProps> = ({
                     className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm font-bold" 
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Labor Fee (Biaya Jasa)</label>
-                  <input 
-                    value={formData.laborFee}
-                    onChange={e => setFormData({...formData, laborFee: e.target.value})}
-                    type="number" 
-                    className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm font-bold" 
-                  />
-                </div>
+              </div>
+
+              <div className="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between"><label className="text-[10px] font-black text-emerald-900 uppercase">Rincian Jasa Servis</label><button type="button" onClick={() => setServiceItems(prev => [...prev, { name: '', price: '' }])} className="text-[10px] font-black text-emerald-700">+ Tambah Jasa</button></div>
+                {serviceItems.map((item, index) => <div key={index} className="flex gap-2"><input value={item.name} onChange={e => setServiceItems(prev => prev.map((v, i) => i === index ? { ...v, name: e.target.value } : v))} placeholder="Contoh: Servis Mesin" className="flex-1 h-10 px-3 bg-white border border-emerald-200 rounded-xl text-xs font-bold"/><input type="number" value={item.price} onChange={e => setServiceItems(prev => prev.map((v, i) => i === index ? { ...v, price: e.target.value } : v))} placeholder="Harga" className="w-28 h-10 px-3 bg-white border border-emerald-200 rounded-xl text-xs font-bold"/>{serviceItems.length > 1 && <button type="button" onClick={() => setServiceItems(prev => prev.filter((_, i) => i !== index))} className="text-rose-600 font-black px-1">×</button>}</div>)}
+                <div className="flex justify-between text-xs font-black text-emerald-800"><span>Total Jasa</span><span>Rp {laborFeeNum.toLocaleString()}</span></div>
               </div>
 
               {/* Pemilihan Mekanik & Konfigurasi Bonus */}
@@ -512,9 +510,9 @@ export const POSForm: React.FC<POSFormProps> = ({
 
                 {formData.mechanicId && (
                   <div className="flex items-center justify-between text-[11px] bg-white p-2.5 rounded-xl border border-blue-100">
-                    <span className="text-slate-600">Estimasi Bonus ({formData.mechanicBonusPercent}% dari jasa Rp {Number(formData.laborFee || 0).toLocaleString()}):</span>
+                    <span className="text-slate-600">Estimasi Bonus ({formData.mechanicBonusPercent}% dari jasa Rp {laborFeeNum.toLocaleString()}):</span>
                     <span className="font-black text-emerald-600">
-                      Rp {Math.round((Number(formData.laborFee || 0) * (formData.mechanicBonusPercent || 0)) / 100).toLocaleString()}
+                      Rp {Math.round((laborFeeNum * (formData.mechanicBonusPercent || 0)) / 100).toLocaleString()}
                     </span>
                   </div>
                 )}
@@ -642,7 +640,8 @@ export const POSForm: React.FC<POSFormProps> = ({
                status: formData.type === 'Retail' ? 'Done' : 'In Progress',
                createdAt: new Date().toISOString(),
                partsUsed: usedParts,
-               laborFee: formData.type === 'Retail' ? 0 : Number(formData.laborFee),
+               serviceItems: formData.type === 'Retail' ? [] : serviceItems.map(item => ({ name: item.name.trim(), price: Number(item.price || 0) })).filter(item => item.name),
+               laborFee: formData.type === 'Retail' ? 0 : laborFeeNum,
                totalAmount: grandTotal,
                discountAmount: discountAmount > 0 ? discountAmount : undefined,
                discountReason: discountAmount > 0 ? discountReason : undefined,
@@ -650,7 +649,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
                mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),
                mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
-               mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((Number(formData.laborFee || 0) * Number(formData.mechanicBonusPercent || 0)) / 100)
+               mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100)
              })}
              className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-blue-200 active:scale-95 transition-all disabled:grayscale disabled:opacity-50"
           >
