@@ -232,11 +232,17 @@ export async function seedDatabase() {
 
   for (const p of partsData) {
     const { category, rackCode, rackZone: _rackZone, ...partData } = p;
+    const product = await prisma.product.upsert({
+      where: { name_categoryId: { name: p.name, categoryId: categoryByName[category].id } },
+      update: {},
+      create: { name: p.name, categoryId: categoryByName[category].id },
+    });
     await prisma.sparePart.upsert({
       where: { id: p.id },
       update: {},
       create: {
         ...partData,
+        productId: product.id,
         categoryId: categoryByName[category].id,
         rackId: rackByCode[rackCode].id,
       },
