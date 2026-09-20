@@ -7,6 +7,19 @@
 
 @layer base {
   @media print {
+    @page { margin: 0; }
+
+    body[data-receipt-paper="58mm"] .printable-area {
+      width: 58mm !important;
+      min-height: auto !important;
+      padding: 4mm !important;
+    }
+
+    body[data-receipt-paper="80mm"] .printable-area {
+      width: 80mm !important;
+      min-height: auto !important;
+      padding: 5mm !important;
+    }
     .no-print {
       display: none !important;
     }
