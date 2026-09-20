@@ -9,6 +9,27 @@
   @media print {
     @page { margin: 0; }
 
+    /* Hanya nota yang dicetak; seluruh konten dibuat monokrom untuk printer thermal. */
+    body * { visibility: hidden !important; }
+    .printable-area-container,
+    .printable-area-container * { visibility: visible !important; }
+    .printable-area-container {
+      position: fixed !important;
+      inset: 0 auto auto 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+    .printable-area,
+    .printable-area * {
+      color: #000 !important;
+      background: #fff !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+    }
+    .printable-area img { filter: grayscale(1) contrast(2); }
+
     body[data-receipt-paper="58mm"] .printable-area {
       width: 58mm !important;
       min-height: auto !important;
@@ -33,16 +54,12 @@
       top: 0 !important;
       left: 0 !important;
       width: 100% !important;
-      height: 100% !important;
+      height: auto !important;
       background: white !important;
       z-index: 9999 !important;
       padding: 40px !important;
     }
 
-    /* Hide everything else when printing invoice */
-    body > *:not(.printable-area-container) {
-      display: none !important;
-    }
   }
 }
 
