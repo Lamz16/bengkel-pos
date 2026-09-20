@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Expense } from '../../types';
+import { CurrencyInput } from '../CurrencyInput';
 
 interface ExpenseFormProps {
   expense?: Expense;
@@ -34,10 +35,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ expense, onSave, onCan
       </div>
       <div className="space-y-1.5">
         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Jumlah (Rp)</label>
-        <input 
-          type="number"
+        <CurrencyInput
           value={formData.amount}
-          onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })}
+          onValueChange={amount => setFormData({ ...formData, amount })}
           className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-bold"
           placeholder="0"
         />
