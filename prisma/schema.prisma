@@ -109,6 +109,7 @@ model SparePart {
   product          Product                  @relation(fields: [productId], references: [id], onDelete: Restrict)
   rack             WarehouseRack?           @relation(fields: [rackId], references: [id], onDelete: Restrict)
   serviceItems     ServicePartItem[]
+  locationStocks   PartLocationStock[]
   purchases        PurchaseRecord[]
   stockHistories   StockHistory[]
   distributorItems DistributorInvoiceItem[]
@@ -166,6 +167,8 @@ model WarehouseRack {
   updatedAt   DateTime      @updatedAt
   zone        WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
   parts       SparePart[]
+  racks       WarehouseRack[]
+  storageLocations StorageLocation[]
 
   @@index([zoneId])
 }
@@ -387,4 +390,46 @@ model IdempotencyRecord {
   createdAt  DateTime @default(now())
 
   @@index([key])
+}
+
+
+model RackLevel {
+  id        String @id @default(uuid())
+  rackId    String
+  code      String
+  sortOrder Int
+  slotCount Int
+  rack      WarehouseRack @relation(fields: [rackId], references: [id], onDelete: Cascade)
+  locations StorageLocation[]
+  @@unique([rackId, code])
+}
+
+model StorageLocation {
+  id           String @id @default(uuid())
+  zoneId       String
+  type         String
+  code         String @unique
+  name         String
+  rackId       String?
+  levelId      String?
+  slotCode     String?
+  positionNote String?
+  isActive     Boolean @default(true)
+  zone         WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  rack         WarehouseRack? @relation(fields: [rackId], references: [id], onDelete: Cascade)
+  level        RackLevel? @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  partStocks   PartLocationStock[]
+  @@index([zoneId])
+  @@index([rackId, levelId])
+}
+
+model PartLocationStock {
+  id         String @id @default(uuid())
+  partId     String
+  locationId String
+  quantity   Int @default(0)
+  part       SparePart @relation(fields: [partId], references: [id], onDelete: Cascade)
+  location   StorageLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  @@unique([partId, locationId])
+  @@index([locationId])
 }
