@@ -15,7 +15,8 @@ import {
   DistributorInvoice,
   PartCategory,
   WarehouseRack,
-  WarehouseZone
+  WarehouseZone,
+  StorageLocation, StorageLocationType
 } from '../types';
 
 export interface BootstrapResponse {
@@ -201,6 +202,16 @@ export const api = {
     anchor.remove();
     URL.revokeObjectURL(url);
     return filename;
+  },
+
+  async getStorageLocations(): Promise<StorageLocation[]> {
+    return request('/api/storage-locations');
+  },
+  async createRackLayout(data: { code: string; name?: string; zoneId: string; description?: string; levelCount: number; slotsPerLevel: number }): Promise<{ rack: WarehouseRack; locations: StorageLocation[] }> {
+    return request('/api/storage-locations/rack-layout', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async createNonRackLocation(data: { zoneId: string; type: StorageLocationType; code: string; name?: string; positionNote?: string }): Promise<StorageLocation> {
+    return request('/api/storage-locations/non-rack', { method: 'POST', body: JSON.stringify(data) });
   },
 
   async createCategory(data: Omit<PartCategory, 'id'>): Promise<PartCategory> {
