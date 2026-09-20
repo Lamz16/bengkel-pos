@@ -14,6 +14,7 @@ import { distributorInvoiceRouter } from './distributorInvoiceRoutes';
 import { uploadRouter } from './uploadRoutes';
 import { masterDataRouter } from './masterDataRoutes';
 import { databaseRouter } from './databaseRoutes';
+import { storageLocationRouter } from './storageLocationRoutes';
 import { authorize, requireAuth } from '../auth';
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { systemMonitor } from '../middleware/monitoring';
@@ -62,4 +63,5 @@ apiRouter.use('/distributor-invoices', distributorInvoiceRouter);
 apiRouter.use('/upload', uploadRouter);
 apiRouter.use('/master-data', masterDataRouter);
 apiRouter.use('/database', databaseRouter);
+apiRouter.use('/storage-locations', storageLocationRouter);
 
