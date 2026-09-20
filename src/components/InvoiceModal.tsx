@@ -148,13 +148,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
               <span>Subtotal</span>
             </div>
             <div className="space-y-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1 pr-6">
-                  <p className="text-xs font-black text-slate-900 uppercase leading-none mb-1">Jasa Mekanik</p>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase">Biaya Penanganan & Analisis</p>
+              {(service.serviceItems?.length ? service.serviceItems : [{ name: 'Jasa Mekanik', price: service.laborFee || 0 }]).map((item, idx) => (
+                <div key={`service-${idx}`} className="flex justify-between items-start">
+                  <div className="flex-1 pr-6"><p className="text-xs font-black text-slate-900 uppercase leading-none mb-1">{item.name}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Jasa Servis</p></div>
+                  <span className="text-xs font-black text-slate-900 tracking-tight">Rp {(item.price || 0).toLocaleString()}</span>
                 </div>
-                <span className="text-xs font-black text-slate-900 tracking-tight">Rp {(service.laborFee || 0).toLocaleString()}</span>
-              </div>
+              ))}
               {service.partsUsed.map((p, idx) => (
                 <div key={idx} className="flex justify-between items-start">
                   <div className="flex-1 pr-6">
