@@ -16,6 +16,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { PartCategory, WarehouseRack, WarehouseZone, SparePart } from '../types';
+import { StorageLocationsPanel } from './StorageLocationsPanel';
 import { Modal } from './Modal';
 import { cn } from '../lib/utils';
 
@@ -42,7 +43,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
   onSaveRacks,
   onSaveZones
 }) => {
-  const [activeTab, setActiveTab] = useState<'categories' | 'racks' | 'zones'>('categories');
+  const [activeTab, setActiveTab] = useState<'categories' | 'racks' | 'zones' | 'locations'>('categories');
   const [notification, setNotification] = useState<string | null>(null);
 
   // Category Form State
@@ -304,6 +305,19 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('locations')}
+            className={cn(
+              "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+              activeTab === 'locations'
+                ? "bg-white text-violet-700 shadow-2xs font-black"
+                : "text-slate-600 hover:text-slate-900"
+            )}
+          >
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Peta Lokasi</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('zones')}
             className={cn(
               "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
@@ -316,6 +330,8 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
             <span>Gudang / Zona ({zones.length})</span>
           </button>
         </div>
+
+        {activeTab === 'locations' && <StorageLocationsPanel zones={zones} />}
 
         {/* TAB 1: KATEGORI BARANG */}
         {activeTab === 'categories' && (
