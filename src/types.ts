@@ -320,3 +320,8 @@ export interface SystemMetrics {
     stack?: string;
   }>;
 }
+
+
+export type StorageLocationType = 'RACK_SLOT' | 'CARTON' | 'DISPLAY' | 'TEMPORARY';
+export interface StorageLocation { id: string; zoneId: string; zoneName?: string; type: StorageLocationType; code: string; name: string; rackId?: string; levelCode?: string; slotCode?: string; positionNote?: string; isActive?: boolean; stockCount?: number; }
+export interface PartLocationStock { id: string; partId: string; locationId: string; quantity: number; location?: StorageLocation; }
