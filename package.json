@@ -14,6 +14,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:variants": "prisma db execute --file prisma/migrations/20260920143000_product_variants_and_inventory_indexes/migration.sql --schema prisma/schema.prisma",
+    "db:migrate:product-warranty": "prisma db execute --file prisma/migrations/20260920160000_product_warranty_snapshots/migration.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts"
   },
   "prisma": {
