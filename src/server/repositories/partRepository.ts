@@ -114,6 +114,9 @@ export class PartRepository implements IPartRepository {
     if (data.stock != null && data.stock < 0) {
       throw new Error('Stok barang tidak boleh negatif.');
     }
+    if ((data.stock || 0) > 0 && !data.supplierId) {
+      throw new Error('Pilih pemasok untuk stok awal agar transaksi masuk dapat dicatat.');
+    }
     if (data.hasProductWarranty && (!data.warrantyDurationDays || data.warrantyDurationDays < 1)) {
       throw new Error('Durasi garansi barang minimal 1 hari.');
     }
