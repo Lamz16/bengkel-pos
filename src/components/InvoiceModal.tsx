@@ -45,7 +45,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       </style>`;
 
     printWindow.document.open();
-    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Nota ${service.id.slice(0, 8)}</title>${assets}${printStyle}</head><body>${receipt.outerHTML}</body></html>`);
+    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Nota ${service.id.slice(0, 8)}</title>${assets}${printStyle}</head><body><div class="printable-area-container">${receipt.outerHTML}</div></body></html>`);
     printWindow.document.close();
 
     const cleanup = () => {
