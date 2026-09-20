@@ -207,11 +207,23 @@ export const api = {
   async getStorageLocations(): Promise<StorageLocation[]> {
     return request('/api/storage-locations');
   },
-  async createRackLayout(data: { code: string; name?: string; zoneId: string; description?: string; levelCount: number; slotsPerLevel: number }): Promise<{ rack: WarehouseRack; locations: StorageLocation[] }> {
+  async createRackLayout(data: { code: string; name?: string; zoneId: string; description?: string; positionNote?: string; levelCount: number; slotsPerLevel: number }): Promise<{ rack: WarehouseRack; locations: StorageLocation[] }> {
     return request('/api/storage-locations/rack-layout', { method: 'POST', body: JSON.stringify(data) });
   },
-  async createNonRackLocation(data: { zoneId: string; type: StorageLocationType; code: string; name?: string; positionNote?: string }): Promise<StorageLocation> {
+  async updateRackLayout(id: string, data: { name?: string; description?: string; positionNote?: string }): Promise<void> {
+    await request(`/api/storage-locations/racks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async deleteRackLayout(id: string): Promise<void> {
+    await request(`/api/storage-locations/racks/${id}`, { method: 'DELETE' });
+  },
+  async createNonRackLocation(data: { zoneId: string; type: StorageLocationType; code: string; name?: string; positionNote?: string; description?: string }): Promise<StorageLocation> {
     return request('/api/storage-locations/non-rack', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async updateNonRackLocation(id: string, data: { name: string; positionNote?: string; description?: string }): Promise<StorageLocation> {
+    return request(`/api/storage-locations/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async deleteNonRackLocation(id: string): Promise<void> {
+    await request(`/api/storage-locations/${id}`, { method: 'DELETE' });
   },
 
   async createCategory(data: Omit<PartCategory, 'id'>): Promise<PartCategory> {
