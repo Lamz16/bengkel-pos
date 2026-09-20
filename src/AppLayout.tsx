@@ -812,8 +812,8 @@ export default function AppLayout() {
         <Header 
           activeTab={activeTab}
           showPOSForm={showPOSForm}
-          currentUser={currentUser}
           dbStatus={{ connected: postgresConnected, orm: 'prisma' }}
+          printerStatus={{ ready: typeof window !== 'undefined' && typeof window.print === 'function' }}
           lowStockCount={lowStockCount}
           onOpenLowStockModal={() => setShowLowStockModal(true)}
           onOpenMobileMenu={() => setIsSidebarOpen(true)}
