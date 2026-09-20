@@ -509,7 +509,9 @@ export const PartForm: React.FC<PartFormProps> = ({
       </div>
       
       <div className="space-y-1.5">
-        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Pemasok / Supplier Terhubung</label>
+          <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+            Pemasok / Supplier Terhubung {formData.stock > 0 ? <span className="text-rose-500">*</span> : null}
+          </label>
         <select 
           value={formData.supplierId || ''}
           onChange={e => setFormData({ ...formData, supplierId: e.target.value || undefined })}
@@ -532,7 +534,13 @@ export const PartForm: React.FC<PartFormProps> = ({
         </button>
         <button 
           type="button"
-          onClick={() => onSave(formData)} 
+          onClick={() => {
+            if (formData.stock > 0 && !formData.supplierId) {
+              alert('Pilih pemasok untuk stok awal agar transaksi masuk dapat dicatat.');
+              return;
+            }
+            onSave(formData);
+          }} 
           className="flex-1 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-200 transition-colors"
         >
           Simpan Part
