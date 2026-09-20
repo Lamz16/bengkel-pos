@@ -120,6 +120,9 @@ export interface SparePart {
   purchasePrice: number;
   stock: number;
   minStock: number;
+  hasProductWarranty?: boolean;
+  warrantyDurationDays?: number;
+  warrantyTerms?: string;
   lastUpdated: string;
   supplierId?: string;
   imageUrl?: string;       // Foto/Gambar barang (WebP)
@@ -175,7 +178,11 @@ export interface WorkshopService {
     partId: string; 
     name: string; 
     quantity: number; 
-    priceAtTime: number 
+    priceAtTime: number;
+    hasProductWarranty?: boolean;
+    warrantyDurationDays?: number;
+    warrantyTerms?: string;
+    warrantyExpiresAt?: string;
   }>;
   laborFee: number;
   totalAmount: number;
