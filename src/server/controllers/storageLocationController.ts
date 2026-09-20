@@ -6,7 +6,8 @@ const makeLevelCode = (index: number) => String.fromCharCode(65 + index);
 const asLocation = (location: any) => ({
   id: location.id, zoneId: location.zoneId, zoneName: location.zone?.name,
   type: location.type, code: location.code, name: location.name,
-  rackId: location.rackId || undefined, levelCode: location.level?.code || undefined,
+  rackId: location.rackId || undefined, rackName: location.rack?.name || undefined,
+  levelCode: location.level?.code || undefined,
   slotCode: location.slotCode || undefined, positionNote: location.positionNote || undefined, description: location.description || location.rack?.description || undefined,
   isActive: location.isActive, stockCount: location.partStocks?.reduce((sum: number, row: any) => sum + row.quantity, 0) || 0,
 });
@@ -33,7 +34,7 @@ export class StorageLocationController {
       if (!isDbConnected()) {
         const rack = { id: `rack-${Date.now()}`, code: code.trim().toUpperCase(), name: name?.trim() || code.trim().toUpperCase(), zoneId, description };
         const created = Array.from({ length: levels }, (_, levelIndex) => Array.from({ length: slots }, (_, slotIndex) => ({
-          id: `loc-${Date.now()}-${levelIndex}-${slotIndex}`, zoneId, type: 'RACK_SLOT', code: `${rack.code}-${makeLevelCode(levelIndex)}-${String(slotIndex + 1).padStart(2, '0')}`, name: `${rack.code} Tingkat ${makeLevelCode(levelIndex)} Slot ${String(slotIndex + 1).padStart(2, '0')}`, rackId: rack.id, levelCode: makeLevelCode(levelIndex), slotCode: String(slotIndex + 1).padStart(2, '0'), description, positionNote, isActive: true, stockCount: 0
+          id: `loc-${Date.now()}-${levelIndex}-${slotIndex}`, zoneId, type: 'RACK_SLOT', code: `${rack.code}-${makeLevelCode(levelIndex)}-${String(slotIndex + 1).padStart(2, '0')}`, name: `${rack.code} Tingkat ${makeLevelCode(levelIndex)} Slot ${String(slotIndex + 1).padStart(2, '0')}`, rackId: rack.id, rackName: rack.name, levelCode: makeLevelCode(levelIndex), slotCode: String(slotIndex + 1).padStart(2, '0'), description, positionNote, isActive: true, stockCount: 0
         }))).flat();
         (memoryStore as any).storageLocations = [...((memoryStore as any).storageLocations || []), ...created];
         return res.status(201).json({ rack, locations: created });
@@ -67,12 +68,13 @@ export class StorageLocationController {
       res.status(201).json(asLocation(item));
     } catch (error: any) { res.status(error?.code === 'P2002' ? 409 : 500).json({ error: error.message || 'Gagal membuat lokasi.' }); }
   };
+
   updateRack = async (req: Request, res: Response) => {
     const { name, description, positionNote } = req.body;
     try {
       if (!isDbConnected()) {
         const locations = (memoryStore as any).storageLocations || [];
-        (memoryStore as any).storageLocations = locations.map((item: any) => item.rackId === req.params.rackId ? { ...item, name: name || item.name, description, positionNote } : item);
+        (memoryStore as any).storageLocations = locations.map((item: any) => item.rackId === req.params.rackId ? { ...item, rackName: name || item.rackName, description, positionNote } : item);
         return res.json({ success: true });
       }
       const result = await (prisma as any).$transaction(async (tx: any) => {
