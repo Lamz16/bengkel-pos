@@ -81,6 +81,7 @@ export interface MechanicAttendance {
   date: string; // YYYY-MM-DD
   status: 'Present' | 'Absent' | 'Sick' | 'Leave';
   notes?: string;
+  version?: number;
 }
 
 export type CustomerTier = 'New' | 'Bronze' | 'Silver' | 'Gold' | 'VIP';
@@ -110,6 +111,9 @@ export interface SparePart {
   sku?: string;            // Nomor Barang / Kode Part (e.g. "OLI-001", "REM-002")
   barcode?: string;        // Barcode / No. Seri (opsional)
   name: string;
+  productId?: string;       // Produk induk; satu produk dapat memiliki beberapa variasi
+  variantName?: string;     // Contoh: "Ukuran", "Warna", "Tipe"
+  size?: string;            // Contoh: "80/90-14", "1 Liter", "STD"
   category: string;
   categoryId?: string;
   price: number;
@@ -266,6 +270,7 @@ export interface DistributorInvoice {
   status: DistributorInvoiceStatus;
   paymentMethod?: string;
   notes?: string;
+  version?: number;
   items?: DistributorInvoiceItem[];
   payments?: DistributorPayment[];
   createdAt?: string;
@@ -305,4 +310,3 @@ export interface SystemMetrics {
     stack?: string;
   }>;
 }
-
