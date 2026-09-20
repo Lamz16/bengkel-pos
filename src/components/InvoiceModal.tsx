@@ -124,9 +124,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Rincian Servis</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Transaksi</p>
               <div className="flex flex-col gap-1 items-end">
-                <p className="text-xs font-black text-slate-900 uppercase">{service.serviceType}</p>
+                {(!service.serviceItems?.length && service.serviceType && service.serviceType !== 'Retail') && <p className="text-xs font-black text-slate-900 uppercase">{service.serviceType}</p>}
                 <p className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase ${
                   service.status === 'Done' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                 }`}>
