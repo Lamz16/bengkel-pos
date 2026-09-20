@@ -1,10 +1,10 @@
-import { DistributorInvoice, DistributorInvoiceItem, DistributorPayment } from '../../types';
+import { DistributorInvoice } from '../../types';
 import { prisma, isDbConnected } from '../db/connection';
-import { memoryStore } from '../db/memoryStore';
 
 export class DistributorInvoiceRepository {
   async getAll(params?: { search?: string; status?: string; branchName?: string; supplierId?: string }): Promise<DistributorInvoice[]> {
-    if (isDbConnected()) {
+    if (!isDbConnected()) throw new Error('DATABASE_UNAVAILABLE: Nota tempo wajib disimpan di PostgreSQL. Periksa DATABASE_URL dan koneksi database.');
+    {
       try {
         const where: any = {};
         if (params?.status && params.status !== 'all') {
@@ -73,13 +73,14 @@ export class DistributorInvoiceRepository {
         }));
       } catch (err) {
         console.error('[DistributorInvoiceRepo] Prisma getAll error:', err);
+        throw err;
       }
     }
-    return (memoryStore as any).distributorInvoices || [];
   }
 
   async getById(id: string): Promise<DistributorInvoice | null> {
-    if (isDbConnected()) {
+    if (!isDbConnected()) throw new Error('DATABASE_UNAVAILABLE: Nota tempo wajib disimpan di PostgreSQL.');
+    {
       try {
         const inv = await prisma.distributorInvoice.findUnique({
           where: { id },
@@ -127,10 +128,10 @@ export class DistributorInvoiceRepository {
         }
       } catch (err) {
         console.error('[DistributorInvoiceRepo] Prisma getById error:', err);
+        throw err;
       }
     }
-    const memList = (memoryStore as any).distributorInvoices || [];
-    return memList.find((inv: any) => inv.id === id) || null;
+    return null;
   }
 
   async create(data: Omit<DistributorInvoice, 'id'>): Promise<DistributorInvoice> {
@@ -153,7 +154,8 @@ export class DistributorInvoiceRepository {
       }
     }
 
-    if (isDbConnected()) {
+    if (!isDbConnected()) throw new Error('DATABASE_UNAVAILABLE: Nota tempo tidak dapat dibuat tanpa PostgreSQL.');
+    {
       try {
         const created = await prisma.$transaction(async tx => {
           // Check if supplier exists or match supplierName
@@ -265,39 +267,12 @@ export class DistributorInvoiceRepository {
           updatedAt: created.updatedAt.toISOString(),
         };
 
-        if (!(memoryStore as any).distributorInvoices) (memoryStore as any).distributorInvoices = [];
-        (memoryStore as any).distributorInvoices.unshift(formatted);
         return formatted;
       } catch (err) {
         console.error('[DistributorInvoiceRepo] Prisma create error:', err);
+        throw err;
       }
     }
-
-    const formatted: DistributorInvoice = {
-      id,
-      invoiceNumber: data.invoiceNumber || `INV-SUP-${Date.now().toString().slice(-4)}`,
-      supplierId: data.supplierId,
-      supplierName: data.supplierName,
-      branchName: data.branchName || 'Bengkel Pusat',
-      branchType: data.branchType || 'Pusat',
-      totalAmount,
-      paidAmount,
-      remainingAmount,
-      issueDate: data.issueDate || new Date().toISOString(),
-      dueDate: data.dueDate,
-      status,
-      paymentMethod: data.paymentMethod || 'Transfer',
-      notes: data.notes,
-      version: 1,
-      items: items.map(i => ({ ...i, id: i.id || `ITEM-${Math.random().toString(36).substring(2, 7)}` })),
-      payments: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    if (!(memoryStore as any).distributorInvoices) (memoryStore as any).distributorInvoices = [];
-    (memoryStore as any).distributorInvoices.unshift(formatted);
-    return formatted;
   }
 
   async addPayment(
@@ -308,7 +283,8 @@ export class DistributorInvoiceRepository {
     const paymentId = `PAY-${Date.now().toString().slice(-6)}`;
     const payDate = paymentData.paymentDate ? new Date(paymentData.paymentDate) : new Date();
 
-    if (isDbConnected()) {
+    if (!isDbConnected()) throw new Error('DATABASE_UNAVAILABLE: Pembayaran nota tempo wajib disimpan di PostgreSQL.');
+    {
       try {
         await prisma.$transaction(async tx => {
           const inv = await tx.distributorInvoice.findUnique({ where: { id: invoiceId } });
@@ -368,58 +344,20 @@ export class DistributorInvoiceRepository {
       }
     }
 
-    const memList = (memoryStore as any).distributorInvoices || [];
-    const idx = memList.findIndex((i: any) => i.id === invoiceId);
-    if (idx === -1) return null;
-
-    const target = memList[idx];
-    const newPaid = target.paidAmount + paymentData.amount;
-    const newRemaining = Math.max(0, target.totalAmount - newPaid);
-    const newStatus = newRemaining === 0 ? 'Paid' : 'Partial';
-
-    const paymentObj: DistributorPayment = {
-      id: paymentId,
-      invoiceId,
-      amount: paymentData.amount,
-      paymentDate: payDate.toISOString(),
-      paymentMethod: paymentData.paymentMethod || 'Transfer',
-      referenceNo: paymentData.referenceNo,
-      notes: paymentData.notes,
-      createdAt: new Date().toISOString()
-    };
-
-    target.paidAmount = newPaid;
-    target.remainingAmount = newRemaining;
-    target.status = newStatus;
-    target.payments = target.payments || [];
-    target.payments.push(paymentObj);
-
-    // Sync memoryStore expenses
-    memoryStore.expenses.unshift({
-      id: `EXP-TEMPO-${Date.now().toString().slice(-6)}`,
-      category: 'Pembayaran Tempo Distributor',
-      amount: paymentData.amount,
-      note: `Pelunasan/Cicilan Nota #${target.invoiceNumber} (${target.supplierName})`,
-      date: payDate.toISOString(),
-    });
-
-    return target;
   }
 
   async delete(id: string): Promise<boolean> {
-    if (isDbConnected()) {
+    if (!isDbConnected()) throw new Error('DATABASE_UNAVAILABLE: Nota tempo wajib disimpan di PostgreSQL.');
+    {
       try {
         await prisma.distributorInvoice.delete({ where: { id } });
       } catch (err) {
         console.error('[DistributorInvoiceRepo] Prisma delete error:', err);
+        throw err;
       }
-    }
-    if ((memoryStore as any).distributorInvoices) {
-      (memoryStore as any).distributorInvoices = (memoryStore as any).distributorInvoices.filter((i: any) => i.id !== id);
     }
     return true;
   }
 }
 
 export const distributorInvoiceRepository = new DistributorInvoiceRepository();
-
