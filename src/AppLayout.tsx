@@ -342,6 +342,7 @@ export default function AppLayout() {
 
   // Distributor Invoices (Nota Tempo) State
   const [distributorInvoices, setDistributorInvoices] = useState<DistributorInvoice[]>([]);
+  const [tempoStatusFilter, setTempoStatusFilter] = useState<'all' | 'outstanding'>('all');
 
   // Navigation Items Definition
   const navItems: NavItem[] = useMemo(() => [
@@ -833,6 +834,11 @@ export default function AppLayout() {
                   user={currentUser} 
                   onPrint={setSelectedInvoiceId} 
                   onOpenLowStock={() => setShowLowStockModal(true)}
+                  distributorInvoices={distributorInvoices}
+                  onOpenOutstandingInvoices={() => {
+                    setTempoStatusFilter('outstanding');
+                    setActiveTab('distributor_tempo');
+                  }}
                   onNavigateToInventory={() => setActiveTab('inventory')}
                 />
               </motion.div>
@@ -922,6 +928,7 @@ export default function AppLayout() {
                   onAddInvoice={handleAddDistributorInvoice}
                   onAddPayment={handleAddDistributorPayment}
                   onDeleteInvoice={handleDeleteDistributorInvoice}
+                  initialStatusFilter={tempoStatusFilter}
                 />
               </motion.div>
             )}
