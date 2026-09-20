@@ -184,6 +184,7 @@ export interface WorkshopService {
     warrantyTerms?: string;
     warrantyExpiresAt?: string;
   }>;
+  serviceItems?: Array<{ name: string; price: number }>;
   laborFee: number;
   totalAmount: number;
   paymentStatus: 'Unpaid' | 'Paid';
