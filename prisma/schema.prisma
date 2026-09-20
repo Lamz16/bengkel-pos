@@ -85,6 +85,9 @@ model SparePart {
   barcode          String?
   name             String
   categoryId       String
+  productId        String
+  variantName      String                   @default("Standar")
+  size             String                   @default("")
   price            Decimal                  @db.Decimal(18, 2)
   purchasePrice    Decimal                  @default(0) @db.Decimal(18, 2)
   stock            Int                      @default(0)
@@ -100,6 +103,7 @@ model SparePart {
   updatedAt        DateTime                 @updatedAt
   supplier         Supplier?                @relation(fields: [supplierId], references: [id])
   category         PartCategory             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  product          Product                  @relation(fields: [productId], references: [id], onDelete: Restrict)
   rack             WarehouseRack?           @relation(fields: [rackId], references: [id], onDelete: Restrict)
   serviceItems     ServicePartItem[]
   purchases        PurchaseRecord[]
@@ -107,8 +111,26 @@ model SparePart {
   distributorItems DistributorInvoiceItem[]
 
   @@index([categoryId])
+  @@index([productId])
   @@index([rackId])
   @@index([supplierId])
+  @@index([rackId, shelfLevel, binNumber])
+  @@unique([productId, variantName, size])
+}
+
+// Produk adalah data induk; setiap SparePart merupakan stok satu variasi yang
+// memiliki SKU, ukuran, harga, dan lokasi rak sendiri.
+model Product {
+  id         String       @id @default(uuid())
+  name       String
+  categoryId String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  category   PartCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  variants   SparePart[]
+
+  @@unique([name, categoryId])
+  @@index([categoryId, name])
 }
 
 model PartCategory {
@@ -119,6 +141,7 @@ model PartCategory {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   parts       SparePart[]
+  products    Product[]
 }
 
 model WarehouseZone {
@@ -344,4 +367,3 @@ model IdempotencyRecord {
 
   @@index([key])
 }
-
