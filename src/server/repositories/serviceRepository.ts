@@ -8,7 +8,7 @@ export class ServiceRepository implements IServiceRepository {
     if (isDbConnected()) {
       try {
         const list = await prisma.workshopService.findMany({
-          include: { partsUsed: true },
+          include: { partsUsed: true, serviceItems: true },
           orderBy: { createdAt: 'desc' }
         });
         return list.map(s => ({
@@ -35,6 +35,7 @@ export class ServiceRepository implements IServiceRepository {
             warrantyTerms: p.warrantyTerms || undefined,
             warrantyExpiresAt: p.warrantyExpiresAt?.toISOString(),
           })),
+          serviceItems: s.serviceItems.map(item => ({ name: item.name, price: Number(item.price) })),
           laborFee: Number(s.laborFee),
           totalAmount: Number(s.totalAmount),
           paymentStatus: s.paymentStatus as any,
@@ -88,7 +89,7 @@ export class ServiceRepository implements IServiceRepository {
         const total = await prisma.workshopService.count({ where });
         const list = await prisma.workshopService.findMany({
           where,
-          include: { partsUsed: true },
+          include: { partsUsed: true, serviceItems: true },
           orderBy: { createdAt: 'desc' },
           skip: (page - 1) * limit,
           take: limit,
@@ -119,6 +120,7 @@ export class ServiceRepository implements IServiceRepository {
               warrantyTerms: p.warrantyTerms || undefined,
               warrantyExpiresAt: p.warrantyExpiresAt?.toISOString(),
             })),
+            serviceItems: s.serviceItems.map(item => ({ name: item.name, price: Number(item.price) })),
             laborFee: Number(s.laborFee),
             totalAmount: Number(s.totalAmount),
             paymentStatus: s.paymentStatus as any,
@@ -171,7 +173,7 @@ export class ServiceRepository implements IServiceRepository {
       try {
         const s = await prisma.workshopService.findUnique({
           where: { id },
-          include: { partsUsed: true }
+          include: { partsUsed: true, serviceItems: true }
         });
         if (s) {
           return {
@@ -198,6 +200,7 @@ export class ServiceRepository implements IServiceRepository {
               warrantyTerms: p.warrantyTerms || undefined,
               warrantyExpiresAt: p.warrantyExpiresAt?.toISOString(),
             })),
+            serviceItems: s.serviceItems.map(item => ({ name: item.name, price: Number(item.price) })),
             laborFee: Number(s.laborFee),
             totalAmount: Number(s.totalAmount),
             paymentStatus: s.paymentStatus as any,
@@ -250,6 +253,7 @@ export class ServiceRepository implements IServiceRepository {
             mechanicName: data.mechanicName,
             mechanicBonusPercent: data.mechanicBonusPercent,
             mechanicBonusAmount: data.mechanicBonusAmount,
+            serviceItems: { create: (data.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
             partsUsed: {
               create: data.partsUsed.map(p => ({
                 partId: p.partId,
