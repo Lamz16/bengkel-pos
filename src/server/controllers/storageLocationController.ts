@@ -16,7 +16,7 @@ export class StorageLocationController {
     try {
       if (!isDbConnected()) return res.json((memoryStore as any).storageLocations || []);
       const locations = await (prisma as any).storageLocation.findMany({
-        include: { zone: true, level: true, partStocks: true }, orderBy: [{ code: 'asc' }]
+        include: { zone: true, rack: true, level: true, partStocks: true }, orderBy: [{ code: 'asc' }]
       });
       res.json(locations.map(asLocation));
     } catch (error: any) { res.status(500).json({ error: error.message || 'Gagal memuat lokasi stok.' }); }
