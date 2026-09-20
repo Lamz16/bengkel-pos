@@ -46,23 +46,35 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
     }
 
     setIsPrinting(true);
+
+    // Jendela print adalah dokumen baru, jadi stylesheet Vite/Tailwind wajib
+    // disalin agar struktur grid, ukuran teks, spacing, dan warna preview tetap terbaca.
+    const appStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(element => element.outerHTML)
+      .join('\n');
     const printStyle = `
       <style>
         @page { size: ${paperWidth} auto; margin: 0; }
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: ${paperWidth}; background: #fff !important; }
-        body, body * {
-          color: #000 !important; background: #fff !important; box-shadow: none !important;
-          text-shadow: none !important; font-family: Arial, sans-serif !important;
+        html, body { margin: 0; padding: 0; background: #fff !important; }
+        body { width: ${paperWidth}; background: #fff !important; }
+        .printable-area {
+          width: ${paperWidth} !important; min-height: 0 !important; height: auto !important;
+          padding: 4mm !important; overflow: visible !important; background: #fff !important;
         }
-        .printable-area { width: ${paperWidth} !important; padding: 4mm !important; }
+
+        /* Pertahankan layout preview, tetapi jadikan semua output aman untuk thermal B/W. */
+        .printable-area, .printable-area * {
+          color: #000 !important; text-shadow: none !important; box-shadow: none !important;
+        }
+        .printable-area [class*="bg-"] { background-color: #fff !important; }
+        .printable-area [class*="border-"] { border-color: #000 !important; }
+        .printable-area .bg-gradient-to-r { background: #000 !important; }
         .printable-area img { filter: grayscale(1) contrast(2); }
-        .receipt-total { border: 1px solid #000 !important; }
-        .receipt-divider { border-color: #000 !important; }
       </style>`;
 
     printWindow.document.open();
-    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Nota ${invoiceNumber}</title>${printStyle}</head><body>${receipt.outerHTML}</body></html>`);
+    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Nota ${invoiceNumber}</title>${appStyles}${printStyle}</head><body>${receipt.outerHTML}</body></html>`);
     printWindow.document.close();
 
     const cleanup = () => {
@@ -70,10 +82,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       printWindow.close();
     };
     printWindow.addEventListener('afterprint', cleanup, { once: true });
+    // Beri waktu stylesheet hasil bundling dimuat di dokumen baru sebelum dialog cetak muncul.
     window.setTimeout(() => {
       printWindow.focus();
       printWindow.print();
-    }, 350);
+    }, 800);
   };
 
   const buildShareImage = () => {
