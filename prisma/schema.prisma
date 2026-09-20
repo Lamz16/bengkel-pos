@@ -415,6 +415,7 @@ model StorageLocation {
   levelId      String?
   slotCode     String?
   positionNote String?
+  description  String?
   isActive     Boolean @default(true)
   zone         WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
   rack         WarehouseRack? @relation(fields: [rackId], references: [id], onDelete: Cascade)
