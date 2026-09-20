@@ -4,9 +4,10 @@ import { prisma, isDbConnected } from '../db/connection';
 import { memoryStore } from '../db/memoryStore';
 
 type PartWithMasterData = any;
-const includeMasterData = { category: true, rack: { include: { zone: true } } } as const;
+const includeMasterData = { category: true, product: true, rack: { include: { zone: true } } } as const;
 const toSparePart = (p: PartWithMasterData): SparePart => ({
-  id: p.id, sku: p.sku || undefined, barcode: p.barcode || undefined, name: p.name,
+  id: p.id, sku: p.sku || undefined, barcode: p.barcode || undefined, name: p.product?.name || p.name,
+  productId: p.productId || undefined, variantName: p.variantName || 'Standar', size: p.size || undefined,
   categoryId: p.categoryId, category: p.category?.name || 'Umum', price: Number(p.price),
   purchasePrice: Number(p.purchasePrice), stock: p.stock, minStock: p.minStock,
   supplierId: p.supplierId || undefined, imageUrl: p.imageUrl || undefined,
@@ -114,14 +115,23 @@ export class PartRepository implements IPartRepository {
     const id = `P${Date.now().toString().slice(-8)}`;
     if (isDbConnected()) {
       const { categoryId, rackId } = await this.resolveMasterIds(data);
-      const created = await prisma.sparePart.create({
-        data: {
-          id, sku: data.sku, barcode: data.barcode, name: data.name, categoryId,
+      const created = await prisma.$transaction(async tx => {
+        const product = data.productId
+          ? await tx.product.findUnique({ where: { id: data.productId } })
+          : await tx.product.upsert({
+              where: { name_categoryId: { name: data.name.trim(), categoryId } },
+              create: { name: data.name.trim(), categoryId },
+              update: {},
+            });
+        if (!product) throw new Error('Produk induk tidak ditemukan.');
+        return tx.sparePart.create({ data: {
+          id, sku: data.sku, barcode: data.barcode, name: data.name, productId: product.id,
+          variantName: data.variantName?.trim() || 'Standar', size: data.size?.trim() || '', categoryId,
           price: data.price, purchasePrice: data.purchasePrice || 0, stock: data.stock || 0,
           minStock: data.minStock ?? 5, supplierId: data.supplierId || null, imageUrl: data.imageUrl,
           rackId, shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
           version: 1,
-        }, include: includeMasterData,
+        }, include: includeMasterData });
       });
       const part = toSparePart(created);
       memoryStore.parts.unshift(part);
@@ -152,6 +162,7 @@ export class PartRepository implements IPartRepository {
         where: { id },
         data: {
           sku: data.sku, barcode: data.barcode, name: data.name, categoryId: masterIds?.categoryId,
+          variantName: data.variantName, size: data.size,
           price: data.price, purchasePrice: data.purchasePrice, stock: data.stock, minStock: data.minStock,
           supplierId: data.supplierId, imageUrl: data.imageUrl, rackId: masterIds?.rackId,
           shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
@@ -290,4 +301,3 @@ export class PartRepository implements IPartRepository {
     };
   }
 }
-
