@@ -26,10 +26,25 @@ export class WorkshopServiceLayer {
   }
 
   async createService(data: WorkshopService): Promise<WorkshopService> {
+    // Bonus mekanik hanya berasal dari nilai jasa; nilai sparepart tidak pernah
+    // menjadi dasar perhitungan bonus, termasuk transaksi Retail.
+    const bonusPercent = data.serviceType === 'Retail' ? 0 : Number(data.mechanicBonusPercent || 0);
+    const effectiveData: WorkshopService = {
+      ...data,
+      mechanicBonusPercent: bonusPercent,
+      mechanicBonusAmount: data.serviceType === 'Retail' ? 0 : Math.round((Number(data.laborFee || 0) * bonusPercent) / 100),
+    };
     if (isDbConnected()) {
-      const id = data.id || `SRV-${Date.now().toString().slice(-8)}`;
+      const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
+      const transactionDate = new Date();
       await prisma.$transaction(async tx => {
-        for (const item of data.partsUsed || []) {
+        const partIds = [...new Set((effectiveData.partsUsed || []).map(item => item.partId).filter(Boolean))];
+        const partWarranty = new Map((await tx.sparePart.findMany({
+          where: { id: { in: partIds } },
+          select: { id: true, hasProductWarranty: true, warrantyDurationDays: true, warrantyTerms: true },
+        })).map(part => [part.id, part]));
+
+        for (const item of effectiveData.partsUsed || []) {
           if (!item.partId || item.quantity <= 0) continue;
           const changed = await tx.sparePart.updateMany({
             where: { id: item.partId, stock: { gte: item.quantity } },
@@ -43,23 +58,31 @@ export class WorkshopServiceLayer {
         }
 
         await tx.workshopService.create({ data: {
-          id, customerId: data.customerId || null, customerName: data.customerName,
-          customerPhone: data.customerPhone, vehicleId: data.vehicleId || null,
-          vehiclePlate: data.vehiclePlate, vehicleModel: data.vehicleModel,
-          kilometers: data.kilometers, serviceType: data.serviceType, complaint: data.complaint,
-          diagnosis: data.diagnosis, status: data.status, laborFee: data.laborFee,
-          totalAmount: data.totalAmount, paymentStatus: data.paymentStatus,
-          discountAmount: data.discountAmount, discountReason: data.discountReason,
-          mechanicId: data.mechanicId || null, mechanicName: data.mechanicName,
-          mechanicBonusPercent: data.mechanicBonusPercent, mechanicBonusAmount: data.mechanicBonusAmount,
-          partsUsed: { create: (data.partsUsed || []).map(item => ({
-            partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime,
-          })) },
+          id, customerId: effectiveData.customerId || null, customerName: effectiveData.customerName,
+          customerPhone: effectiveData.customerPhone, vehicleId: effectiveData.vehicleId || null,
+          vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel,
+          kilometers: effectiveData.kilometers, serviceType: effectiveData.serviceType, complaint: effectiveData.complaint,
+          diagnosis: effectiveData.diagnosis, status: effectiveData.status, laborFee: effectiveData.laborFee,
+          totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus,
+          discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
+          mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName,
+          mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
+          partsUsed: { create: (effectiveData.partsUsed || []).map(item => {
+            const warranty = partWarranty.get(item.partId);
+            const duration = warranty?.hasProductWarranty ? warranty.warrantyDurationDays : 0;
+            return {
+              partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime,
+              hasProductWarranty: !!warranty?.hasProductWarranty,
+              warrantyDurationDays: duration,
+              warrantyTerms: warranty?.hasProductWarranty ? warranty.warrantyTerms : null,
+              warrantyExpiresAt: duration > 0 ? new Date(transactionDate.getTime() + duration * 86_400_000) : null,
+            };
+          }) },
         }});
 
-        if (data.customerId) await tx.customer.update({
-          where: { id: data.customerId },
-          data: { totalServiceCount: { increment: 1 }, totalSpent: { increment: data.totalAmount }, lastVisitDate: new Date() },
+        if (effectiveData.customerId) await tx.customer.update({
+          where: { id: effectiveData.customerId },
+          data: { totalServiceCount: { increment: 1 }, totalSpent: { increment: effectiveData.totalAmount }, lastVisitDate: transactionDate },
         });
       });
       const persisted = await this.serviceRepo.getById(id);
@@ -67,11 +90,11 @@ export class WorkshopServiceLayer {
       return persisted;
     }
 
-    const created = await this.serviceRepo.create(data);
+    const created = await this.serviceRepo.create(effectiveData);
 
     // Business Logic: Automatically adjust inventory stock for used parts
-    if (data.partsUsed && data.partsUsed.length > 0) {
-      for (const part of data.partsUsed) {
+    if (effectiveData.partsUsed && effectiveData.partsUsed.length > 0) {
+      for (const part of effectiveData.partsUsed) {
         if (part.partId && part.quantity > 0) {
           await this.partRepo.adjustStock(part.partId, -part.quantity);
         }
@@ -79,8 +102,8 @@ export class WorkshopServiceLayer {
     }
 
     // Business Logic: Update customer visit stats and loyalty tier
-    if (data.customerId) {
-      await this.customerRepo.incrementStats(data.customerId, data.totalAmount);
+    if (effectiveData.customerId) {
+      await this.customerRepo.incrementStats(effectiveData.customerId, effectiveData.totalAmount);
     }
 
     return created;
