@@ -270,7 +270,7 @@ export interface DistributorInvoice {
   invoiceNumber: string;
   supplierId?: string;
   supplierName: string;
-  branchName: string; // e.g. "Bengkel Pusat", "Cabang Bandung", etc.
+  branchName: string;
   branchType: BranchType;
   totalAmount: number;
   paidAmount: number;
@@ -321,7 +321,29 @@ export interface SystemMetrics {
   }>;
 }
 
-
 export type StorageLocationType = 'RACK_SLOT' | 'CARTON' | 'DISPLAY' | 'TEMPORARY';
-export interface StorageLocation { id: string; zoneId: string; zoneName?: string; type: StorageLocationType; code: string; name: string; rackId?: string; levelCode?: string; slotCode?: string; positionNote?: string; description?: string; isActive?: boolean; stockCount?: number; }
-export interface PartLocationStock { id: string; partId: string; locationId: string; quantity: number; location?: StorageLocation; }
+
+export interface StorageLocation {
+  id: string;
+  zoneId: string;
+  zoneName?: string;
+  type: StorageLocationType;
+  code: string;
+  name: string;
+  rackId?: string;
+  rackName?: string;
+  levelCode?: string;
+  slotCode?: string;
+  positionNote?: string;
+  description?: string;
+  isActive?: boolean;
+  stockCount?: number;
+}
+
+export interface PartLocationStock {
+  id: string;
+  partId: string;
+  locationId: string;
+  quantity: number;
+  location?: StorageLocation;
+}
