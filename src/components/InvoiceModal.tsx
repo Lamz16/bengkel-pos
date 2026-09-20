@@ -185,7 +185,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         </div>
 
         {/* Footer actions */}
-        <div className="p-6 border-t border-slate-100 bg-white grid grid-cols-2 gap-4 no-print">
+        <div className="p-6 border-t border-slate-100 bg-white grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
           <div className="space-y-2">
             <select
               value={paperWidth}
