@@ -140,6 +140,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     return parts.filter(p => {
       const matchSearch = 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.size && p.size.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (p.variantName && p.variantName.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (p.sku && p.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (p.rackCode && p.rackCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -175,6 +177,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     const q = locatorSearch.toLowerCase();
     return parts.filter(p => 
       p.name.toLowerCase().includes(q) ||
+      (p.size && p.size.toLowerCase().includes(q)) ||
       (p.sku && p.sku.toLowerCase().includes(q)) ||
       p.category.toLowerCase().includes(q) ||
       (p.rackCode && p.rackCode.toLowerCase().includes(q))
@@ -696,6 +699,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-black text-slate-900 truncate">{part.name}</p>
+                          {part.size && <span className="text-[10px] font-black bg-violet-50 text-violet-700 px-2 py-0.5 rounded-md border border-violet-100">{part.variantName || 'Ukuran'}: {part.size}</span>}
                           {part.sku ? (
                             <span className="text-[10px] font-mono font-black bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100 flex items-center gap-0.5">
                               <Hash className="w-2.5 h-2.5" />
