@@ -10,6 +10,8 @@ const toSparePart = (p: PartWithMasterData): SparePart => ({
   productId: p.productId || undefined, variantName: p.variantName || 'Standar', size: p.size || undefined,
   categoryId: p.categoryId, category: p.category?.name || 'Umum', price: Number(p.price),
   purchasePrice: Number(p.purchasePrice), stock: p.stock, minStock: p.minStock,
+  hasProductWarranty: p.hasProductWarranty, warrantyDurationDays: p.warrantyDurationDays,
+  warrantyTerms: p.warrantyTerms || undefined,
   supplierId: p.supplierId || undefined, imageUrl: p.imageUrl || undefined,
   rackId: p.rackId || undefined, rackCode: p.rack?.code || undefined,
   shelfLevel: p.shelfLevel || undefined, binNumber: p.binNumber || undefined,
@@ -112,6 +114,9 @@ export class PartRepository implements IPartRepository {
     if (data.stock != null && data.stock < 0) {
       throw new Error('Stok barang tidak boleh negatif.');
     }
+    if (data.hasProductWarranty && (!data.warrantyDurationDays || data.warrantyDurationDays < 1)) {
+      throw new Error('Durasi garansi barang minimal 1 hari.');
+    }
     const id = `P${Date.now().toString().slice(-8)}`;
     if (isDbConnected()) {
       const { categoryId, rackId } = await this.resolveMasterIds(data);
@@ -128,7 +133,10 @@ export class PartRepository implements IPartRepository {
           id, sku: data.sku, barcode: data.barcode, name: data.name, productId: product.id,
           variantName: data.variantName?.trim() || 'Standar', size: data.size?.trim() || '', categoryId,
           price: data.price, purchasePrice: data.purchasePrice || 0, stock: data.stock || 0,
-          minStock: data.minStock ?? 5, supplierId: data.supplierId || null, imageUrl: data.imageUrl,
+          minStock: data.minStock ?? 5, hasProductWarranty: !!data.hasProductWarranty,
+          warrantyDurationDays: data.hasProductWarranty ? Math.max(0, data.warrantyDurationDays || 0) : 0,
+          warrantyTerms: data.hasProductWarranty ? data.warrantyTerms?.trim() || null : null,
+          supplierId: data.supplierId || null, imageUrl: data.imageUrl,
           rackId, shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
           version: 1,
         }, include: includeMasterData });
@@ -145,6 +153,9 @@ export class PartRepository implements IPartRepository {
   async update(id: string, data: Partial<SparePart>, expectedVersion?: number): Promise<SparePart | null> {
     if (data.stock != null && data.stock < 0) {
       throw new Error('Stok barang tidak boleh negatif.');
+    }
+    if (data.hasProductWarranty && (!data.warrantyDurationDays || data.warrantyDurationDays < 1)) {
+      throw new Error('Durasi garansi barang minimal 1 hari.');
     }
 
     if (isDbConnected()) {
@@ -164,6 +175,9 @@ export class PartRepository implements IPartRepository {
           sku: data.sku, barcode: data.barcode, name: data.name, categoryId: masterIds?.categoryId,
           variantName: data.variantName, size: data.size,
           price: data.price, purchasePrice: data.purchasePrice, stock: data.stock, minStock: data.minStock,
+          hasProductWarranty: data.hasProductWarranty,
+          warrantyDurationDays: data.hasProductWarranty === false ? 0 : data.warrantyDurationDays,
+          warrantyTerms: data.hasProductWarranty === false ? null : data.warrantyTerms,
           supplierId: data.supplierId, imageUrl: data.imageUrl, rackId: masterIds?.rackId,
           shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
           version: { increment: 1 },
