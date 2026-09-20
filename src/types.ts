@@ -179,6 +179,8 @@ export interface WorkshopService {
     name: string; 
     quantity: number; 
     priceAtTime: number;
+    // Snapshot modal saat transaksi dibuat; menjaga laporan tetap akurat saat modal master berubah.
+    purchasePriceAtTime?: number;
     hasProductWarranty?: boolean;
     warrantyDurationDays?: number;
     warrantyTerms?: string;
