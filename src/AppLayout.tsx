@@ -384,7 +384,7 @@ export default function AppLayout() {
         if (data.purchases && data.purchases.length > 0) setPurchases(data.purchases);
         if (data.expenses && data.expenses.length > 0) setExpenses(data.expenses);
         if (data.staff && data.staff.length > 0) setStaff(data.staff);
-        if (data.distributorInvoices && data.distributorInvoices.length > 0) setDistributorInvoices(data.distributorInvoices);
+        if (data.distributorInvoices) setDistributorInvoices(data.distributorInvoices);
         if (data.categories?.length) setMasterCategories(data.categories);
         if (data.racks?.length) setMasterRacks(data.racks);
         if (data.zones?.length) setMasterZones(data.zones);
@@ -408,28 +408,7 @@ export default function AppLayout() {
       }
     } catch (err) {
       console.error('Failed to create distributor invoice:', err);
-      // Fallback local
-      const id = `INV-DIST-${Date.now()}`;
-      const totalAmount = newInv.totalAmount || 0;
-      const formatted: DistributorInvoice = {
-        id,
-        invoiceNumber: newInv.invoiceNumber || `INV-SUP-${Date.now().toString().slice(-4)}`,
-        supplierName: newInv.supplierName || 'Distributor',
-        supplierId: newInv.supplierId,
-        branchName: newInv.branchName || 'Bengkel Pusat',
-        branchType: newInv.branchType || 'Pusat',
-        totalAmount,
-        paidAmount: 0,
-        remainingAmount: totalAmount,
-        issueDate: newInv.issueDate || new Date().toISOString(),
-        dueDate: newInv.dueDate || new Date().toISOString(),
-        status: 'Unpaid',
-        paymentMethod: newInv.paymentMethod || 'Transfer',
-        notes: newInv.notes,
-        items: newInv.items || [],
-        payments: []
-      };
-      setDistributorInvoices(prev => [formatted, ...prev]);
+      alert(err instanceof Error ? err.message : 'Nota tempo gagal disimpan. Pastikan PostgreSQL aktif.');
     }
   };
 
@@ -441,31 +420,7 @@ export default function AppLayout() {
       api.getExpenses().then(updatedExpenses => setExpenses(updatedExpenses)).catch(() => {});
     } catch (err) {
       console.error('Failed to add distributor payment:', err);
-      // Fallback local
-      setDistributorInvoices(prev => prev.map(inv => {
-        if (inv.id === invoiceId) {
-          const newPaid = inv.paidAmount + paymentData.amount;
-          const newRem = Math.max(0, inv.totalAmount - newPaid);
-          const newStatus = newRem === 0 ? 'Paid' : 'Partial';
-          const newPayObj = {
-            id: `PAY-${Date.now()}`,
-            invoiceId,
-            amount: paymentData.amount,
-            paymentDate: paymentData.paymentDate || new Date().toISOString(),
-            paymentMethod: paymentData.paymentMethod,
-            referenceNo: paymentData.referenceNo,
-            notes: paymentData.notes
-          };
-          return {
-            ...inv,
-            paidAmount: newPaid,
-            remainingAmount: newRem,
-            status: newStatus as any,
-            payments: [...(inv.payments || []), newPayObj]
-          };
-        }
-        return inv;
-      }));
+      alert(err instanceof Error ? err.message : 'Pembayaran gagal disimpan.');
     }
   };
 
@@ -475,7 +430,7 @@ export default function AppLayout() {
       setDistributorInvoices(prev => prev.filter(inv => inv.id !== id));
     } catch (err) {
       console.error('Failed to delete distributor invoice:', err);
-      setDistributorInvoices(prev => prev.filter(inv => inv.id !== id));
+      alert(err instanceof Error ? err.message : 'Nota tempo gagal dihapus.');
     }
   };
 
