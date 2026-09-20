@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { SparePart, Supplier, PartCategory, WarehouseRack, WarehouseZone } from '../../types';
-import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Image as ImageIcon, Upload, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Image as ImageIcon, Upload, Trash2, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { generatePartSKU, DEFAULT_RACK_LIST, DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_ZONES } from '../../utils/inventory';
 import { compressAndConvertToWebP, formatBytes, CompressionResult } from '../../utils/imageCompressor';
 import { api } from '../../services/api';
@@ -47,6 +47,9 @@ export const PartForm: React.FC<PartFormProps> = ({
       purchasePrice: 0,
       stock: 0,
       minStock: 5,
+      hasProductWarranty: false,
+      warrantyDurationDays: 0,
+      warrantyTerms: '',
       category: initialCategory.name,
       categoryId: initialCategory.id,
       rackCode: initialRack?.code,
@@ -425,6 +428,38 @@ export const PartForm: React.FC<PartFormProps> = ({
             />
           </div>
         </div>
+      </div>
+
+      {/* Pricing & Stock Details */}
+      <div className="p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200/70 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 text-emerald-800">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Garansi Pembelian Barang</span>
+          </div>
+          <label className="flex items-center gap-2 text-xs font-black text-emerald-800 cursor-pointer">
+            <input type="checkbox" checked={!!formData.hasProductWarranty}
+              onChange={e => setFormData({ ...formData, hasProductWarranty: e.target.checked, warrantyDurationDays: e.target.checked ? Math.max(1, formData.warrantyDurationDays || 30) : 0 })}
+              className="w-4 h-4 accent-emerald-600" /> Ada garansi
+          </label>
+        </div>
+        {formData.hasProductWarranty && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Durasi Garansi (hari)</label>
+              <input type="number" min="1" value={formData.warrantyDurationDays || ''}
+                onChange={e => setFormData({ ...formData, warrantyDurationDays: Math.max(0, Number(e.target.value)) })}
+                className="w-full h-10 px-3 bg-white border border-emerald-200 rounded-xl outline-none text-xs font-bold text-slate-900" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Syarat Garansi</label>
+              <input placeholder="Contoh: Segel utuh, nota wajib dibawa"
+                value={formData.warrantyTerms || ''}
+                onChange={e => setFormData({ ...formData, warrantyTerms: e.target.value })}
+                className="w-full h-10 px-3 bg-white border border-emerald-200 rounded-xl outline-none text-xs text-slate-800" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pricing & Stock Details */}
