@@ -26,13 +26,26 @@ export class WorkshopServiceLayer {
   }
 
   async createService(data: WorkshopService): Promise<WorkshopService> {
+    const serviceItems = data.serviceType === 'Retail' ? [] : (data.serviceItems || []).map(item => ({
+      name: item.name.trim(), price: Number(item.price || 0),
+    })).filter(item => item.name && item.price >= 0);
+    if (data.serviceType !== 'Retail' && serviceItems.some(item => !Number.isFinite(item.price))) {
+      throw new Error('Harga jasa tidak valid.');
+    }
+    const laborFee = data.serviceType === 'Retail'
+      ? 0
+      : serviceItems.length > 0
+        ? serviceItems.reduce((total, item) => total + item.price, 0)
+        : Number(data.laborFee || 0);
     // Bonus mekanik hanya berasal dari nilai jasa; nilai sparepart tidak pernah
     // menjadi dasar perhitungan bonus, termasuk transaksi Retail.
     const bonusPercent = data.serviceType === 'Retail' ? 0 : Number(data.mechanicBonusPercent || 0);
     const effectiveData: WorkshopService = {
       ...data,
+      serviceItems,
+      laborFee,
       mechanicBonusPercent: bonusPercent,
-      mechanicBonusAmount: data.serviceType === 'Retail' ? 0 : Math.round((Number(data.laborFee || 0) * bonusPercent) / 100),
+      mechanicBonusAmount: data.serviceType === 'Retail' ? 0 : Math.round((laborFee * bonusPercent) / 100),
     };
     if (isDbConnected()) {
       const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
@@ -67,6 +80,7 @@ export class WorkshopServiceLayer {
           discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
           mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName,
           mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
+          serviceItems: { create: (effectiveData.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
           partsUsed: { create: (effectiveData.partsUsed || []).map(item => {
             const warranty = partWarranty.get(item.partId);
             const duration = warranty?.hasProductWarranty ? warranty.warrantyDurationDays : 0;
