@@ -177,7 +177,7 @@ export const POSForm: React.FC<POSFormProps> = ({
       if (existing) {
         return prev.map(p => p.partId === part.id ? { ...p, quantity: p.quantity + 1 } : p);
       }
-      return [...prev, { partId: part.id, name: part.name, quantity: 1, priceAtTime: part.price }];
+      return [...prev, { partId: part.id, name: `${part.name}${part.size ? ` (${part.variantName || 'Ukuran'}: ${part.size})` : ''}`, quantity: 1, priceAtTime: part.price }];
     });
     setShowPartPicker(false);
   };
@@ -697,6 +697,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-xs font-black text-slate-900 truncate">{part.name}</p>
+                            {part.size && <span className="text-[9px] font-black bg-violet-50 text-violet-700 px-1.5 py-0.5 rounded border border-violet-100">{part.variantName || 'Ukuran'}: {part.size}</span>}
                             {part.sku && (
                               <span className="text-[9px] font-mono font-black bg-blue-50 text-blue-700 px-1.5 py-0.2 rounded border border-blue-100 flex items-center gap-0.5">
                                 <Hash className="w-2.5 h-2.5" />
