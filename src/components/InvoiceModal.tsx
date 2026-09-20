@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { format } from 'date-fns';
 import { FileText, X, ShieldCheck, Share2, Printer } from 'lucide-react';
@@ -11,10 +11,19 @@ interface InvoiceModalProps {
 }
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, onClose }) => {
+  const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('80mm');
   if (!service) return null;
 
   const handlePrint = () => {
-    window.print();
+    // Browser print dialog meneruskan output ke printer thermal USB/LAN/Bluetooth
+    // yang sudah terpasang sebagai printer sistem pada komputer kasir.
+    document.body.dataset.receiptPaper = paperWidth;
+    const clearPaper = () => {
+      delete document.body.dataset.receiptPaper;
+      window.removeEventListener('afterprint', clearPaper);
+    };
+    window.addEventListener('afterprint', clearPaper);
+    window.setTimeout(() => window.print(), 50);
   };
 
   return (
@@ -177,6 +186,18 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
 
         {/* Footer actions */}
         <div className="p-6 border-t border-slate-100 bg-white grid grid-cols-2 gap-4 no-print">
+          <div className="space-y-2">
+            <select
+              value={paperWidth}
+              onChange={e => setPaperWidth(e.target.value as '58mm' | '80mm')}
+              aria-label="Lebar kertas printer thermal"
+              className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600"
+            >
+              <option value="58mm">Thermal 58 mm</option>
+              <option value="80mm">Thermal 80 mm</option>
+            </select>
+            <p className="text-[9px] text-slate-400 leading-tight">Pilih printer thermal yang sudah terpasang pada dialog cetak sistem.</p>
+          </div>
           <button 
             className="h-14 bg-slate-50 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors border border-slate-100"
           >
