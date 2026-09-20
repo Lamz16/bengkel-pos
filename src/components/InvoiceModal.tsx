@@ -35,10 +35,86 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
   const invoiceNumber = `INV-${service.id.slice(0, 8).toUpperCase()}`;
   const invoiceDate = format(new Date(service.createdAt), 'dd MMM yyyy • HH:mm');
 
-  const handlePrint = () => {
-    const receipt = receiptRef.current;
-    if (!receipt || isPrinting) return;
+  const buildPrintMarkup = () => {
+    const itemRows = [
+      ...serviceItems.map(item => ({
+        title: item.name,
+        detail: 'Jasa Servis',
+        amount: rupiah(item.price || 0)
+      })),
+      ...service.partsUsed.map(item => ({
+        title: item.name || 'Sparepart',
+        detail: `${item.quantity || 1} pcs x ${rupiah(item.priceAtTime || 0)}`,
+        amount: rupiah((item.quantity || 1) * (item.priceAtTime || 0))
+      }))
+    ].map(item => `
+      <tr>
+        <td><strong>${escapeXml(item.title)}</strong><br /><small>${escapeXml(item.detail)}</small></td>
+        <td class="right"><strong>${escapeXml(item.amount)}</strong></td>
+      </tr>
+    `).join('');
 
+    const optionalMeta = [
+      settings.showCustomerPhoneOnReceipt && service.customerPhone
+        ? `<div><span>Telepon:</span><b>${escapeXml(service.customerPhone)}</b></div>` : '',
+      settings.showOdometerOnReceipt && service.kilometers > 0
+        ? `<div><span>Kilometer:</span><b>${escapeXml(service.kilometers.toLocaleString('id-ID'))} KM</b></div>` : '',
+      settings.showMechanicOnReceipt && service.mechanicName
+        ? `<div><span>Mekanik:</span><b>${escapeXml(service.mechanicName)}</b></div>` : ''
+    ].join('');
+
+    return `<!doctype html>
+      <html><head><meta charset="utf-8"><title>Nota ${escapeXml(invoiceNumber)}</title>
+      <style>
+        @page { size: ${paperWidth} auto; margin: 0; }
+        html, body { margin: 0; padding: 0; width: ${paperWidth}; background: #fff; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #000; }
+        .receipt { width: ${paperWidth}; padding: 4mm; box-sizing: border-box; background: #fff; }
+        .accent { height: 2px; background: #000; margin: -4mm -4mm 4mm; }
+        .center { text-align: center; } .title { font-size: 14px; font-weight: 800; margin: 0; text-transform: uppercase; }
+        .sub { font-size: 8px; font-weight: 700; margin: 3px 0; } .muted { font-size: 8px; margin: 3px 0; }
+        .header-label { display: inline-block; border: 1px solid #000; padding: 2px 5px; font-size: 8px; font-weight: 700; margin-top: 5px; }
+        .dash { border-top: 1px dashed #000; margin: 9px 0; }
+        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 8px; } .meta div { min-width: 0; }
+        .meta span { display: block; font-size: 7px; margin-bottom: 2px; } .meta b { font-size: 8px; word-break: break-word; }
+        .right { text-align: right; } table { width: 100%; border-collapse: collapse; font-size: 8px; } td { vertical-align: top; padding: 4px 0; }
+        td:first-child { padding-right: 5px; } td strong { font-size: 8px; } small { font-size: 7px; }
+        .discount { display: flex; justify-content: space-between; font-size: 8px; padding: 5px 0; border-top: 1px dashed #000; }
+        .total { display: flex; justify-content: space-between; align-items: center; border: 1px solid #000; padding: 7px; margin-top: 8px; }
+        .total small { display: block; font-size: 7px; font-weight: 700; } .total b { font-size: 13px; }
+        .box { border: 1px solid #000; padding: 6px; margin-top: 8px; font-size: 8px; line-height: 1.4; } .box strong { font-size: 8px; }
+        .footer { text-align: center; margin-top: 10px; font-size: 8px; line-height: 1.4; } .footer strong { font-size: 8px; }
+      </style></head>
+      <body><main class="receipt">
+        <div class="accent"></div>
+        <header class="center">
+          <h1 class="title">${escapeXml(settings.name || 'NAMA BENGKEL')}</h1>
+          <p class="sub">${escapeXml(settings.slogan || '')}</p>
+          ${settings.address ? `<p class="muted">${escapeXml(settings.address)}</p>` : ''}
+          ${settings.phone ? `<p class="sub">Telp/WA: ${escapeXml(settings.phone)}</p>` : ''}
+          ${settings.receiptHeader ? `<span class="header-label">${escapeXml(settings.receiptHeader)}</span>` : ''}
+        </header>
+        <div class="dash"></div>
+        <section class="meta">
+          <div><span>No. Nota:</span><b>${escapeXml(invoiceNumber)}</b></div>
+          <div class="right"><span>Tanggal:</span><b>${escapeXml(invoiceDate)}</b></div>
+          <div><span>Pelanggan:</span><b>${escapeXml(service.customerName)}</b></div>
+          <div class="right"><span>Kendaraan:</span><b>${escapeXml(service.vehiclePlate)}</b><br /><small>${escapeXml(service.vehicleModel)}</small></div>
+          ${optionalMeta}
+        </section>
+        <div class="dash"></div>
+        <table><tbody>${itemRows}</tbody></table>
+        ${service.discountAmount && service.discountAmount > 0 ? `<div class="discount"><b>${escapeXml(service.discountReason || 'Diskon Transaksi')}</b><b>- ${escapeXml(rupiah(service.discountAmount))}</b></div>` : ''}
+        <div class="total"><div><small>TOTAL PEMBAYARAN</small><small>${service.paymentStatus === 'Paid' ? 'LUNAS' : 'BELUM LUNAS'}</small></div><b>${escapeXml(rupiah(service.totalAmount))}</b></div>
+        ${settings.showWarrantyOnReceipt && service.serviceType !== 'Retail' && settings.warrantyTerms ? `<div class="box"><strong>KETENTUAN GARANSI SERVIS</strong><br />${escapeXml(settings.warrantyTerms)}</div>` : ''}
+        ${productWarrantyItems.length ? `<div class="box"><strong>GARANSI PRODUK / SPAREPART</strong><br />${productWarrantyItems.map(item => `${escapeXml(item.name)} — ${escapeXml(item.warrantyDurationDays)} hari`).join('<br />')}</div>` : ''}
+        ${settings.receiptContactHelp ? `<p class="footer">☎ ${escapeXml(settings.receiptContactHelp)}</p>` : ''}
+        <footer class="footer"><strong>${escapeXml(settings.name || 'BENGKEL KITA')} • TERIMA KASIH</strong><br />${escapeXml(settings.footerNote || '')}</footer>
+      </main></body></html>`;
+  };
+
+  const handlePrint = () => {
+    if (isPrinting) return;
     const printWindow = window.open('', '_blank', 'width=480,height=720');
     if (!printWindow) {
       alert('Popup cetak diblokir browser. Izinkan popup untuk aplikasi ini, lalu coba lagi.');
@@ -46,35 +122,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
     }
 
     setIsPrinting(true);
-
-    // Jendela print adalah dokumen baru, jadi stylesheet Vite/Tailwind wajib
-    // disalin agar struktur grid, ukuran teks, spacing, dan warna preview tetap terbaca.
-    const appStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-      .map(element => element.outerHTML)
-      .join('\n');
-    const printStyle = `
-      <style>
-        @page { size: ${paperWidth} auto; margin: 0; }
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; background: #fff !important; }
-        body { width: ${paperWidth}; background: #fff !important; }
-        .printable-area {
-          width: ${paperWidth} !important; min-height: 0 !important; height: auto !important;
-          padding: 4mm !important; overflow: visible !important; background: #fff !important;
-        }
-
-        /* Pertahankan layout preview, tetapi jadikan semua output aman untuk thermal B/W. */
-        .printable-area, .printable-area * {
-          color: #000 !important; text-shadow: none !important; box-shadow: none !important;
-        }
-        .printable-area [class*="bg-"] { background-color: #fff !important; }
-        .printable-area [class*="border-"] { border-color: #000 !important; }
-        .printable-area .bg-gradient-to-r { background: #000 !important; }
-        .printable-area img { filter: grayscale(1) contrast(2); }
-      </style>`;
-
+    // HTML cetak sengaja mandiri, tanpa stylesheet aplikasi: menghindari aturan
+    // @media print global yang sebelumnya membuat halaman preview menjadi putih kosong.
     printWindow.document.open();
-    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Nota ${invoiceNumber}</title>${appStyles}${printStyle}</head><body>${receipt.outerHTML}</body></html>`);
+    printWindow.document.write(buildPrintMarkup());
     printWindow.document.close();
 
     const cleanup = () => {
@@ -82,11 +133,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       printWindow.close();
     };
     printWindow.addEventListener('afterprint', cleanup, { once: true });
-    // Beri waktu stylesheet hasil bundling dimuat di dokumen baru sebelum dialog cetak muncul.
     window.setTimeout(() => {
       printWindow.focus();
       printWindow.print();
-    }, 800);
+    }, 250);
   };
 
   const buildShareImage = () => {
