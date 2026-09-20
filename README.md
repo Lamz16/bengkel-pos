@@ -189,6 +189,7 @@ Berikut daftar perintah npm yang dapat digunakan dalam proyek ini:
 | `npm run db:push` | Menyinkronkan struktur schema Prisma ke PostgreSQL tanpa file migrasi |
 | `npm run db:migrate` | Menerapkan migration produksi, termasuk normalisasi master kategori/rak/gudang dan variasi produk |
 | `npm run db:migrate:variants` | Menerapkan migrasi variasi produk ke database lokal lama yang dibuat dengan `db:push` |
+| `npm run db:migrate:product-warranty` | Menerapkan kolom garansi produk dan snapshot garansi pada nota tanpa reset data |
 | `npm run db:seed` | Menjalankan file `prisma/seed.ts` untuk mengisi data sampel awal |
 | `npm run lint` | Memeriksa validasi tipe data TypeScript (`tsc --noEmit`) |
 
