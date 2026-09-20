@@ -43,7 +43,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
   onSaveRacks,
   onSaveZones
 }) => {
-  const [activeTab, setActiveTab] = useState<'categories' | 'racks' | 'zones' | 'locations'>('categories');
+  const [activeTab, setActiveTab] = useState<'categories' | 'zones' | 'locations'>('categories');
   const [notification, setNotification] = useState<string | null>(null);
 
   // Category Form State
@@ -265,7 +265,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
   };
 
   return (
-    <Modal title="Manajemen Master Data Kategori & Gudang" onClose={onClose} isOpen={isOpen} maxWidth="4xl">
+    <Modal title="Manajemen Kategori & Lokasi Stok" onClose={onClose} isOpen={isOpen} maxWidth="4xl">
       <div className="space-y-5">
         {/* Notification Toast */}
         {notification && (
@@ -289,19 +289,6 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
           >
             <Tag className="w-3.5 h-3.5" />
             <span>Kategori Barang ({categories.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('racks')}
-            className={cn(
-              "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
-              activeTab === 'racks'
-                ? "bg-white text-amber-700 shadow-2xs font-black"
-                : "text-slate-600 hover:text-slate-900"
-            )}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Rak Storage ({racks.length})</span>
           </button>
           <button
             type="button"
@@ -466,150 +453,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
           </div>
         )}
 
-        {/* TAB 2: RAK STORAGE */}
-        {activeTab === 'racks' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Data Rak & Letak Penyimpanan</h4>
-                <p className="text-[11px] text-slate-500">Kelola kode rak, nama rak, dan pemetaan ke zona gudang.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleOpenRackForm()}
-                className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-200 transition-all active:scale-95"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Tambah Rak Baru</span>
-              </button>
-            </div>
-
-            {/* Rack Form Inline */}
-            {editingRack && (
-              <form onSubmit={handleSaveRack} className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-3">
-                <div className="flex justify-between items-center border-b border-amber-200/60 pb-2">
-                  <h5 className="text-xs font-black text-amber-900 uppercase">
-                    {editingRack.id ? 'Edit Data Rak' : 'Tambah Rak Storage Baru'}
-                  </h5>
-                  <button type="button" onClick={() => setEditingRack(null)} className="text-slate-400 hover:text-slate-600">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase">Kode Rak *</label>
-                    <input 
-                      type="text"
-                      placeholder="e.g. Rak F, Etalase 2, Rak Ban"
-                      value={rackCode}
-                      onChange={e => setRackCode(e.target.value)}
-                      className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-amber-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase">Nama Label Rak</label>
-                    <input 
-                      type="text"
-                      placeholder="e.g. Rak F - Suspensi & Shock"
-                      value={rackName}
-                      onChange={e => setRackName(e.target.value)}
-                      className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase">Pilih Gudang / Zona</label>
-                    <select
-                      value={rackZone}
-                      onChange={e => setRackZone(e.target.value)}
-                      className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-amber-500"
-                    >
-                      {zones.map(z => (
-                        <option key={z.id} value={z.name}>{z.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-600 uppercase">Keterangan Catatan Rak</label>
-                  <input 
-                    type="text"
-                    placeholder="Contoh: Susunan paling kanan dekat lorong tengah"
-                    value={rackDesc}
-                    onChange={e => setRackDesc(e.target.value)}
-                    className="w-full h-9 px-3 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 outline-none"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setEditingRack(null)}
-                    className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-100"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 shadow-2xs"
-                  >
-                    Simpan Rak
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Racks List */}
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-              {racks.map(r => {
-                const count = parts.filter(p => p.rackCode === r.code).length;
-                return (
-                  <div 
-                    key={r.id}
-                    className="p-3 bg-white border border-slate-200 rounded-2xl shadow-2xs hover:border-amber-300 transition-colors flex items-center justify-between group"
-                  >
-                    <div className="space-y-1 min-w-0 pr-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-black text-slate-900 text-xs">{r.code}</span>
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                          📍 {r.zone}
-                        </span>
-                      </div>
-                      <p className="text-xs font-bold text-slate-700">{r.name}</p>
-                      {r.description && <p className="text-[10px] text-slate-500">{r.description}</p>}
-                      <span className="inline-block text-[10px] font-bold text-slate-400">
-                        📦 Memuat {count} Jenis Barang
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1 opacity-95 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenRackForm(r)}
-                        className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                        title="Edit Rak"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteRack(r)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                        title="Hapus Rak"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Rak, slot, kardus, dan lokasi sementara dikelola melalui Peta Lokasi. */}
 
         {/* TAB 3: ZONA GUDANG */}
         {activeTab === 'zones' && (
