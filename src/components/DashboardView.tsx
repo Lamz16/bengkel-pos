@@ -8,7 +8,8 @@ import {
   TrendingUp, 
   Search, 
   History, 
-  Printer 
+  Printer,
+  CreditCard
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -19,7 +20,7 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
-import { WorkshopService, SparePart, User } from '../types';
+import { WorkshopService, SparePart, User, DistributorInvoice } from '../types';
 import { cn } from '../lib/utils';
 
 interface DashboardViewProps {
@@ -29,9 +30,11 @@ interface DashboardViewProps {
   onPrint: (id: string) => void;
   onOpenLowStock?: () => void;
   onNavigateToInventory?: () => void;
+  distributorInvoices?: DistributorInvoice[];
+  onOpenOutstandingInvoices?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, user, onPrint, onOpenLowStock, onNavigateToInventory }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, user, onPrint, onOpenLowStock, onNavigateToInventory, distributorInvoices = [], onOpenOutstandingInvoices }) => {
   const [historySearch, setHistorySearch] = useState('');
   
   const searchResults = useMemo(() => {
@@ -47,13 +50,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
     return parts.filter(p => p.stock <= p.minStock);
   }, [parts]);
 
+  const outstandingInvoices = useMemo(
+    () => distributorInvoices.filter(invoice => invoice.status !== 'Paid' && invoice.remainingAmount > 0),
+    [distributorInvoices]
+  );
+  const outstandingTotal = useMemo(
+    () => outstandingInvoices.reduce((total, invoice) => total + invoice.remainingAmount, 0),
+    [outstandingInvoices]
+  );
+
   const stats = useMemo(() => {
     const totalRevenue = services.filter(s => s.status === 'Done').reduce((acc, s) => acc + s.totalAmount, 0);
     const activeJobs = services.filter(s => s.status !== 'Done').length;
     const completedJobs = services.filter(s => s.status === 'Done').length;
     const lowStockCount = lowStockParts.length;
 
-    const items: { label: string, value: number | string, icon: any, color: string, bg: string, isClickable?: boolean, onClick?: () => void }[] = [
+    const items: { label: string, value: number | string, detail?: string, icon: any, color: string, bg: string, isClickable?: boolean, onClick?: () => void }[] = [
       { label: 'Active', value: activeJobs, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
       { label: 'Done', value: completedJobs, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50' },
       { 
@@ -65,12 +77,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
         isClickable: true,
         onClick: onOpenLowStock
       },
+      {
+        label: 'Nota Tempo Belum Lunas',
+        value: outstandingInvoices.length,
+        detail: `Sisa Rp ${outstandingTotal.toLocaleString()}`,
+        icon: CreditCard,
+        color: 'text-amber-600',
+        bg: outstandingInvoices.length > 0 ? 'bg-amber-100' : 'bg-amber-50',
+        isClickable: true,
+        onClick: onOpenOutstandingInvoices,
+      },
     ];
 
     items.unshift({ label: "Revenue", value: `Rp ${(totalRevenue / 1000).toFixed(0)}k`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' });
 
     return items;
-  }, [services, parts, user, lowStockParts, onOpenLowStock]);
+  }, [services, parts, user, lowStockParts, onOpenLowStock, outstandingInvoices, outstandingTotal, onOpenOutstandingInvoices]);
 
   const topServices = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -172,6 +194,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
             </div>
             <h3 className="text-lg font-black text-slate-900 leading-none">{stat.value}</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-wider">{stat.label}</p>
+            {stat.detail && <p className="text-[10px] font-black text-amber-700 mt-1">{stat.detail}</p>}
           </motion.div>
         ))}
       </div>
