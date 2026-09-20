@@ -4,7 +4,12 @@ import { distributorInvoiceRepository } from '../repositories/distributorInvoice
 export class DistributorInvoiceController {
   async getAll(req: Request, res: Response) {
     try {
-      const list = await distributorInvoiceRepository.getAll();
+      const search = req.query.search as string | undefined;
+      const status = req.query.status as string | undefined;
+      const branchName = req.query.branchName as string | undefined;
+      const supplierId = req.query.supplierId as string | undefined;
+
+      const list = await distributorInvoiceRepository.getAll({ search, status, branchName, supplierId });
       res.json(list);
     } catch (err: any) {
       console.error('[DistributorInvoiceController] getAll error:', err);
@@ -25,7 +30,10 @@ export class DistributorInvoiceController {
   async addPayment(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const updated = await distributorInvoiceRepository.addPayment(id, req.body);
+      const { expectedVersion, version, ...paymentData } = req.body;
+      const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+
+      const updated = await distributorInvoiceRepository.addPayment(id, paymentData, expVer);
       if (!updated) {
         return res.status(404).json({ error: 'Nota tempo tidak ditemukan' });
       }
@@ -33,7 +41,12 @@ export class DistributorInvoiceController {
     } catch (err: any) {
       console.error('[DistributorInvoiceController] addPayment error:', err);
       const invalid = err?.message === 'INVALID_PAYMENT';
-      res.status(invalid ? 400 : 500).json({ error: invalid ? 'Nominal pembayaran tidak valid atau melebihi sisa tagihan.' : 'Gagal mencatat pembayaran cicilan' });
+      const isConflict = String(err?.message).includes('Optimistic Lock');
+      res.status(isConflict ? 409 : (invalid ? 400 : 500)).json({
+        error: isConflict 
+          ? err.message 
+          : (invalid ? 'Nominal pembayaran tidak valid atau melebihi sisa tagihan.' : 'Gagal mencatat pembayaran cicilan')
+      });
     }
   }
 

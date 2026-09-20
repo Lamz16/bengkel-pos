@@ -402,6 +402,10 @@ export default function AppLayout() {
     try {
       const created = await api.createDistributorInvoice(newInv);
       setDistributorInvoices(prev => [created, ...prev]);
+      // Refresh parts if stock was added
+      if (newInv.items?.some(i => i.partId)) {
+        api.getParts().then(updatedParts => setParts(updatedParts)).catch(() => {});
+      }
     } catch (err) {
       console.error('Failed to create distributor invoice:', err);
       // Fallback local
@@ -433,6 +437,8 @@ export default function AppLayout() {
     try {
       const updated = await api.addDistributorPayment(invoiceId, paymentData);
       setDistributorInvoices(prev => prev.map(inv => inv.id === invoiceId ? updated : inv));
+      // Refresh expenses ledger
+      api.getExpenses().then(updatedExpenses => setExpenses(updatedExpenses)).catch(() => {});
     } catch (err) {
       console.error('Failed to add distributor payment:', err);
       // Fallback local

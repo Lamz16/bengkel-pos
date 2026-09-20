@@ -290,6 +290,7 @@ model DistributorInvoice {
   status          String                   @default("Unpaid") // "Unpaid" | "Partial" | "Paid" | "Overdue"
   paymentMethod   String?                  @default("Transfer")
   notes           String?
+  version         Int                      @default(1)
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   supplier        Supplier?                @relation(fields: [supplierId], references: [id])
@@ -297,6 +298,7 @@ model DistributorInvoice {
   payments        DistributorPayment[]
 
   @@index([dueDate])
+  @@index([issueDate])
   @@index([branchName])
   @@index([status])
   @@index([supplierId])
@@ -329,6 +331,7 @@ model DistributorPayment {
   invoice       DistributorInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
+  @@index([paymentDate])
 }
 
 model IdempotencyRecord {

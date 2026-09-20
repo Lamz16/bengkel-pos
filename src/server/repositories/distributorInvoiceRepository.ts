@@ -3,13 +3,33 @@ import { prisma, isDbConnected } from '../db/connection';
 import { memoryStore } from '../db/memoryStore';
 
 export class DistributorInvoiceRepository {
-  async getAll(): Promise<DistributorInvoice[]> {
+  async getAll(params?: { search?: string; status?: string; branchName?: string; supplierId?: string }): Promise<DistributorInvoice[]> {
     if (isDbConnected()) {
       try {
+        const where: any = {};
+        if (params?.status && params.status !== 'all') {
+          where.status = params.status;
+        }
+        if (params?.branchName && params.branchName !== 'all') {
+          where.branchName = params.branchName;
+        }
+        if (params?.supplierId) {
+          where.supplierId = params.supplierId;
+        }
+        if (params?.search) {
+          const q = params.search.trim();
+          where.OR = [
+            { invoiceNumber: { contains: q, mode: 'insensitive' } },
+            { supplierName: { contains: q, mode: 'insensitive' } },
+            { notes: { contains: q, mode: 'insensitive' } },
+          ];
+        }
+
         const list = await prisma.distributorInvoice.findMany({
+          where,
           include: {
             items: true,
-            payments: true,
+            payments: { orderBy: { paymentDate: 'desc' } },
           },
           orderBy: { dueDate: 'asc' }
         });
@@ -28,6 +48,7 @@ export class DistributorInvoiceRepository {
           status: inv.status as any,
           paymentMethod: inv.paymentMethod || undefined,
           notes: inv.notes || undefined,
+          version: (inv as any).version || 1,
           items: inv.items.map(i => ({
             id: i.id,
             invoiceId: i.invoiceId,
@@ -62,7 +83,7 @@ export class DistributorInvoiceRepository {
       try {
         const inv = await prisma.distributorInvoice.findUnique({
           where: { id },
-          include: { items: true, payments: true }
+          include: { items: true, payments: { orderBy: { paymentDate: 'desc' } } }
         });
         if (inv) {
           return {
@@ -80,6 +101,7 @@ export class DistributorInvoiceRepository {
             status: inv.status as any,
             paymentMethod: inv.paymentMethod || undefined,
             notes: inv.notes || undefined,
+            version: (inv as any).version || 1,
             items: inv.items.map(i => ({
               id: i.id,
               invoiceId: i.invoiceId,
@@ -133,34 +155,84 @@ export class DistributorInvoiceRepository {
 
     if (isDbConnected()) {
       try {
-        const created = await prisma.distributorInvoice.create({
-          data: {
-            id,
-            invoiceNumber: data.invoiceNumber || `INV-SUP-${Date.now().toString().slice(-4)}`,
-            supplierId: data.supplierId || null,
-            supplierName: data.supplierName,
-            branchName: data.branchName || 'Bengkel Pusat',
-            branchType: data.branchType || 'Pusat',
-            totalAmount,
-            paidAmount,
-            remainingAmount,
-            issueDate: new Date(data.issueDate || Date.now()),
-            dueDate: new Date(data.dueDate),
-            status,
-            paymentMethod: data.paymentMethod || 'Transfer',
-            notes: data.notes || null,
-            items: {
-              create: items.map(item => ({
-                id: item.id || `ITEM-${Math.random().toString(36).substring(2, 7)}`,
-                partId: item.partId || null,
-                partName: item.partName,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                totalPrice: item.totalPrice,
-              }))
+        const created = await prisma.$transaction(async tx => {
+          // Check if supplier exists or match supplierName
+          let finalSupplierId = data.supplierId || null;
+          if (!finalSupplierId && data.supplierName) {
+            const matchedSupplier = await tx.supplier.findFirst({
+              where: { name: { equals: data.supplierName, mode: 'insensitive' } }
+            });
+            if (matchedSupplier) {
+              finalSupplierId = matchedSupplier.id;
             }
-          },
-          include: { items: true, payments: true }
+          }
+
+          const inv = await tx.distributorInvoice.create({
+            data: {
+              id,
+              invoiceNumber: data.invoiceNumber || `INV-SUP-${Date.now().toString().slice(-4)}`,
+              supplierId: finalSupplierId,
+              supplierName: data.supplierName,
+              branchName: data.branchName || 'Bengkel Pusat',
+              branchType: data.branchType || 'Pusat',
+              totalAmount,
+              paidAmount,
+              remainingAmount,
+              issueDate: new Date(data.issueDate || Date.now()),
+              dueDate: new Date(data.dueDate),
+              status,
+              paymentMethod: data.paymentMethod || 'Transfer',
+              notes: data.notes || null,
+              version: 1,
+              items: {
+                create: items.map(item => ({
+                  id: item.id || `ITEM-${Math.random().toString(36).substring(2, 7)}`,
+                  partId: item.partId || null,
+                  partName: item.partName,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  totalPrice: item.totalPrice,
+                }))
+              }
+            },
+            include: { items: true, payments: true }
+          });
+
+          // If items contain spare parts, auto update stock and record purchase
+          for (const item of items) {
+            if (item.partId) {
+              const existingPart = await tx.sparePart.findUnique({ where: { id: item.partId } });
+              if (existingPart) {
+                await tx.sparePart.update({
+                  where: { id: item.partId },
+                  data: { stock: { increment: item.quantity } }
+                });
+                await tx.stockHistory.create({
+                  data: {
+                    partId: item.partId,
+                    partName: item.partName,
+                    amount: item.quantity,
+                    type: 'In',
+                    reason: `Penerimaan Stok Tempo #${inv.invoiceNumber} (${data.supplierName})`,
+                    date: new Date()
+                  }
+                });
+                if (finalSupplierId) {
+                  await tx.purchaseRecord.create({
+                    data: {
+                      partId: item.partId,
+                      supplierId: finalSupplierId,
+                      quantity: item.quantity,
+                      costPrice: item.unitPrice,
+                      date: new Date()
+                    }
+                  });
+                }
+              }
+            }
+          }
+
+          return inv;
         });
 
         const formatted: DistributorInvoice = {
@@ -178,6 +250,7 @@ export class DistributorInvoiceRepository {
           status: created.status as any,
           paymentMethod: created.paymentMethod || undefined,
           notes: created.notes || undefined,
+          version: (created as any).version || 1,
           items: created.items.map(i => ({
             id: i.id,
             invoiceId: i.invoiceId,
@@ -215,6 +288,7 @@ export class DistributorInvoiceRepository {
       status,
       paymentMethod: data.paymentMethod || 'Transfer',
       notes: data.notes,
+      version: 1,
       items: items.map(i => ({ ...i, id: i.id || `ITEM-${Math.random().toString(36).substring(2, 7)}` })),
       payments: [],
       createdAt: new Date().toISOString(),
@@ -226,7 +300,11 @@ export class DistributorInvoiceRepository {
     return formatted;
   }
 
-  async addPayment(invoiceId: string, paymentData: { amount: number; paymentMethod: string; referenceNo?: string; notes?: string; paymentDate?: string }): Promise<DistributorInvoice | null> {
+  async addPayment(
+    invoiceId: string, 
+    paymentData: { amount: number; paymentMethod: string; referenceNo?: string; notes?: string; paymentDate?: string },
+    expectedVersion?: number
+  ): Promise<DistributorInvoice | null> {
     const paymentId = `PAY-${Date.now().toString().slice(-6)}`;
     const payDate = paymentData.paymentDate ? new Date(paymentData.paymentDate) : new Date();
 
@@ -235,26 +313,50 @@ export class DistributorInvoiceRepository {
         await prisma.$transaction(async tx => {
           const inv = await tx.distributorInvoice.findUnique({ where: { id: invoiceId } });
           if (!inv) throw new Error('NOT_FOUND');
-          const newPaid = Number(inv.paidAmount) + paymentData.amount;
-          if (paymentData.amount <= 0 || newPaid > Number(inv.totalAmount)) throw new Error('INVALID_PAYMENT');
-          const newRemaining = Number(inv.totalAmount) - newPaid;
-          const newStatus = newRemaining === 0 ? 'Paid' : 'Partial';
-          await tx.distributorPayment.create({ data: {
-            id: paymentId,
-            invoiceId,
-            amount: paymentData.amount,
-            paymentDate: payDate,
-            paymentMethod: paymentData.paymentMethod || 'Transfer',
-            referenceNo: paymentData.referenceNo || null,
-            notes: paymentData.notes || null,
-          }});
-          await tx.distributorInvoice.update({
-          where: { id: invoiceId },
-          data: {
-            paidAmount: newPaid,
-            remainingAmount: newRemaining,
-            status: newStatus,
+
+          if (expectedVersion !== undefined && (inv as any).version !== undefined && (inv as any).version !== expectedVersion) {
+            throw new Error('Optimistic Lock Failure: Nota tempo telah diperbarui oleh pengguna lain.');
           }
+
+          const newPaid = Number(inv.paidAmount) + paymentData.amount;
+          if (paymentData.amount <= 0 || newPaid > Number(inv.totalAmount) + 0.01) {
+            throw new Error('INVALID_PAYMENT');
+          }
+
+          const newRemaining = Math.max(0, Number(inv.totalAmount) - newPaid);
+          const newStatus = newRemaining === 0 ? 'Paid' : 'Partial';
+
+          await tx.distributorPayment.create({ 
+            data: {
+              id: paymentId,
+              invoiceId,
+              amount: paymentData.amount,
+              paymentDate: payDate,
+              paymentMethod: paymentData.paymentMethod || 'Transfer',
+              referenceNo: paymentData.referenceNo || null,
+              notes: paymentData.notes || null,
+            }
+          });
+
+          // Sync with Expense Ledger
+          await tx.expense.create({
+            data: {
+              id: `EXP-TEMPO-${Date.now().toString().slice(-6)}`,
+              category: 'Pembayaran Tempo Distributor',
+              amount: paymentData.amount,
+              note: `Pelunasan/Cicilan Nota #${inv.invoiceNumber} (${inv.supplierName}) - Method: ${paymentData.paymentMethod}`,
+              date: payDate,
+            }
+          });
+
+          await tx.distributorInvoice.update({
+            where: { id: invoiceId },
+            data: {
+              paidAmount: newPaid,
+              remainingAmount: newRemaining,
+              status: newStatus,
+              version: { increment: 1 }
+            }
           });
         }, { isolationLevel: 'Serializable' });
 
@@ -292,6 +394,15 @@ export class DistributorInvoiceRepository {
     target.payments = target.payments || [];
     target.payments.push(paymentObj);
 
+    // Sync memoryStore expenses
+    memoryStore.expenses.unshift({
+      id: `EXP-TEMPO-${Date.now().toString().slice(-6)}`,
+      category: 'Pembayaran Tempo Distributor',
+      amount: paymentData.amount,
+      note: `Pelunasan/Cicilan Nota #${target.invoiceNumber} (${target.supplierName})`,
+      date: payDate.toISOString(),
+    });
+
     return target;
   }
 
@@ -311,3 +422,4 @@ export class DistributorInvoiceRepository {
 }
 
 export const distributorInvoiceRepository = new DistributorInvoiceRepository();
+
