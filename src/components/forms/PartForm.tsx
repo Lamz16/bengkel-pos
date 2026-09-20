@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { SparePart, Supplier, PartCategory, WarehouseRack, WarehouseZone } from '../../types';
+import React, { useEffect, useState, useRef } from 'react';
+import { SparePart, Supplier, PartCategory, WarehouseRack, WarehouseZone, StorageLocation } from '../../types';
 import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Image as ImageIcon, Upload, Trash2, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { generatePartSKU, DEFAULT_RACK_LIST, DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_ZONES } from '../../utils/inventory';
 import { compressAndConvertToWebP, formatBytes, CompressionResult } from '../../utils/imageCompressor';
@@ -31,6 +31,9 @@ export const PartForm: React.FC<PartFormProps> = ({
   const [isCompressing, setIsCompressing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [compressionMeta, setCompressionMeta] = useState<CompressionResult | null>(null);
+  const [storageLocations, setStorageLocations] = useState<StorageLocation[]>([]);
+
+  useEffect(() => { api.getStorageLocations().then(setStorageLocations).catch(() => setStorageLocations([])); }, []);
 
   const [formData, setFormData] = useState<SparePart>(() => {
     if (part && part.id) return part;
@@ -338,97 +341,12 @@ export const PartForm: React.FC<PartFormProps> = ({
         </div>
       </div>
 
-      {/* Warehouse & Rack Location Management */}
+      {/* Lokasi diseleksi dari slot/lokasi yang sudah dibuat pada Peta Lokasi. */}
       <div className="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200/60 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-amber-800">
-            <MapPin className="w-3.5 h-3.5 text-amber-600" />
-            <span className="text-[10px] font-black uppercase tracking-wider">Letak Barang di Rak & Gudang</span>
-          </div>
-          <div className="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-md flex items-center gap-1">
-            <span>📍 {previewLocation}</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {/* Kode Rak */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">
-              Kode Rak *
-            </label>
-            <select
-              value={formData.rackId || ''}
-              onChange={e => {
-                const selected = (racks || []).find(r => r.id === e.target.value);
-                setFormData({ ...formData, rackId: selected?.id, rackCode: selected?.code, rackZone: selected?.zone });
-              }}
-              className="w-full h-10 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-bold text-slate-900"
-            >
-              <option value="">-- Tanpa Rak --</option>
-              {(racks || []).map(r => (
-                <option key={r.id} value={r.id}>{r.code} — {r.name} ({r.zone})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tingkat / Ambalan */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">
-              Tingkat / Ambalan
-            </label>
-            <input 
-              list="shelf-presets"
-              placeholder="e.g. Tingkat 1, Tingkat 2..."
-              value={formData.shelfLevel || ''}
-              onChange={e => setFormData({ ...formData, shelfLevel: e.target.value })}
-              className="w-full h-10 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-semibold text-slate-800"
-            />
-            <datalist id="shelf-presets">
-              <option value="Tingkat 1 (Bawah)">Tingkat 1 (Bawah)</option>
-              <option value="Tingkat 2 (Tengah)">Tingkat 2 (Tengah)</option>
-              <option value="Tingkat 3 (Atas)">Tingkat 3 (Atas)</option>
-              <option value="Tingkat 4 (Paling Atas)">Tingkat 4 (Paling Atas)</option>
-              <option value="Gantungan Baris 1">Gantungan Baris 1</option>
-              <option value="Etalase Kaca Depan">Etalase Kaca Depan</option>
-            </datalist>
-          </div>
-
-          {/* Kotak / Bin / Slot */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-600 uppercase ml-1">
-              Nomor Kotak / Bin
-            </label>
-            <input 
-              placeholder="e.g. Kotak 01, Slot A, Bin 04..."
-              value={formData.binNumber || ''}
-              onChange={e => setFormData({ ...formData, binNumber: e.target.value })}
-              className="w-full h-10 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-semibold text-slate-800"
-            />
-          </div>
-        </div>
-
-        {/* Zona & Catatan Petunjuk */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">
-              Zona / Ruang Gudang
-            </label>
-            <div className="w-full h-9 px-3 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center">
-              {formData.rackZone || 'Mengikuti gudang dari rak'}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">
-              Petunjuk Tambahan Posisi
-            </label>
-            <input 
-              placeholder="e.g. Dekat pintu kiri, susunan paling depan"
-              value={formData.locationNotes || ''}
-              onChange={e => setFormData({ ...formData, locationNotes: e.target.value })}
-              className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl outline-none text-xs text-slate-700"
-            />
-          </div>
-        </div>
+        <div className="flex items-center gap-1.5 text-amber-800"><MapPin className="w-3.5 h-3.5 text-amber-600" /><span className="text-[10px] font-black uppercase tracking-wider">Lokasi Stok (Pilih dari Peta Rak)</span></div>
+        <div className="space-y-1"><label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Slot / Kardus / Lokasi Penyimpanan</label><select value={formData.rackLocation || ''} onChange={event => { const location = storageLocations.find(item => item.id === event.target.value); setFormData({ ...formData, rackLocation: location?.id, rackId: location?.rackId, rackCode: location?.code, shelfLevel: location?.levelCode || location?.type, binNumber: location?.slotCode, rackZone: location?.zoneName, locationNotes: location?.positionNote || '' }); }} className="w-full h-11 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-bold text-slate-900"><option value="">-- Pilih lokasi yang sudah dibuat --</option>{storageLocations.map(location => <option key={location.id} value={location.id}>{location.code} — {location.zoneName || 'Gudang'}{location.positionNote ? ` · ${location.positionNote}` : ''}</option>)}</select></div>
+        {storageLocations.length === 0 && <p className="text-[10px] text-amber-800">Belum ada slot/lokasi. Buat dulu melalui Pengaturan → Manajemen Kategori & Rak → Peta Lokasi.</p>}
+        {formData.rackCode && <div className="text-[10px] font-black text-amber-700 bg-amber-100/80 px-2 py-2 rounded-md">📍 Lokasi dipilih: {formData.rackCode}</div>}
       </div>
 
       {/* Pricing & Stock Details */}
