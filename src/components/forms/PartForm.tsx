@@ -41,6 +41,8 @@ export const PartForm: React.FC<PartFormProps> = ({
       sku: autoSku,
       barcode: '',
       name: '',
+      variantName: 'Ukuran',
+      size: '',
       price: 0,
       purchasePrice: 0,
       stock: 0,
@@ -263,6 +265,29 @@ export const PartForm: React.FC<PartFormProps> = ({
           onChange={e => setFormData({ ...formData, name: e.target.value })}
           className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900 focus:border-blue-500 transition-colors"
         />
+      </div>
+
+      {/* SKU / Part Numbering & Barcode */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Jenis Variasi</label>
+          <input
+            placeholder="Contoh: Ukuran, Tipe, Warna"
+            value={formData.variantName || 'Ukuran'}
+            onChange={e => setFormData({ ...formData, variantName: e.target.value })}
+            className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Nilai Variasi / Ukuran</label>
+          <input
+            placeholder="Contoh: 80/90-14, 1 Liter, STD"
+            value={formData.size || ''}
+            onChange={e => setFormData({ ...formData, size: e.target.value })}
+            className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
+          />
+          <p className="text-[10px] text-slate-400 ml-1">Stok, harga, dan posisi rak dicatat untuk tiap variasi ini.</p>
+        </div>
       </div>
 
       {/* SKU / Part Numbering & Barcode */}
