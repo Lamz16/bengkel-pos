@@ -9,6 +9,9 @@ Sistem Informasi Manajemen Bengkel Motor & Kasir POS (Point of Sale) berbasis We
 - **🏎️ Kasir POS & Transaksi Servis**: Pembuatan nota resmi, perhitungan biaya jasa & suku cadang, otomatisasi potongan diskon tier pelanggan (Silver/Gold/VIP), dan cetak struk resmi.
 - **📋 Antrean & Pelacakan Servis**: Pelacakan status pengerjaan secara real-time (*Pending*, *In Progress*, *Ready*, *Done*), nomor antrean otomatis, dan klaim garansi servis.
 - **📦 Stok Suku Cadang & Gudang**: Manajemen SKU unik, barcode, titik stok minimum (alarm stok menipis), lokasi rak detail (*Zone*, *Bin*, *Shelf*), serta riwayat keluar-masuk barang.
+- **🧩 Variasi Produk**: Satu produk induk dapat memiliki variasi ukuran/tipe berbeda; setiap variasi mempunyai SKU, harga, stok minimum, dan lokasi rak sendiri.
+- **🧾 Nota Tempo Persisten**: Nota pembelian tempo, item, dan cicilan disimpan secara atomik di PostgreSQL—tanpa fallback memori yang hilang setelah refresh.
+- **🖨️ Cetak Printer Thermal**: Nota mendukung lebar kertas 58 mm/80 mm dan dicetak melalui dialog browser ke printer thermal USB/LAN/Bluetooth yang telah diinstal pada komputer kasir.
 - **👨‍🔧 Komisi & Penggajian Mekanik**: Perhitungan bonus komisi dari setiap pengerjaan servis, potongan absen/denda garansi, serta rekap harian gaji mekanik.
 - **👥 Pelanggan & Program Loyalitas**: Pencatatan riwayat servis per kendaraan/plat nomor, otomatisasi tier loyalitas (*Bronze*, *Silver*, *Gold*, *VIP*), dan promo otomatis via CS WhatsApp.
 - **📊 Laporan Keuangan & Pengeluaran**: Rekapitulasi omset harian/bulanan, biaya operasional, estimasi laba bersih, serta grafik statistik visual.
@@ -131,11 +134,12 @@ Setelah PostgreSQL berjalan dan file `.env` siap, jalankan urutan perintah Prism
    npm run db:push
    ```
 
-   **Database lama yang sudah berisi barang — jalankan migration normalisasi:**
+   **Database lokal lama yang sebelumnya dibuat dengan `db:push` — jalankan migrasi variasi ini sekali (tanpa reset data):**
    ```bash
-   npm run db:migrate
+   npm run db:migrate:variants
+   npm run db:generate
    ```
-   Migration akan memindahkan nilai kategori, gudang, dan rak lama ke tabel master serta foreign key tanpa menghapus data barang.
+   Migration akan membuat produk induk dari stok yang ada lalu menambahkan kolom variasi ukuran, indeks lokasi rak, dan relasi stok per variasi. Jangan gunakan `--force-reset`.
 
 3. **Seeding Data Awal (Memasukkan data sampel awal):**
    ```bash
@@ -183,7 +187,8 @@ Berikut daftar perintah npm yang dapat digunakan dalam proyek ini:
 | `npm run start` | Menjalankan server produksi terkompilasi (`dist/server.cjs`) |
 | `npm run db:generate` | Menghasilkan kode Prisma Client berdasarkan `prisma/schema.prisma` |
 | `npm run db:push` | Menyinkronkan struktur schema Prisma ke PostgreSQL tanpa file migrasi |
-| `npm run db:migrate` | Menerapkan migration produksi, termasuk normalisasi master kategori/rak/gudang |
+| `npm run db:migrate` | Menerapkan migration produksi, termasuk normalisasi master kategori/rak/gudang dan variasi produk |
+| `npm run db:migrate:variants` | Menerapkan migrasi variasi produk ke database lokal lama yang dibuat dengan `db:push` |
 | `npm run db:seed` | Menjalankan file `prisma/seed.ts` untuk mengisi data sampel awal |
 | `npm run lint` | Memeriksa validasi tipe data TypeScript (`tsc --noEmit`) |
 
