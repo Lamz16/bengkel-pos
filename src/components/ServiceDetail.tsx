@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertTriangle, Wrench, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, Wrench, MapPin, RotateCcw } from 'lucide-react';
 import { WorkshopService, ServiceStatus, SparePart } from '../types';
 import { cn } from '../lib/utils';
 import { formatPartLocation } from '../utils/inventory';
@@ -9,14 +9,20 @@ interface ServiceDetailProps {
   parts?: SparePart[];
   onUpdateStatus: (id: string, s: ServiceStatus) => void;
   onOpenWarrantyClaim?: (service: WorkshopService) => void;
+  onProcessReturn?: (data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }) => Promise<void>;
 }
 
 export const ServiceDetail: React.FC<ServiceDetailProps> = ({ 
   service, 
   parts = [],
   onUpdateStatus, 
-  onOpenWarrantyClaim 
+  onOpenWarrantyClaim,
+  onProcessReturn
 }) => {
+  const [returnMode, setReturnMode] = useState(false);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnQty, setReturnQty] = useState<Record<string, number>>({});
+  const [isReturning, setIsReturning] = useState(false);
   const calculatedBonus = service.mechanicBonusAmount !== undefined 
     ? service.mechanicBonusAmount 
     : Math.round(((service.laborFee || 0) * (service.mechanicBonusPercent || 0)) / 100);
@@ -97,11 +103,12 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
         <div className="p-4 bg-slate-50 rounded-2xl space-y-3">
           {service.partsUsed.map(p => {
             const matchedPart = parts.find(x => x.id === p.partId);
+            const returnable = Math.max(0, p.quantity - (p.returnedQuantity || 0));
             return (
               <div key={p.partId} className="flex justify-between items-start text-xs gap-2">
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-bold text-slate-800">{p.name} (x{p.quantity})</span>
+                    <span className="font-bold text-slate-800">{p.name} (x{returnable}{p.returnedQuantity ? `, retur ${p.returnedQuantity}` : ''})</span>
                     {matchedPart?.sku && (
                       <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 px-1 py-0.2 rounded border border-blue-100">
                         {matchedPart.sku}
@@ -135,6 +142,20 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
           </div>
         </div>
       </div>
+
+      {service.status === 'Done' && onProcessReturn && service.partsUsed.some(item => item.quantity > (item.returnedQuantity || 0)) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
+          <button type="button" onClick={() => setReturnMode(value => !value)} className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white py-3 text-xs font-black text-amber-800 hover:bg-amber-100">
+            <RotateCcw className="w-4 h-4" /> {returnMode ? 'Tutup Retur Barang' : 'Proses Retur Barang'}
+          </button>
+          {returnMode && <>
+            <p className="text-[10px] text-amber-900">Pilih beberapa barang dan jumlahnya. Stok serta laba transaksi akan diperbarui otomatis.</p>
+            {service.partsUsed.map(item => { const available = Math.max(0, item.quantity - (item.returnedQuantity || 0)); return available > 0 && <div key={item.partId} className="flex items-center justify-between gap-3 rounded-xl bg-white p-2.5 border border-amber-100"><span className="text-xs font-bold text-slate-800">{item.name}<small className="block text-slate-400">Maks. {available} pcs</small></span><input type="number" min="0" max={available} value={returnQty[item.partId] || ''} onChange={event => setReturnQty(prev => ({ ...prev, [item.partId]: Math.min(available, Math.max(0, Number(event.target.value || 0))) }))} className="h-9 w-20 rounded-lg border border-amber-200 px-2 text-xs font-bold" /></div> })}
+            <input value={returnReason} onChange={event => setReturnReason(event.target.value)} placeholder="Alasan retur (opsional)" className="h-10 w-full rounded-xl border border-amber-200 bg-white px-3 text-xs" />
+            <button type="button" disabled={isReturning} onClick={async () => { const items = Object.entries(returnQty).filter(([, quantity]) => quantity > 0).map(([partId, quantity]) => ({ partId, quantity })); if (!items.length) return alert('Masukkan jumlah barang yang diretur.'); setIsReturning(true); try { await onProcessReturn({ serviceId: service.id, reason: returnReason, items }); setReturnQty({}); setReturnReason(''); setReturnMode(false); } catch (error: any) { alert(error.message || 'Retur gagal diproses.'); } finally { setIsReturning(false); } }} className="w-full rounded-xl bg-amber-600 py-3 text-xs font-black text-white disabled:opacity-60">{isReturning ? 'Memproses...' : 'Simpan Retur & Kembalikan Stok'}</button>
+          </>}
+        </div>
+      )}
 
       <div className="space-y-3">
         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Update Status</h4>
