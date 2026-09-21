@@ -110,7 +110,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         </section>
         <div class="dash"></div>
         <table><tbody>${itemRows}</tbody></table>
-        ${service.discountAmount && service.discountAmount > 0 ? `<div class="discount"><b>${escapeXml(service.discountReason || 'Diskon Transaksi')}</b><b>- ${escapeXml(rupiah(service.discountAmount))}</b></div>` : ''}
+        ${(service.discountAmount || 0) > 0 ? `<div class="discount"><b>${escapeXml(service.discountReason || 'Diskon Transaksi')}</b><b>- ${escapeXml(rupiah(service.discountAmount))}</b></div>` : ''}
         <div class="total"><div><small>TOTAL PEMBAYARAN</small><small>${service.paymentStatus === 'Paid' ? 'LUNAS' : 'BELUM LUNAS'}</small></div><b>${escapeXml(rupiah(service.totalAmount))}</b></div>
         ${settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 ? `<div class="box"><strong>KETENTUAN GARANSI SERVIS</strong><br />${escapeXml(`${serviceWarrantyTerms} (${serviceWarrantyDays} hari)`)}</div>` : ''}
         ${productWarrantyItems.length ? `<div class="box"><strong>GARANSI PRODUK / SPAREPART</strong><br />${productWarrantyItems.map(item => `${escapeXml(item.name)} — ${escapeXml(item.warrantyDurationDays)} hari`).join('<br />')}</div>` : ''}
@@ -165,7 +165,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         <text x="558" y="${y}" class="amount" text-anchor="end">${escapeXml(item.amount)}</text>`;
     }).join('');
     const discountY = 312 + lineItems.length * 50;
-    const totalY = discountY + (service.discountAmount && service.discountAmount > 0 ? 74 : 38);
+    const totalY = discountY + ((service.discountAmount || 0) > 0 ? 74 : 38);
     const footerY = totalY + 106;
     const height = footerY + 135;
 
@@ -193,7 +193,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       ${settings.showMechanicOnReceipt && service.mechanicName ? `<text x="558" y="269" class="meta" text-anchor="end">Mekanik: ${escapeXml(service.mechanicName)}</text>` : ''}
       <line x1="36" y1="285" x2="564" y2="285" stroke="#cbd5e1" stroke-dasharray="5 4"/>
       ${itemRows}
-      ${service.discountAmount && service.discountAmount > 0 ? `<text x="42" y="${discountY + 18}" class="title" fill="#047857">${escapeXml(service.discountReason || 'Diskon')}</text><text x="558" y="${discountY + 18}" class="amount" fill="#047857" text-anchor="end">- ${escapeXml(rupiah(service.discountAmount))}</text>` : ''}
+      ${(service.discountAmount || 0) > 0 ? `<text x="42" y="${discountY + 18}" class="title" fill="#047857">${escapeXml(service.discountReason || 'Diskon')}</text><text x="558" y="${discountY + 18}" class="amount" fill="#047857" text-anchor="end">- ${escapeXml(rupiah(service.discountAmount))}</text>` : ''}
       <rect x="36" y="${totalY}" width="528" height="62" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
       <text x="54" y="${totalY + 26}" class="total-label">TOTAL PEMBAYARAN</text><text x="54" y="${totalY + 43}" class="meta">${service.paymentStatus === 'Paid' ? 'LUNAS' : 'BELUM LUNAS'}</text>
       <text x="546" y="${totalY + 39}" class="total" text-anchor="end">${escapeXml(rupiah(service.totalAmount))}</text>
@@ -279,7 +279,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
           <div className="space-y-2 text-xs pb-3 border-b border-dashed border-slate-200 receipt-divider">
             {serviceItems.map((item, index) => <div key={`service-${index}`} className="flex justify-between items-start"><div><p className="font-bold text-slate-900">{item.name}</p><p className="text-[9px] text-slate-400">Jasa Servis</p></div><span className="font-bold text-slate-800">{rupiah(item.price || 0)}</span></div>)}
             {service.partsUsed.map((item, index) => <div key={`part-${index}`} className="flex justify-between items-start"><div><p className="font-bold text-slate-900">{item.name || 'Sparepart'}</p><p className="text-[9px] text-slate-400">{item.quantity || 1} pcs x {rupiah(item.priceAtTime || 0)}</p></div><span className="font-bold text-slate-800">{rupiah((item.quantity || 1) * (item.priceAtTime || 0))}</span></div>)}
-            {service.discountAmount && service.discountAmount > 0 && <div className="flex justify-between items-start pt-2 text-emerald-700"><div><p className="font-bold">{service.discountReason || 'Diskon Transaksi'}</p><p className="text-[9px]">Potongan harga</p></div><span className="font-bold">- {rupiah(service.discountAmount)}</span></div>}
+            {(service.discountAmount || 0) > 0 && <div className="flex justify-between items-start pt-2 text-emerald-700"><div><p className="font-bold">{service.discountReason || 'Diskon Transaksi'}</p><p className="text-[9px]">Potongan harga</p></div><span className="font-bold">- {rupiah(service.discountAmount)}</span></div>}
           </div>
 
           <div className="receipt-total bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex justify-between items-center">
