@@ -77,6 +77,38 @@ export function clearAuthToken(): void {
   if (typeof window !== 'undefined') localStorage.removeItem(API_TOKEN_KEY);
 }
 
+type TokenPayload = { exp?: number };
+
+function readTokenPayload(token: string): TokenPayload | null {
+  try {
+    const encoded = token.split('.')[1];
+    if (!encoded) return null;
+    const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + (4 - normalized.length % 4) % 4, '=');
+    return JSON.parse(atob(padded)) as TokenPayload;
+  } catch {
+    return null;
+  }
+}
+
+export function isAuthTokenExpired(token = getAuthToken()): boolean {
+  if (!token) return true;
+  const payload = readTokenPayload(token);
+  return !payload?.exp || payload.exp * 1000 <= Date.now();
+}
+
+export function getAuthTokenExpiry(token = getAuthToken()): number | null {
+  const payload = token ? readTokenPayload(token) : null;
+  return payload?.exp ? payload.exp * 1000 : null;
+}
+
+export function expireAuthSession(): void {
+  clearAuthToken();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('bengkelpro:session-expired'));
+  }
+}
+
 export interface ApiHealthStatus {
   online: boolean;
   url: string;
@@ -167,6 +199,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    if (res.status === 401 && token) {
+      expireAuthSession();
+    }
     throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
   }
 
