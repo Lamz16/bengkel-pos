@@ -51,6 +51,12 @@ export class ServiceRepository implements IServiceRepository {
           warrantyClaimReason: s.warrantyClaimReason || undefined,
           isMechanicAbsentOnClaim: s.isMechanicAbsentOnClaim || undefined,
           warrantyDeductionAmount: s.warrantyDeductionAmount == null ? undefined : Number(s.warrantyDeductionAmount),
+          receiptType: s.receiptType as 'SERVICE' | 'SALE',
+          receiptHeaderSnapshot: s.receiptHeaderSnapshot || undefined,
+          receiptFooterSnapshot: s.receiptFooterSnapshot || undefined,
+          serviceWarrantyDurationDays: s.serviceWarrantyDurationDays || 0,
+          serviceWarrantyTermsSnapshot: s.serviceWarrantyTermsSnapshot || undefined,
+          serviceWarrantyExpiresAt: s.serviceWarrantyExpiresAt?.toISOString(),
           version: s.version || 1,
         }));
       } catch (err) {
@@ -131,6 +137,12 @@ export class ServiceRepository implements IServiceRepository {
             mechanicName: s.mechanicName || undefined,
             mechanicBonusPercent: s.mechanicBonusPercent || undefined,
             mechanicBonusAmount: s.mechanicBonusAmount == null ? undefined : Number(s.mechanicBonusAmount),
+            receiptType: s.receiptType as 'SERVICE' | 'SALE',
+            receiptHeaderSnapshot: s.receiptHeaderSnapshot || undefined,
+            receiptFooterSnapshot: s.receiptFooterSnapshot || undefined,
+            serviceWarrantyDurationDays: s.serviceWarrantyDurationDays || 0,
+            serviceWarrantyTermsSnapshot: s.serviceWarrantyTermsSnapshot || undefined,
+            serviceWarrantyExpiresAt: s.serviceWarrantyExpiresAt?.toISOString(),
             hasWarrantyClaim: s.hasWarrantyClaim,
             warrantyClaimDate: s.warrantyClaimDate ? s.warrantyClaimDate.toISOString() : undefined,
             warrantyClaimReason: s.warrantyClaimReason || undefined,
@@ -254,6 +266,12 @@ export class ServiceRepository implements IServiceRepository {
             mechanicName: data.mechanicName,
             mechanicBonusPercent: data.mechanicBonusPercent,
             mechanicBonusAmount: data.mechanicBonusAmount,
+            receiptType: data.receiptType || (data.serviceType === 'Retail' ? 'SALE' : 'SERVICE'),
+            receiptHeaderSnapshot: data.receiptHeaderSnapshot,
+            receiptFooterSnapshot: data.receiptFooterSnapshot,
+            serviceWarrantyDurationDays: data.serviceWarrantyDurationDays || 0,
+            serviceWarrantyTermsSnapshot: data.serviceWarrantyTermsSnapshot,
+            serviceWarrantyExpiresAt: data.serviceWarrantyExpiresAt ? new Date(data.serviceWarrantyExpiresAt) : null,
             serviceItems: { create: (data.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
             partsUsed: {
               create: data.partsUsed.map(p => ({
