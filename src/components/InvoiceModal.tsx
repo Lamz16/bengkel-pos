@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { format } from 'date-fns';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { FileText, X, ShieldCheck, Share2, Printer } from 'lucide-react';
 import { WorkshopService, CompanySettings } from '../types';
 
@@ -158,7 +160,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
     };
 
     try {
-      // Render seluruh isi preview, termasuk bagian yang berada di luar area scroll.
+      // Ambil elemen preview yang sama persis, termasuk semua bagian yang perlu discroll.
       source.style.height = 'auto';
       source.style.maxHeight = 'none';
       source.style.overflow = 'visible';
@@ -166,56 +168,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       source.style.flex = 'none';
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
-      const width = Math.ceil(source.getBoundingClientRect().width);
-      const height = Math.ceil(source.scrollHeight);
-      if (!width || !height) throw new Error('Ukuran preview nota tidak valid.');
-
-      const clone = source.cloneNode(true) as HTMLElement;
-
-      const copyComputedStyles = (from: Element, to: Element) => {
-        const styles = getComputedStyle(from);
-        let inlineStyle = '';
-        for (let index = 0; index < styles.length; index += 1) {
-          const property = styles[index];
-          inlineStyle += `${property}:${styles.getPropertyValue(property)};`;
-        }
-        to.setAttribute('style', inlineStyle);
-        Array.from(from.children).forEach((child, index) => {
-          if (to.children[index]) copyComputedStyles(child, to.children[index]);
-        });
-      };
-      copyComputedStyles(source, clone);
-      clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-      clone.style.width = `${width}px`;
-      clone.style.height = `${height}px`;
-      clone.style.maxHeight = 'none';
-      clone.style.overflow = 'visible';
-
-      const markup = new XMLSerializer().serializeToString(clone);
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${markup}</foreignObject></svg>`;
-      const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
-
-      try {
-        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const value = new Image();
-          value.onload = () => resolve(value);
-          value.onerror = () => reject(new Error('Preview tidak dapat dirender menjadi PDF.'));
-          value.src = svgUrl;
-        });
-        const scale = 2;
-        const canvas = document.createElement('canvas');
-        canvas.width = width * scale;
-        canvas.height = height * scale;
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Canvas tidak tersedia pada browser ini.');
-        context.scale(scale, scale);
-        context.fillStyle = '#ffffff';
-        context.fillRect(0, 0, width, height);
-        context.drawImage(image, 0, 0, width, height);
-        return canvas;
-      } finally {
-        URL.revokeObjectURL(svgUrl);
-      }
+      return await html2canvas(source, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: source.scrollWidth,
+        windowHeight: source.scrollHeight
+      });
     } finally {
       source.style.height = originalStyle.height;
       source.style.maxHeight = originalStyle.maxHeight;
@@ -226,46 +186,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
   };
 
   const createPdfFile = (canvas: HTMLCanvasElement) => {
-    const imageData = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
-    const binary = atob(imageData);
-    const jpeg = Uint8Array.from(binary, char => char.charCodeAt(0));
-    const encoder = new TextEncoder();
-    const chunks: Uint8Array[] = [];
-    const offsets: number[] = [];
-    let position = 0;
-    const add = (value: string | Uint8Array) => {
-      const bytes = typeof value === 'string' ? encoder.encode(value) : value;
-      chunks.push(bytes);
-      position += bytes.length;
-    };
-    const pageWidth = 320;
-    const pageHeight = Math.max(180, Number((canvas.height / canvas.width * pageWidth).toFixed(2)));
-    const addObject = (id: number, value: string | Uint8Array, image = false) => {
-      offsets[id] = position;
-      add(`${id} 0 obj\n`);
-      if (image) {
-        add(`<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);
-        add(jpeg);
-        add('\nendstream\n');
-      } else {
-        add(value);
-      }
-      add('endobj\n');
-    };
-
-    add('%PDF-1.4\n');
-    addObject(1, '<< /Type /Catalog /Pages 2 0 R >>\n');
-    addObject(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n');
-    addObject(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\n`);
-    addObject(4, jpeg, true);
-    const content = `q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im0 Do\nQ\n`;
-    addObject(5, `<< /Length ${encoder.encode(content).length} >>\nstream\n${content}endstream\n`);
-    const xrefPosition = position;
-    add('xref\n0 6\n0000000000 65535 f \n');
-    for (let id = 1; id <= 5; id += 1) add(`${String(offsets[id]).padStart(10, '0')} 00000 n \n`);
-    add(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF`);
-
-    return new File([new Blob(chunks, { type: 'application/pdf' })], `nota-${invoiceNumber}.pdf`, { type: 'application/pdf' });
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'px',
+      format: [canvas.width, canvas.height],
+      hotfixes: ['px_scaling'],
+      compress: true
+    });
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, canvas.width, canvas.height, undefined, 'FAST');
+    return new File([pdf.output('blob')], `nota-${invoiceNumber}.pdf`, { type: 'application/pdf' });
   };
 
   const handleShareWhatsApp = async () => {
