@@ -7,7 +7,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar,
   CartesianGrid, XAxis, YAxis
 } from 'recharts';
-import { WalletCards, ReceiptText, TrendingUp, Package, Wrench, UsersRound } from 'lucide-react';
+import { WalletCards, ReceiptText, TrendingUp, Package, Wrench, UsersRound, Trophy } from 'lucide-react';
 import { WorkshopService, Expense, SparePart } from '../types';
 import { cn } from '../lib/utils';
 
@@ -104,6 +104,58 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
     return Object.entries(groups).map(([name, value]) => ({ name, value }));
   }, [filteredData]);
 
+  const bestSellingParts = useMemo(() => {
+    const products = new Map<string, { name: string; quantity: number; revenue: number }>();
+
+    filteredData.filteredServices.forEach(service => {
+      service.partsUsed.forEach(item => {
+        const quantity = Math.max(0, (item.quantity || 0) - (item.returnedQuantity || 0));
+        if (quantity === 0) return;
+
+        const key = item.partId || item.name;
+        const current = products.get(key) || { name: item.name, quantity: 0, revenue: 0 };
+        current.quantity += quantity;
+        current.revenue += (item.priceAtTime || 0) * quantity;
+        products.set(key, current);
+      });
+    });
+
+    return Array.from(products.values())
+      .sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [filteredData]);
+
+  const bestSellingServices = useMemo(() => {
+    const serviceItems = new Map<string, { name: string; quantity: number; revenue: number }>();
+
+    filteredData.filteredServices.forEach(service => {
+      if (service.receiptType === 'SALE' || service.serviceType === 'Retail') return;
+
+      const items = service.serviceItems?.filter(item => item.name.trim()) || [];
+      if (items.length > 0) {
+        items.forEach(item => {
+          const key = item.name.trim();
+          const current = serviceItems.get(key) || { name: key, quantity: 0, revenue: 0 };
+          current.quantity += 1;
+          current.revenue += item.price || 0;
+          serviceItems.set(key, current);
+        });
+        return;
+      }
+
+      // Fallback untuk transaksi lama sebelum rincian jasa per item tersedia.
+      const key = service.serviceType.trim() || 'Jasa servis';
+      const current = serviceItems.get(key) || { name: key, quantity: 0, revenue: 0 };
+      current.quantity += 1;
+      current.revenue += service.laborFee || 0;
+      serviceItems.set(key, current);
+    });
+
+    return Array.from(serviceItems.values())
+      .sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [filteredData]);
+
   return (
     <div className="space-y-6 pb-20">
       <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
@@ -150,6 +202,25 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
         <div className="p-6 bg-white rounded-[32px] border border-slate-100 shadow-sm"><h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Komposisi Penjualan</h3><div className="h-[200px] w-full"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={salesComposition} cx="50%" cy="50%" innerRadius={55} outerRadius={78} paddingAngle={5} dataKey="value">{salesComposition.map((entry, index) => <Cell key={entry.name} fill={COLORS[index]} />)}</Pie><Tooltip formatter={(value: number) => money(value || 0)} /></PieChart></ResponsiveContainer></div><div className="flex justify-center gap-5">{salesComposition.map((item, index) => <div key={item.name} className="flex items-center gap-2 text-[10px] font-bold text-slate-500"><span className="w-2 h-2 rounded-full" style={{ background: COLORS[index] }} />{item.name}</div>)}</div></div>
         <div className="p-6 bg-white rounded-[32px] border border-slate-100 shadow-sm"><div className="flex items-center justify-between mb-4"><h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Jenis Transaksi Selesai</h3><span className="text-[10px] font-black text-blue-600 flex items-center gap-1"><UsersRound className="w-3.5 h-3.5" /> {stats.transactionCount} transaksi</span></div><div className="h-[200px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={performanceData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} /><YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} /><Tooltip cursor={{ fill: '#f8fafc' }} /><Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={24} /></BarChart></ResponsiveContainer></div></div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TopSellingList
+          title="Produk Terlaris"
+          description="Berdasarkan jumlah barang bersih terjual setelah retur pada transaksi selesai."
+          icon={Package}
+          items={bestSellingParts}
+          emptyMessage="Belum ada penjualan barang pada periode ini."
+          accent="blue"
+        />
+        <TopSellingList
+          title="Jasa Terlaris"
+          description="Berdasarkan frekuensi jasa pada transaksi servis yang sudah selesai."
+          icon={Wrench}
+          items={bestSellingServices}
+          emptyMessage="Belum ada transaksi jasa pada periode ini."
+          accent="emerald"
+        />
+      </div>
     </div>
   );
 };
@@ -157,3 +228,33 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
 const DateField = ({ label, type, value, onChange }: { label: string; type: 'date' | 'month'; value: string; onChange: (value: string) => void }) => <div className="flex-1 min-w-[140px] space-y-1.5"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label><input type={type} value={value} onChange={event => onChange(event.target.value)} className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:border-blue-200" /></div>;
 
 const ProfitSection = ({ title, icon: Icon, color, rows, result }: { title: string; icon: React.ComponentType<{ className?: string }>; color: 'blue' | 'emerald'; rows: [string, number][]; result: [string, number] }) => <section className={cn('p-4 rounded-2xl border', color === 'blue' ? 'bg-blue-50/60 border-blue-100' : 'bg-emerald-50/60 border-emerald-100')}><div className="flex items-center gap-2 mb-4"><Icon className={cn('w-4 h-4', color === 'blue' ? 'text-blue-600' : 'text-emerald-600')} /><h4 className="text-xs font-black text-slate-800 uppercase">{title}</h4></div>{rows.map(([label, value]) => <div key={label} className="flex justify-between py-2 border-b border-slate-200/60 text-xs"><span className="text-slate-500">{label}</span><span className="font-bold text-slate-800">{money(value)}</span></div>)}<div className="flex justify-between pt-3 text-xs"><span className="font-black text-slate-800 uppercase">{result[0]}</span><span className={cn('font-black', color === 'blue' ? 'text-blue-700' : 'text-emerald-700')}>{money(result[1])}</span></div></section>;
+
+const TopSellingList = ({ title, description, icon: Icon, items, emptyMessage, accent }: {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: Array<{ name: string; quantity: number; revenue: number }>;
+  emptyMessage: string;
+  accent: 'blue' | 'emerald';
+}) => {
+  const colors = accent === 'blue'
+    ? { icon: 'text-blue-600', badge: 'bg-blue-100 text-blue-700', value: 'text-blue-700' }
+    : { icon: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700', value: 'text-emerald-700' };
+
+  return <section className="p-6 bg-white rounded-[32px] border border-slate-100 shadow-sm">
+    <div className="flex items-start justify-between gap-3 mb-5">
+      <div>
+        <div className="flex items-center gap-2"><Icon className={cn('w-4 h-4', colors.icon)} /><h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">{title}</h3></div>
+        <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{description}</p>
+      </div>
+      <Trophy className={cn('w-5 h-5 shrink-0', colors.icon)} />
+    </div>
+    {items.length === 0 ? <p className="py-8 text-center text-xs font-medium text-slate-400">{emptyMessage}</p> : <div className="space-y-2.5">
+      {items.map((item, index) => <div key={item.name} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+        <span className={cn('w-7 h-7 shrink-0 rounded-xl flex items-center justify-center text-[10px] font-black', colors.badge)}>{index + 1}</span>
+        <div className="min-w-0 flex-1"><p className="truncate text-xs font-black text-slate-800">{item.name}</p><p className="mt-0.5 text-[10px] font-medium text-slate-400">Omzet {money(item.revenue)}</p></div>
+        <div className="text-right"><p className={cn('text-sm font-black', colors.value)}>{item.quantity}x</p><p className="text-[9px] font-bold text-slate-400 uppercase">Terjual</p></div>
+      </div>)}
+    </div>}
+  </section>;
+};
