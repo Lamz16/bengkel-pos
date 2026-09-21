@@ -25,8 +25,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
   if (!service) return null;
 
   const isSale = service.receiptType === 'SALE' || service.serviceType === 'Retail';
-  const receiptHeader = service.receiptHeaderSnapshot || (isSale ? settings.saleReceiptHeader : settings.serviceReceiptHeader) || receiptHeader || (isSale ? 'NOTA PEMBELIAN BARANG' : 'NOTA TRANSAKSI SERVIS');
-  const receiptFooter = service.receiptFooterSnapshot || (isSale ? settings.saleReceiptFooter : settings.serviceReceiptFooter) || receiptFooter;
+  const receiptHeader = service.receiptHeaderSnapshot || (isSale ? settings.saleReceiptHeader : settings.serviceReceiptHeader) || settings.receiptHeader || (isSale ? 'NOTA PEMBELIAN BARANG' : 'NOTA TRANSAKSI SERVIS');
+  const receiptFooter = service.receiptFooterSnapshot || (isSale ? settings.saleReceiptFooter : settings.serviceReceiptFooter) || settings.footerNote;
   const serviceWarrantyDays = service.serviceWarrantyDurationDays || 0;
   const serviceWarrantyTerms = service.serviceWarrantyTermsSnapshot || settings.serviceWarrantyTerms || settings.warrantyTerms;
 
