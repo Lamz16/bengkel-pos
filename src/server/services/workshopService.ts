@@ -152,6 +152,47 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.updateStatus(id, status);
   }
 
+  async processReturn(data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }): Promise<WorkshopService> {
+    if (!isDbConnected()) throw new Error('Retur memerlukan koneksi database.');
+    const requests = data.items.filter(item => item.partId && Number.isInteger(item.quantity) && item.quantity > 0);
+    if (!requests.length) throw new Error('Pilih minimal satu barang yang akan diretur.');
+
+    await prisma.$transaction(async tx => {
+      const service = await tx.workshopService.findUnique({
+        where: { id: data.serviceId }, include: { partsUsed: true }
+      });
+      if (!service) throw new Error('Transaksi asal tidak ditemukan.');
+      if (service.status !== 'Done') throw new Error('Retur hanya dapat diproses pada transaksi selesai.');
+
+      let refund = 0;
+      const returnItems: Array<{ servicePartId: string; partId: string; name: string; quantity: number; unitPrice: any }> = [];
+      for (const request of requests) {
+        const sold = service.partsUsed.find(item => item.partId === request.partId);
+        if (!sold) throw new Error('Barang retur tidak ditemukan pada transaksi asal.');
+        const remaining = sold.quantity - sold.returnedQuantity;
+        if (request.quantity > remaining) throw new Error(`Jumlah retur ${sold.name} melebihi sisa yang dapat diretur (${remaining}).`);
+        refund += Number(sold.priceAtTime) * request.quantity;
+        returnItems.push({ servicePartId: sold.id, partId: sold.partId, name: sold.name, quantity: request.quantity, unitPrice: sold.priceAtTime });
+      }
+
+      const record = await tx.salesReturn.create({ data: {
+        serviceId: service.id, reason: data.reason?.trim() || null, totalAmount: refund,
+        items: { create: returnItems }
+      }});
+      for (const item of returnItems) {
+        await tx.servicePartItem.update({ where: { id: item.servicePartId }, data: { returnedQuantity: { increment: item.quantity } } });
+        await tx.sparePart.update({ where: { id: item.partId }, data: { stock: { increment: item.quantity } } });
+        await tx.stockHistory.create({ data: { partId: item.partId, partName: item.name, amount: item.quantity, type: 'In', reason: `Retur ${record.id} dari transaksi ${service.id}` } });
+      }
+      await tx.workshopService.update({ where: { id: service.id }, data: { totalAmount: { decrement: refund }, version: { increment: 1 } } });
+      if (service.customerId) await tx.customer.update({ where: { id: service.customerId }, data: { totalSpent: { decrement: refund } } });
+    });
+
+    const updated = await this.serviceRepo.getById(data.serviceId);
+    if (!updated) throw new Error('Transaksi retur berhasil tetapi data tidak dapat dimuat.');
+    return updated;
+  }
+
   async applyWarrantyClaim(data: {
     serviceId: string;
     reason: string;
