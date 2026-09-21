@@ -24,9 +24,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
 
   if (!service) return null;
 
+  const isSale = service.receiptType === 'SALE' || service.serviceType === 'Retail';
+  const receiptHeader = service.receiptHeaderSnapshot || (isSale ? settings.saleReceiptHeader : settings.serviceReceiptHeader) || receiptHeader || (isSale ? 'NOTA PEMBELIAN BARANG' : 'NOTA TRANSAKSI SERVIS');
+  const receiptFooter = service.receiptFooterSnapshot || (isSale ? settings.saleReceiptFooter : settings.serviceReceiptFooter) || receiptFooter;
+  const serviceWarrantyDays = service.serviceWarrantyDurationDays || 0;
+  const serviceWarrantyTerms = service.serviceWarrantyTermsSnapshot || settings.serviceWarrantyTerms || settings.warrantyTerms;
+
   const serviceItems = service.serviceItems?.length
     ? service.serviceItems
-    : service.serviceType !== 'Retail'
+    : !isSale
       ? [{ name: 'Jasa Mekanik', price: service.laborFee || 0 }]
       : [];
   const productWarrantyItems = service.partsUsed.filter(
@@ -92,7 +98,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
           <p class="sub">${escapeXml(settings.slogan || '')}</p>
           ${settings.address ? `<p class="muted">${escapeXml(settings.address)}</p>` : ''}
           ${settings.phone ? `<p class="sub">Telp/WA: ${escapeXml(settings.phone)}</p>` : ''}
-          ${settings.receiptHeader ? `<span class="header-label">${escapeXml(settings.receiptHeader)}</span>` : ''}
+          ${receiptHeader ? `<span class="header-label">${escapeXml(receiptHeader)}</span>` : ''}
         </header>
         <div class="dash"></div>
         <section class="meta">
@@ -106,10 +112,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         <table><tbody>${itemRows}</tbody></table>
         ${service.discountAmount && service.discountAmount > 0 ? `<div class="discount"><b>${escapeXml(service.discountReason || 'Diskon Transaksi')}</b><b>- ${escapeXml(rupiah(service.discountAmount))}</b></div>` : ''}
         <div class="total"><div><small>TOTAL PEMBAYARAN</small><small>${service.paymentStatus === 'Paid' ? 'LUNAS' : 'BELUM LUNAS'}</small></div><b>${escapeXml(rupiah(service.totalAmount))}</b></div>
-        ${settings.showWarrantyOnReceipt && service.serviceType !== 'Retail' && settings.warrantyTerms ? `<div class="box"><strong>KETENTUAN GARANSI SERVIS</strong><br />${escapeXml(settings.warrantyTerms)}</div>` : ''}
+        ${settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 ? `<div class="box"><strong>KETENTUAN GARANSI SERVIS</strong><br />${escapeXml(`${serviceWarrantyTerms} (${serviceWarrantyDays} hari)`)}</div>` : ''}
         ${productWarrantyItems.length ? `<div class="box"><strong>GARANSI PRODUK / SPAREPART</strong><br />${productWarrantyItems.map(item => `${escapeXml(item.name)} — ${escapeXml(item.warrantyDurationDays)} hari`).join('<br />')}</div>` : ''}
         ${settings.receiptContactHelp ? `<p class="footer">☎ ${escapeXml(settings.receiptContactHelp)}</p>` : ''}
-        <footer class="footer"><strong>${escapeXml(settings.name || 'BENGKEL KITA')} • TERIMA KASIH</strong><br />${escapeXml(settings.footerNote || '')}</footer>
+        <footer class="footer"><strong>${escapeXml(settings.name || 'BENGKEL KITA')} • TERIMA KASIH</strong><br />${escapeXml(receiptFooter || '')}</footer>
       </main></body></html>`;
   };
 
@@ -175,7 +181,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       <text x="300" y="66" class="tag" text-anchor="middle">${escapeXml(settings.slogan || '')}</text>
       <text x="300" y="83" class="muted" text-anchor="middle">${escapeXml(settings.address || '')}</text>
       <text x="300" y="100" class="meta" text-anchor="middle">${settings.phone ? `Telp/WA: ${escapeXml(settings.phone)}` : ''}</text>
-      ${settings.receiptHeader ? `<rect x="185" y="112" width="230" height="22" rx="7" fill="#f1f5f9"/><text x="300" y="127" class="meta" text-anchor="middle">${escapeXml(settings.receiptHeader)}</text>` : ''}
+      ${receiptHeader ? `<rect x="185" y="112" width="230" height="22" rx="7" fill="#f1f5f9"/><text x="300" y="127" class="meta" text-anchor="middle">${escapeXml(receiptHeader)}</text>` : ''}
       <line x1="36" y1="148" x2="564" y2="148" stroke="#cbd5e1" stroke-dasharray="5 4"/>
       <text x="42" y="171" class="muted">No. Nota</text><text x="42" y="187" class="meta">${escapeXml(invoiceNumber)}</text>
       <text x="558" y="171" class="muted" text-anchor="end">Tanggal</text><text x="558" y="187" class="meta" text-anchor="end">${escapeXml(invoiceDate)}</text>
@@ -191,9 +197,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       <rect x="36" y="${totalY}" width="528" height="62" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
       <text x="54" y="${totalY + 26}" class="total-label">TOTAL PEMBAYARAN</text><text x="54" y="${totalY + 43}" class="meta">${service.paymentStatus === 'Paid' ? 'LUNAS' : 'BELUM LUNAS'}</text>
       <text x="546" y="${totalY + 39}" class="total" text-anchor="end">${escapeXml(rupiah(service.totalAmount))}</text>
-      ${settings.showWarrantyOnReceipt && service.serviceType !== 'Retail' && settings.warrantyTerms ? `<rect x="36" y="${totalY + 76}" width="528" height="48" rx="10" fill="#eff6ff"/><text x="52" y="${totalY + 95}" class="meta">GARANSI SERVIS</text><text x="52" y="${totalY + 112}" class="muted">${escapeXml(settings.warrantyTerms)}</text>` : ''}
+      ${settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 ? `<rect x="36" y="${totalY + 76}" width="528" height="48" rx="10" fill="#eff6ff"/><text x="52" y="${totalY + 95}" class="meta">GARANSI SERVIS</text><text x="52" y="${totalY + 112}" class="muted">${escapeXml(`${serviceWarrantyTerms} (${serviceWarrantyDays} hari)`)}</text>` : ''}
       <text x="300" y="${footerY}" class="title" text-anchor="middle">${escapeXml(settings.name || 'BENGKEL KITA')} • TERIMA KASIH</text>
-      <text x="300" y="${footerY + 20}" class="muted" text-anchor="middle">${escapeXml(settings.footerNote || '')}</text>
+      <text x="300" y="${footerY + 20}" class="muted" text-anchor="middle">${escapeXml(receiptFooter || '')}</text>
       ${settings.receiptContactHelp ? `<text x="300" y="${footerY + 42}" class="meta" text-anchor="middle">☎ ${escapeXml(settings.receiptContactHelp)}</text>` : ''}
     </svg>`;
   };
@@ -250,7 +256,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{settings.slogan || 'Slogan Bengkel Anda'}</p>
             {settings.address && <p className="text-[9px] text-slate-400 font-medium leading-tight max-w-[240px] mx-auto">{settings.address}</p>}
             {settings.phone && <p className="text-[9px] font-bold text-blue-600">Telp/WA: {settings.phone}</p>}
-            {settings.receiptHeader && <div className="pt-2"><span className="text-[9px] font-black uppercase bg-slate-100 px-2.5 py-0.5 rounded text-slate-700">{settings.receiptHeader}</span></div>}
+            {receiptHeader && <div className="pt-2"><span className="text-[9px] font-black uppercase bg-slate-100 px-2.5 py-0.5 rounded text-slate-700">{receiptHeader}</span></div>}
           </div>
 
           <div className="grid grid-cols-2 text-[10px] gap-2 pb-3 border-b border-dashed border-slate-200 receipt-divider">
@@ -281,12 +287,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             <span className="text-lg font-black text-blue-600 tracking-tight">{rupiah(service.totalAmount)}</span>
           </div>
 
-          {settings.showWarrantyOnReceipt && service.serviceType !== 'Retail' && settings.warrantyTerms && <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Ketentuan Garansi Servis:</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{settings.warrantyTerms}</p></div>}
+          {settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 && <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Ketentuan Garansi Servis:</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{settings.warrantyTerms}</p></div>}
 
           {productWarrantyItems.length > 0 && <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl space-y-1"><div className="flex items-center gap-1.5 text-emerald-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /><span>Garansi Produk / Sparepart</span></div>{productWarrantyItems.map((item, index) => <p key={`${item.partId}-${index}`} className="text-[10px] text-emerald-800"><b>{item.name}</b> — {item.warrantyDurationDays} hari{item.warrantyExpiresAt ? `, sampai ${format(new Date(item.warrantyExpiresAt), 'dd MMM yyyy')}` : ''}</p>)}</div>}
 
           {settings.receiptContactHelp && <div className="text-center text-[10px] text-slate-600 font-bold bg-slate-50 p-2 rounded-lg">📞 {settings.receiptContactHelp}</div>}
-          <div className="text-center space-y-1 pt-2"><p className="text-[10px] font-black uppercase tracking-wider text-slate-700">{settings.name || 'BENGKEL KITA'} • TERIMA KASIH</p><p className="text-[9px] text-slate-400 font-medium leading-normal max-w-[280px] mx-auto italic">"{settings.footerNote}"</p></div>
+          <div className="text-center space-y-1 pt-2"><p className="text-[10px] font-black uppercase tracking-wider text-slate-700">{settings.name || 'BENGKEL KITA'} • TERIMA KASIH</p><p className="text-[9px] text-slate-400 font-medium leading-normal max-w-[280px] mx-auto italic">"{receiptFooter}"</p></div>
           <div className="pt-2 text-center text-[10px] font-mono text-slate-300">- - - - - - - - - - - - - - - - - - - - - - -</div>
         </div>
 
