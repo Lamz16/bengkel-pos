@@ -145,71 +145,134 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
     }, 250);
   };
 
-  const buildShareImage = () => {
-    const lineItems = [
-      ...serviceItems.map(item => ({
-        title: item.name,
-        subtitle: 'Jasa Servis',
-        amount: rupiah(item.price || 0)
-      })),
-      ...service.partsUsed.map(item => ({
-        title: item.name || 'Sparepart',
-        subtitle: `${item.quantity || 1} pcs x ${rupiah(item.priceAtTime || 0)}`,
-        amount: rupiah((item.quantity || 1) * (item.priceAtTime || 0))
-      }))
-    ];
-    const itemRows = lineItems.map((item, index) => {
-      const y = 312 + index * 50;
-      return `<text x="42" y="${y}" class="title">${escapeXml(item.title)}</text>
-        <text x="42" y="${y + 16}" class="muted">${escapeXml(item.subtitle)}</text>
-        <text x="558" y="${y}" class="amount" text-anchor="end">${escapeXml(item.amount)}</text>`;
-    }).join('');
-    const discountY = 312 + lineItems.length * 50;
-    const totalY = discountY + ((service.discountAmount || 0) > 0 ? 74 : 38);
-    const footerY = totalY + 106;
-    const height = footerY + 135;
+  const renderReceiptPreview = async () => {
+    const source = receiptRef.current;
+    if (!source) throw new Error('Preview nota belum tersedia.');
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="${height}" viewBox="0 0 600 ${height}">
-      <style>
-        .brand{font:800 23px Arial,sans-serif;fill:#0f172a}.tag{font:700 10px Arial,sans-serif;fill:#64748b}
-        .meta{font:700 11px Arial,sans-serif;fill:#475569}.title{font:700 13px Arial,sans-serif;fill:#0f172a}
-        .muted{font:500 10px Arial,sans-serif;fill:#64748b}.amount{font:700 13px Arial,sans-serif;fill:#0f172a}
-        .total-label{font:700 10px Arial,sans-serif;fill:#64748b}.total{font:800 23px Arial,sans-serif;fill:#2563eb}
-      </style>
-      <rect width="600" height="${height}" fill="#fff"/><rect width="600" height="7" fill="#2563eb"/>
-      <text x="300" y="48" class="brand" text-anchor="middle">${escapeXml(settings.name || 'NAMA BENGKEL')}</text>
-      <text x="300" y="66" class="tag" text-anchor="middle">${escapeXml(settings.slogan || '')}</text>
-      <text x="300" y="83" class="muted" text-anchor="middle">${escapeXml(settings.address || '')}</text>
-      <text x="300" y="100" class="meta" text-anchor="middle">${settings.phone ? `Telp/WA: ${escapeXml(settings.phone)}` : ''}</text>
-      ${receiptHeader ? `<rect x="185" y="112" width="230" height="22" rx="7" fill="#f1f5f9"/><text x="300" y="127" class="meta" text-anchor="middle">${escapeXml(receiptHeader)}</text>` : ''}
-      <line x1="36" y1="148" x2="564" y2="148" stroke="#cbd5e1" stroke-dasharray="5 4"/>
-      <text x="42" y="171" class="muted">No. Nota</text><text x="42" y="187" class="meta">${escapeXml(invoiceNumber)}</text>
-      <text x="558" y="171" class="muted" text-anchor="end">Tanggal</text><text x="558" y="187" class="meta" text-anchor="end">${escapeXml(invoiceDate)}</text>
-      <text x="42" y="214" class="muted">Pelanggan</text><text x="42" y="230" class="title">${escapeXml(service.customerName)}</text>
-      ${settings.showCustomerPhoneOnReceipt && service.customerPhone ? `<text x="42" y="246" class="muted">${escapeXml(service.customerPhone)}</text>` : ''}
-      <text x="558" y="214" class="muted" text-anchor="end">Kendaraan</text><text x="558" y="230" class="title" text-anchor="end">${escapeXml(service.vehiclePlate)}</text>
-      <text x="558" y="246" class="muted" text-anchor="end">${escapeXml(service.vehicleModel)}</text>
-      ${settings.showOdometerOnReceipt && service.kilometers ? `<text x="42" y="269" class="meta">KM: ${escapeXml(service.kilometers.toLocaleString('id-ID'))} KM</text>` : ''}
-      ${settings.showMechanicOnReceipt && service.mechanicName ? `<text x="558" y="269" class="meta" text-anchor="end">Mekanik: ${escapeXml(service.mechanicName)}</text>` : ''}
-      <line x1="36" y1="285" x2="564" y2="285" stroke="#cbd5e1" stroke-dasharray="5 4"/>
-      ${itemRows}
-      ${(service.discountAmount || 0) > 0 ? `<text x="42" y="${discountY + 18}" class="title" fill="#047857">${escapeXml(service.discountReason || 'Diskon')}</text><text x="558" y="${discountY + 18}" class="amount" fill="#047857" text-anchor="end">- ${escapeXml(rupiah(service.discountAmount))}</text>` : ''}
-      <rect x="36" y="${totalY}" width="528" height="62" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
-      <text x="54" y="${totalY + 26}" class="total-label">TOTAL PEMBAYARAN</text><text x="54" y="${totalY + 43}" class="meta">${service.paymentStatus === 'Paid' ? 'LUNAS' : 'BELUM LUNAS'}</text>
-      <text x="546" y="${totalY + 39}" class="total" text-anchor="end">${escapeXml(rupiah(service.totalAmount))}</text>
-      ${settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 ? `<rect x="36" y="${totalY + 76}" width="528" height="48" rx="10" fill="#eff6ff"/><text x="52" y="${totalY + 95}" class="meta">GARANSI SERVIS</text><text x="52" y="${totalY + 112}" class="muted">${escapeXml(`${serviceWarrantyTerms} (${serviceWarrantyDays} hari)`)}</text>` : ''}
-      <text x="300" y="${footerY}" class="title" text-anchor="middle">${escapeXml(settings.name || 'BENGKEL KITA')} • TERIMA KASIH</text>
-      <text x="300" y="${footerY + 20}" class="muted" text-anchor="middle">${escapeXml(receiptFooter || '')}</text>
-      ${settings.receiptContactHelp ? `<text x="300" y="${footerY + 42}" class="meta" text-anchor="middle">☎ ${escapeXml(settings.receiptContactHelp)}</text>` : ''}
-    </svg>`;
+    const originalStyle = {
+      height: source.style.height,
+      maxHeight: source.style.maxHeight,
+      overflow: source.style.overflow,
+      overflowY: source.style.overflowY,
+      flex: source.style.flex
+    };
+
+    try {
+      // Render seluruh isi preview, termasuk bagian yang berada di luar area scroll.
+      source.style.height = 'auto';
+      source.style.maxHeight = 'none';
+      source.style.overflow = 'visible';
+      source.style.overflowY = 'visible';
+      source.style.flex = 'none';
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
+      const width = Math.ceil(source.getBoundingClientRect().width);
+      const height = Math.ceil(source.scrollHeight);
+      if (!width || !height) throw new Error('Ukuran preview nota tidak valid.');
+
+      const clone = source.cloneNode(true) as HTMLElement;
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.maxHeight = 'none';
+      clone.style.overflow = 'visible';
+
+      const copyComputedStyles = (from: Element, to: Element) => {
+        const styles = getComputedStyle(from);
+        let inlineStyle = '';
+        for (let index = 0; index < styles.length; index += 1) {
+          const property = styles[index];
+          inlineStyle += `${property}:${styles.getPropertyValue(property)};`;
+        }
+        to.setAttribute('style', inlineStyle);
+        Array.from(from.children).forEach((child, index) => {
+          if (to.children[index]) copyComputedStyles(child, to.children[index]);
+        });
+      };
+      copyComputedStyles(source, clone);
+
+      const markup = new XMLSerializer().serializeToString(clone);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${markup}</foreignObject></svg>`;
+      const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+
+      try {
+        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const value = new Image();
+          value.onload = () => resolve(value);
+          value.onerror = () => reject(new Error('Preview tidak dapat dirender menjadi PDF.'));
+          value.src = svgUrl;
+        });
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas tidak tersedia pada browser ini.');
+        context.scale(scale, scale);
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+        return canvas;
+      } finally {
+        URL.revokeObjectURL(svgUrl);
+      }
+    } finally {
+      source.style.height = originalStyle.height;
+      source.style.maxHeight = originalStyle.maxHeight;
+      source.style.overflow = originalStyle.overflow;
+      source.style.overflowY = originalStyle.overflowY;
+      source.style.flex = originalStyle.flex;
+    }
+  };
+
+  const createPdfFile = (canvas: HTMLCanvasElement) => {
+    const imageData = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
+    const binary = atob(imageData);
+    const jpeg = Uint8Array.from(binary, char => char.charCodeAt(0));
+    const encoder = new TextEncoder();
+    const chunks: Uint8Array[] = [];
+    const offsets: number[] = [];
+    let position = 0;
+    const add = (value: string | Uint8Array) => {
+      const bytes = typeof value === 'string' ? encoder.encode(value) : value;
+      chunks.push(bytes);
+      position += bytes.length;
+    };
+    const pageWidth = 320;
+    const pageHeight = Math.max(180, Number((canvas.height / canvas.width * pageWidth).toFixed(2)));
+    const addObject = (id: number, value: string | Uint8Array, image = false) => {
+      offsets[id] = position;
+      add(`${id} 0 obj\n`);
+      if (image) {
+        add(`<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);
+        add(jpeg);
+        add('\nendstream\n');
+      } else {
+        add(value);
+      }
+      add('endobj\n');
+    };
+
+    add('%PDF-1.4\n');
+    addObject(1, '<< /Type /Catalog /Pages 2 0 R >>\n');
+    addObject(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n');
+    addObject(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\n`);
+    addObject(4, jpeg, true);
+    const content = `q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im0 Do\nQ\n`;
+    addObject(5, `<< /Length ${encoder.encode(content).length} >>\nstream\n${content}endstream\n`);
+    const xrefPosition = position;
+    add('xref\n0 6\n0000000000 65535 f \n');
+    for (let id = 1; id <= 5; id += 1) add(`${String(offsets[id]).padStart(10, '0')} 00000 n \n`);
+    add(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF`);
+
+    return new File([new Blob(chunks, { type: 'application/pdf' })], `nota-${invoiceNumber}.pdf`, { type: 'application/pdf' });
   };
 
   const handleShareWhatsApp = async () => {
     if (isSharing) return;
     setIsSharing(true);
     try {
-      const svg = buildShareImage();
-      const file = new File([svg], `nota-${invoiceNumber}.svg`, { type: 'image/svg+xml' });
+      const canvas = await renderReceiptPreview();
+      const file = createPdfFile(canvas);
       const shareData = {
         title: `Nota ${settings.name}`,
         text: `Nota ${invoiceNumber} • Total ${rupiah(service.totalAmount)}`,
@@ -219,13 +282,18 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       if (navigator.canShare?.({ files: [file] }) && navigator.share) {
         await navigator.share(shareData);
       } else {
-        const text = encodeURIComponent(`Nota ${invoiceNumber}\n${settings.name}\nTotal: ${rupiah(service.totalAmount)}\n\nGambar nota berwarna dapat dibagikan dari perangkat mobile melalui tombol ini.`);
-        window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer');
+        // Desktop browser mengunduh PDF yang sama agar dapat dilampirkan manual ke WhatsApp.
+        const url = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.click();
+        URL.revokeObjectURL(url);
+        window.open(`https://wa.me/?text=${encodeURIComponent(`Nota ${invoiceNumber} • Total ${rupiah(service.totalAmount)}. PDF nota telah diunduh, silakan lampirkan ke WhatsApp.`)}`, '_blank', 'noopener,noreferrer');
       }
     } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        alert('Nota belum dapat dibagikan. Coba gunakan browser modern atau perangkat mobile.');
-      }
+      console.error(error);
+      alert('PDF nota belum dapat dibuat. Coba ulangi dari browser Chrome/Edge versi terbaru.');
     } finally {
       setIsSharing(false);
     }
