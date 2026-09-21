@@ -21,9 +21,15 @@ export interface CompanySettings {
   allowCustomBonusPerTransaction: boolean; // izinkan PIC ubah % bonus per transaksi
 
   // Pengaturan Isi Nota / Struk
-  receiptHeader?: string;
-  footerNote: string;
-  warrantyTerms: string; // e.g. "Garansi servis 7 hari / 500 km..."
+  receiptHeader?: string; // Legacy header; fallback untuk data lama
+  serviceReceiptHeader?: string;
+  saleReceiptHeader?: string;
+  footerNote: string; // Legacy footer; fallback untuk data lama
+  serviceReceiptFooter?: string;
+  saleReceiptFooter?: string;
+  warrantyTerms: string; // Legacy ketentuan servis; fallback untuk data lama
+  defaultServiceWarrantyDays?: number;
+  serviceWarrantyTerms?: string;
   showMechanicOnReceipt: boolean;
   showWarrantyOnReceipt: boolean;
   showOdometerOnReceipt: boolean;
@@ -204,6 +210,12 @@ export interface WorkshopService {
   warrantyClaimReason?: string;
   isMechanicAbsentOnClaim?: boolean;
   warrantyDeductionAmount?: number;
+  receiptType?: 'SERVICE' | 'SALE';
+  receiptHeaderSnapshot?: string;
+  receiptFooterSnapshot?: string;
+  serviceWarrantyDurationDays?: number;
+  serviceWarrantyTermsSnapshot?: string;
+  serviceWarrantyExpiresAt?: string;
   version?: number;
 }
 
