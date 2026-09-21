@@ -326,6 +326,9 @@ model MechanicAttendance {
   status     String   @default("Present")
   notes      String?
   mechanic   Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+
+  @@unique([mechanicId, date])
+  @@index([date])
 }
 
 model Supplier {
