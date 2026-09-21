@@ -664,7 +664,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               return (
                 <div 
                   key={part.id} 
-                  className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all group"
+                  className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all group relative"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <button type="button" disabled={part.stock < 1} onClick={() => addToSaleCart(part)} className="absolute right-4 bottom-4 rounded-xl bg-blue-600 px-3 py-2 text-[10px] font-black text-white disabled:opacity-40">+ Keranjang</button>
