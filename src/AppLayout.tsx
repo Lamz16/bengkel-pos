@@ -482,6 +482,12 @@ export default function AppLayout() {
   }, [currentUser, filteredNavItems, activeTab]);
 
   // Action Handlers connected to PostgreSQL & Prisma API
+  const handleProcessReturn = async (data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }) => {
+    const updated = await api.processReturn(data.serviceId, { reason: data.reason, items: data.items });
+    setServices(prev => prev.map(service => service.id === updated.id ? updated : service));
+    setParts(await api.getParts());
+  };
+
   const handleApplyWarrantyClaim = async (data: {
     serviceId: string;
     reason: string;
@@ -1099,7 +1105,8 @@ export default function AppLayout() {
               <ServiceDetail 
                 service={selectedService} 
                 parts={parts}
-                onUpdateStatus={handleUpdateStatus} 
+                onUpdateStatus={handleUpdateStatus}
+                onProcessReturn={handleProcessReturn}
                 onOpenWarrantyClaim={(srv) => {
                   setSelectedServiceId(null);
                   setWarrantyModalService(srv);
