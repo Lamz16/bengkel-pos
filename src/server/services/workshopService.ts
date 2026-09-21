@@ -51,6 +51,20 @@ export class WorkshopServiceLayer {
       const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
       const transactionDate = new Date();
       await prisma.$transaction(async tx => {
+        const receiptSettings = await tx.companySettings.findFirst();
+        const isSale = effectiveData.serviceType === 'Retail';
+        const serviceWarrantyDurationDays = isSale
+          ? 0
+          : Math.max(0, Number(effectiveData.serviceWarrantyDurationDays ?? receiptSettings?.defaultServiceWarrantyDays ?? 0));
+        const serviceWarrantyTermsSnapshot = isSale
+          ? null
+          : (effectiveData.serviceWarrantyTermsSnapshot || receiptSettings?.serviceWarrantyTerms || receiptSettings?.warrantyTerms || null);
+        const receiptHeaderSnapshot = effectiveData.receiptHeaderSnapshot || (isSale
+          ? (receiptSettings?.saleReceiptHeader || receiptSettings?.receiptHeader || 'NOTA PEMBELIAN BARANG')
+          : (receiptSettings?.serviceReceiptHeader || receiptSettings?.receiptHeader || 'NOTA TRANSAKSI SERVIS'));
+        const receiptFooterSnapshot = effectiveData.receiptFooterSnapshot || (isSale
+          ? (receiptSettings?.saleReceiptFooter || receiptSettings?.footerNote || null)
+          : (receiptSettings?.serviceReceiptFooter || receiptSettings?.footerNote || null));
         const partIds = [...new Set((effectiveData.partsUsed || []).map(item => item.partId).filter(Boolean))];
         const partWarranty = new Map((await tx.sparePart.findMany({
           where: { id: { in: partIds } },
@@ -80,6 +94,12 @@ export class WorkshopServiceLayer {
           discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
           mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName,
           mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
+          receiptType: isSale ? 'SALE' : 'SERVICE',
+          receiptHeaderSnapshot,
+          receiptFooterSnapshot,
+          serviceWarrantyDurationDays,
+          serviceWarrantyTermsSnapshot,
+          serviceWarrantyExpiresAt: serviceWarrantyDurationDays > 0 ? new Date(transactionDate.getTime() + serviceWarrantyDurationDays * 86_400_000) : null,
           serviceItems: { create: (effectiveData.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
           partsUsed: { create: (effectiveData.partsUsed || []).map(item => {
             const warranty = partWarranty.get(item.partId);
