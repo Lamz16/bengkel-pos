@@ -1,5 +1,5 @@
-import { IMechanicRepository, IDeductionRepository } from './interfaces';
-import { Mechanic, MechanicDeduction } from '../../types';
+import { IMechanicRepository, IDeductionRepository, IAttendanceRepository } from './interfaces';
+import { Mechanic, MechanicDeduction, MechanicAttendance } from '../../types';
 import { prisma, isDbConnected } from '../db/connection';
 import { memoryStore } from '../db/memoryStore';
 
@@ -228,5 +228,57 @@ export class DeductionRepository implements IDeductionRepository {
     }
     memoryStore.deductions = memoryStore.deductions.filter(d => d.id !== id);
     return true;
+  }
+}
+
+export class AttendanceRepository implements IAttendanceRepository {
+  async getAll(): Promise<MechanicAttendance[]> {
+    if (isDbConnected()) {
+      try {
+        const list = await prisma.mechanicAttendance.findMany({ orderBy: [{ date: 'desc' }, { mechanicId: 'asc' }] });
+        return list.map(item => ({
+          id: item.id,
+          mechanicId: item.mechanicId,
+          date: item.date,
+          status: item.status as MechanicAttendance['status'],
+          notes: item.notes || undefined,
+        }));
+      } catch (err) {
+        console.error('[AttendanceRepo] Prisma getAll error:', err);
+      }
+    }
+    return memoryStore.attendances;
+  }
+
+  async upsert(data: Omit<MechanicAttendance, 'id'>): Promise<MechanicAttendance> {
+    const date = data.date.slice(0, 10);
+    if (isDbConnected()) {
+      try {
+        const saved = await prisma.mechanicAttendance.upsert({
+          where: { mechanicId_date: { mechanicId: data.mechanicId, date } },
+          create: { mechanicId: data.mechanicId, date, status: data.status, notes: data.notes || null },
+          update: { status: data.status, notes: data.notes || null },
+        });
+        const attendance: MechanicAttendance = {
+          id: saved.id,
+          mechanicId: saved.mechanicId,
+          date: saved.date,
+          status: saved.status as MechanicAttendance['status'],
+          notes: saved.notes || undefined,
+        };
+        const index = memoryStore.attendances.findIndex(item => item.mechanicId === attendance.mechanicId && item.date === attendance.date);
+        if (index >= 0) memoryStore.attendances[index] = attendance;
+        else memoryStore.attendances.unshift(attendance);
+        return attendance;
+      } catch (err) {
+        console.error('[AttendanceRepo] Prisma upsert error:', err);
+      }
+    }
+
+    const index = memoryStore.attendances.findIndex(item => item.mechanicId === data.mechanicId && item.date === date);
+    const attendance: MechanicAttendance = { id: index >= 0 ? memoryStore.attendances[index].id : `ATT-${Date.now()}-${data.mechanicId}`, ...data, date };
+    if (index >= 0) memoryStore.attendances[index] = attendance;
+    else memoryStore.attendances.unshift(attendance);
+    return attendance;
   }
 }
