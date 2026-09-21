@@ -103,7 +103,8 @@ export class WorkshopServiceLayer {
           serviceItems: { create: (effectiveData.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
           partsUsed: { create: (effectiveData.partsUsed || []).map(item => {
             const warranty = partWarranty.get(item.partId);
-            const duration = warranty?.hasProductWarranty ? warranty.warrantyDurationDays : 0;
+            const duration = item.hasProductWarranty ? Number(item.warrantyDurationDays || 0) : 0;
+            const terms = item.hasProductWarranty ? (item.warrantyTerms || warranty?.warrantyTerms || null) : null;
             return {
               partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime,
               normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime,
@@ -112,7 +113,7 @@ export class WorkshopServiceLayer {
               wholesaleUnitPrice: item.wholesaleUnitPrice || null,
               hasProductWarranty: !!warranty?.hasProductWarranty,
               warrantyDurationDays: duration,
-              warrantyTerms: warranty?.hasProductWarranty ? warranty.warrantyTerms : null,
+              warrantyTerms: terms,
               warrantyExpiresAt: duration > 0 ? new Date(transactionDate.getTime() + duration * 86_400_000) : null,
             };
           }) },
