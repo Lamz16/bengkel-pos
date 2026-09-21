@@ -392,9 +392,12 @@ export const api = {
 
   async updateServiceStatus(id: string, status: ServiceStatus): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
+      method: 'PUT', body: JSON.stringify({ status }),
     });
+  },
+
+  async processReturn(serviceId: string, data: { reason?: string; items: Array<{ partId: string; quantity: number }> }): Promise<WorkshopService> {
+    return request<WorkshopService>(`/api/services/${serviceId}/returns`, { method: 'POST', body: JSON.stringify(data) });
   },
 
   async applyWarrantyClaim(data: {
