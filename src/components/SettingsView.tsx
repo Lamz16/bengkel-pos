@@ -856,6 +856,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 gap-3 rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
+                <div><p className="text-xs font-black text-violet-950">Dua Template Nota</p><p className="text-[10px] text-violet-700">Template dipilih otomatis sesuai transaksi: servis atau pembelian barang.</p></div>
+                <label className="text-[10px] font-bold text-slate-600">Header Nota Servis<input value={formData.serviceReceiptHeader || ''} onChange={e => setFormData({ ...formData, serviceReceiptHeader: e.target.value })} className="mt-1 h-10 w-full rounded-xl border bg-white px-3 text-xs font-bold" placeholder="NOTA TRANSAKSI SERVIS" /></label>
+                <label className="text-[10px] font-bold text-slate-600">Footer Nota Servis<textarea value={formData.serviceReceiptFooter || ''} onChange={e => setFormData({ ...formData, serviceReceiptFooter: e.target.value })} className="mt-1 min-h-16 w-full rounded-xl border bg-white px-3 py-2 text-xs" /></label>
+                <label className="text-[10px] font-bold text-slate-600">Garansi jasa default (hari)<input type="number" min="0" value={formData.defaultServiceWarrantyDays ?? 7} onChange={e => setFormData({ ...formData, defaultServiceWarrantyDays: Number(e.target.value) })} className="mt-1 h-10 w-full rounded-xl border bg-white px-3 text-xs font-bold" /></label>
+                <label className="text-[10px] font-bold text-slate-600">Ketentuan garansi jasa<textarea value={formData.serviceWarrantyTerms || ''} onChange={e => setFormData({ ...formData, serviceWarrantyTerms: e.target.value })} className="mt-1 min-h-16 w-full rounded-xl border bg-white px-3 py-2 text-xs" /></label>
+                <label className="text-[10px] font-bold text-slate-600">Header Nota Pembelian<input value={formData.saleReceiptHeader || ''} onChange={e => setFormData({ ...formData, saleReceiptHeader: e.target.value })} className="mt-1 h-10 w-full rounded-xl border bg-white px-3 text-xs font-bold" placeholder="NOTA PEMBELIAN BARANG" /></label>
+                <label className="text-[10px] font-bold text-slate-600">Footer Nota Pembelian<textarea value={formData.saleReceiptFooter || ''} onChange={e => setFormData({ ...formData, saleReceiptFooter: e.target.value })} className="mt-1 min-h-16 w-full rounded-xl border bg-white px-3 py-2 text-xs" /></label>
+              </div>
+
               {/* Text Customizations */}
               <div className="space-y-4">
                 <div className="space-y-1.5">
