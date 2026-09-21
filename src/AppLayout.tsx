@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
+import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
 import { INITIAL_PARTS } from './constants';
 import { DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_RACKS, DEFAULT_WAREHOUSE_ZONES } from './utils/inventory';
 
@@ -208,6 +208,7 @@ export default function AppLayout() {
       isAbsentNextDay: true
     }
   ]);
+  const [attendances, setAttendances] = useState<MechanicAttendance[]>([]);
 
   const [services, setServices] = useState<WorkshopService[]>([
     {
@@ -418,6 +419,7 @@ export default function AppLayout() {
         if (data.services && data.services.length > 0) setServices(data.services);
         if (data.mechanics && data.mechanics.length > 0) setMechanics(data.mechanics);
         if (data.deductions) setDeductions(data.deductions);
+        if (data.attendances) setAttendances(data.attendances);
         if (data.suppliers && data.suppliers.length > 0) setSuppliers(data.suppliers);
         if (data.purchases && data.purchases.length > 0) setPurchases(data.purchases);
         if (data.expenses && data.expenses.length > 0) setExpenses(data.expenses);
@@ -778,13 +780,30 @@ export default function AppLayout() {
   };
 
   const handleSaveManualDeduction = async (ded: MechanicDeduction) => {
-    setDeductions(prev => [ded, ...prev]);
-    setShowManualDeduction(false);
-    setManualDeductionMechanic(null);
     try {
-      await api.createDeduction(ded);
+      const { id: _temporaryId, ...payload } = ded;
+      const saved = await api.createDeduction(payload);
+      setDeductions(prev => [saved, ...prev]);
+      setShowManualDeduction(false);
+      setManualDeductionMechanic(null);
     } catch (err) {
       console.error('Failed to save deduction to backend:', err);
+      alert(err instanceof Error ? err.message : 'Potongan gagal disimpan.');
+    }
+  };
+
+  const handleSaveAttendance = async (attendance: Omit<MechanicAttendance, 'id'>) => {
+    try {
+      const saved = await api.saveAttendance(attendance);
+      setAttendances(prev => {
+        const existingIndex = prev.findIndex(item => item.mechanicId === saved.mechanicId && item.date === saved.date);
+        return existingIndex === -1
+          ? [saved, ...prev]
+          : prev.map(item => item.id === prev[existingIndex].id ? saved : item);
+      });
+    } catch (err) {
+      console.error('Failed to save attendance:', err);
+      alert(err instanceof Error ? err.message : 'Absensi gagal disimpan.');
     }
   };
 
@@ -987,12 +1006,13 @@ export default function AppLayout() {
                   mechanics={mechanics}
                   services={services}
                   deductions={deductions}
+                  attendances={attendances}
                   onAddMechanic={() => { setEditingMechanic(null); setShowMechanicModal(true); }}
                   onEditMechanic={(m) => { setEditingMechanic(m); setShowMechanicModal(true); }}
                   onDeleteMechanic={handleDeleteMechanic}
-                  onOpenWarrantyClaim={(srv) => setWarrantyModalService(srv)}
-                  onOpenManualDeduction={(m) => { setManualDeductionMechanic(m); setShowManualDeduction(true); }}
+                  onAddDeduction={() => { setManualDeductionMechanic(null); setShowManualDeduction(true); }}
                   onDeleteDeduction={handleDeleteDeduction}
+                  onSaveAttendance={handleSaveAttendance}
                 />
               </motion.div>
             )}
