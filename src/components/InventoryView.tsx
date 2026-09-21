@@ -49,6 +49,7 @@ interface InventoryViewProps {
   initialShowLowStockModal?: boolean;
   onOpenLowStockModal?: () => void;
   onOpenMasterDataModal?: () => void;
+  onCheckoutCart: (items: Array<{ partId: string; quantity: number }>) => void;
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
@@ -64,7 +65,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onDelete,
   initialShowLowStockModal = false,
   onOpenLowStockModal,
-  onOpenMasterDataModal
+  onOpenMasterDataModal,
+  onCheckoutCart
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'stock' | 'rack_locator' | 'purchases'>('stock');
@@ -72,6 +74,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [stockStatusFilter, setStockStatusFilter] = useState<'all' | 'low_stock' | 'out_of_stock'>('all');
   const [showLowStockModal, setShowLowStockModal] = useState(initialShowLowStockModal);
+  const [saleCart, setSaleCart] = useState<Array<{ partId: string; quantity: number }>>([]);
+  const addToSaleCart = (part: SparePart) => {
+    if (part.stock < 1) return;
+    setSaleCart(current => {
+      const existing = current.find(item => item.partId === part.id);
+      if (!existing) return [...current, { partId: part.id, quantity: 1 }];
+      return current.map(item => item.partId === part.id ? { ...item, quantity: Math.min(part.stock, item.quantity + 1) } : item);
+    });
+  };
 
   const handleOpenLowStock = () => {
     if (onOpenLowStockModal) {
@@ -256,6 +267,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       {/* ================= TAB 1: DAFTAR STOK & LOKASI RAK ================= */}
       {activeSubTab === 'stock' && (
         <>
+          {saleCart.length > 0 && <div className="flex items-center justify-between rounded-2xl border border-blue-200 bg-blue-50 p-3"><span className="text-xs font-bold text-blue-900">Keranjang penjualan: {saleCart.length} jenis barang</span><button type="button" onClick={() => onCheckoutCart(saleCart)} className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-black text-white">Checkout Penjualan</button></div>}
           {/* Quick Stat Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <div 
@@ -655,6 +667,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all group"
                 >
                   <div className="flex items-start justify-between gap-3">
+                    <button type="button" disabled={part.stock < 1} onClick={() => addToSaleCart(part)} className="absolute right-4 bottom-4 rounded-xl bg-blue-600 px-3 py-2 text-[10px] font-black text-white disabled:opacity-40">+ Keranjang</button>
                     <div className="flex items-start gap-3.5 flex-1 min-w-0">
                       {/* Image Thumbnail / Stock Badge */}
                       {part.imageUrl ? (
