@@ -68,7 +68,16 @@ export class ServiceController {
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Gagal memproses klaim garansi' });
     }
+  }  async processReturn(req: Request, res: Response) {
+    try {
+      const result = await workshopService.processReturn({ serviceId: req.params.id, reason: req.body.reason, items: req.body.items || [] });
+      res.json(result);
+    } catch (err: any) {
+      const message = err.message || 'Gagal memproses retur barang';
+      res.status(/tidak ditemukan|melebihi|hanya dapat|Pilih minimal/.test(message) ? 400 : 500).json({ error: message });
+    }
   }
+
 }
 
 export const serviceController = new ServiceController();
