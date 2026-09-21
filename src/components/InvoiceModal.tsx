@@ -171,10 +171,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       if (!width || !height) throw new Error('Ukuran preview nota tidak valid.');
 
       const clone = source.cloneNode(true) as HTMLElement;
-      clone.style.width = `${width}px`;
-      clone.style.height = `${height}px`;
-      clone.style.maxHeight = 'none';
-      clone.style.overflow = 'visible';
 
       const copyComputedStyles = (from: Element, to: Element) => {
         const styles = getComputedStyle(from);
@@ -189,6 +185,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         });
       };
       copyComputedStyles(source, clone);
+      clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.maxHeight = 'none';
+      clone.style.overflow = 'visible';
 
       const markup = new XMLSerializer().serializeToString(clone);
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${markup}</foreignObject></svg>`;
@@ -288,7 +289,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         link.href = url;
         link.download = file.name;
         link.click();
-        URL.revokeObjectURL(url);
+        window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
         window.open(`https://wa.me/?text=${encodeURIComponent(`Nota ${invoiceNumber} • Total ${rupiah(service.totalAmount)}. PDF nota telah diunduh, silakan lampirkan ke WhatsApp.`)}`, '_blank', 'noopener,noreferrer');
       }
     } catch (error) {
