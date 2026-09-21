@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Mechanic, WorkshopService, MechanicDeduction } from '../types';
+import { Mechanic, WorkshopService, MechanicDeduction, MechanicAttendance } from '../types';
 import { cn } from '../lib/utils';
 import { 
   Wrench, 
@@ -27,24 +27,28 @@ interface MechanicsViewProps {
   mechanics: Mechanic[];
   services: WorkshopService[];
   deductions: MechanicDeduction[];
+  attendances: MechanicAttendance[];
   onAddMechanic: () => void;
   onEditMechanic: (m: Mechanic) => void;
   onDeleteMechanic: (id: string) => void;
   onAddDeduction: () => void;
   onDeleteDeduction: (id: string) => void;
+  onSaveAttendance: (attendance: Omit<MechanicAttendance, 'id'>) => void;
 }
 
 export const MechanicsView: React.FC<MechanicsViewProps> = ({
   mechanics,
   services,
   deductions,
+  attendances,
   onAddMechanic,
   onEditMechanic,
   onDeleteMechanic,
   onAddDeduction,
-  onDeleteDeduction
+  onDeleteDeduction,
+  onSaveAttendance
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'data' | 'payroll'>('data');
+  const [activeSubTab, setActiveSubTab] = useState<'data' | 'attendance' | 'payroll'>('data');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMechanicFilter, setSelectedMechanicFilter] = useState<string>('all');
 
@@ -151,6 +155,17 @@ export const MechanicsView: React.FC<MechanicsViewProps> = ({
               )}
             >
               Data Mekanik ({mechanics.length})
+            </button>
+            <button
+              onClick={() => setActiveSubTab('attendance')}
+              className={cn(
+                "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
+                activeSubTab === 'attendance'
+                  ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-100"
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              Absensi Harian
             </button>
             <button
               onClick={() => setActiveSubTab('payroll')}
@@ -351,6 +366,14 @@ export const MechanicsView: React.FC<MechanicsViewProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {activeSubTab === 'attendance' && (
+        <AttendancePanel
+          mechanics={activeMechanics}
+          attendances={attendances}
+          onSaveAttendance={onSaveAttendance}
+        />
       )}
 
       {/* SUBTAB 2: REKAP GAJI & BONUS (PAYROLL) */}
@@ -596,3 +619,83 @@ export const MechanicsView: React.FC<MechanicsViewProps> = ({
     </div>
   );
 };
+
+const AttendancePanel = ({ mechanics, attendances, onSaveAttendance }: {
+  mechanics: Mechanic[];
+  attendances: MechanicAttendance[];
+  onSaveAttendance: (attendance: Omit<MechanicAttendance, 'id'>) => void;
+}) => {
+  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [drafts, setDrafts] = useState<Record<string, { status: MechanicAttendance['status']; notes: string }>>({});
+
+  const attendanceByMechanic = useMemo(() => new Map(
+    attendances.filter(item => item.date === selectedDate).map(item => [item.mechanicId, item])
+  ), [attendances, selectedDate]);
+
+  const getDraft = (mechanicId: string) => {
+    const saved = attendanceByMechanic.get(mechanicId);
+    return drafts[mechanicId] || { status: saved?.status || 'Present', notes: saved?.notes || '' };
+  };
+
+  const summary = useMemo(() => {
+    const statuses = mechanics.map(mechanic => getDraft(mechanic.id).status);
+    return {
+      present: statuses.filter(status => status === 'Present').length,
+      absent: statuses.filter(status => status === 'Absent').length,
+      excused: statuses.filter(status => status === 'Sick' || status === 'Leave').length,
+    };
+  // Draft values are intentionally included so the header responds before Save.
+  }, [mechanics, attendanceByMechanic, drafts]);
+
+  const updateDraft = (mechanicId: string, patch: Partial<{ status: MechanicAttendance['status']; notes: string }>) => {
+    setDrafts(current => ({ ...current, [mechanicId]: { ...getDraft(mechanicId), ...patch } }));
+  };
+
+  const save = (mechanicId: string) => {
+    const draft = getDraft(mechanicId);
+    onSaveAttendance({ mechanicId, date: selectedDate, status: draft.status, notes: draft.notes.trim() || undefined });
+    setDrafts(current => {
+      const next = { ...current };
+      delete next[mechanicId];
+      return next;
+    });
+  };
+
+  const statusStyle: Record<MechanicAttendance['status'], string> = {
+    Present: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    Absent: 'bg-rose-50 text-rose-700 border-rose-100',
+    Sick: 'bg-amber-50 text-amber-700 border-amber-100',
+    Leave: 'bg-blue-50 text-blue-700 border-blue-100',
+  };
+  const statusLabel: Record<MechanicAttendance['status'], string> = { Present: 'Hadir', Absent: 'Alpa', Sick: 'Sakit', Leave: 'Izin' };
+
+  return <div className="space-y-5">
+    <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2"><Calendar className="w-4 h-4 text-blue-600" /> Absensi Mekanik Harian</h3><p className="mt-1 text-[11px] text-slate-500">Pilih tanggal, isi status setiap mekanik aktif, lalu simpan. Satu absensi per mekanik per hari akan diperbarui, bukan diduplikasi.</p></div>
+        <div className="w-full md:w-56"><label className="mb-1 block text-[9px] font-black uppercase tracking-widest text-slate-400">Tanggal Absensi</label><input type="date" value={selectedDate} onChange={event => { setSelectedDate(event.target.value); setDrafts({}); }} className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold outline-none focus:border-blue-300" /></div>
+      </div>
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        <AttendanceSummary label="Hadir" value={summary.present} className="text-emerald-700 bg-emerald-50" />
+        <AttendanceSummary label="Alpa" value={summary.absent} className="text-rose-700 bg-rose-50" />
+        <AttendanceSummary label="Sakit atau Izin" value={summary.excused} className="text-amber-700 bg-amber-50" />
+      </div>
+    </div>
+
+    <div className="space-y-3">
+      {mechanics.map(mechanic => {
+        const draft = getDraft(mechanic.id);
+        const saved = attendanceByMechanic.get(mechanic.id);
+        return <div key={mechanic.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="flex min-w-[190px] items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xs font-black text-blue-600">{mechanic.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</div><div><p className="text-sm font-black text-slate-900">{mechanic.name}</p><p className="text-[10px] font-bold text-slate-400">{mechanic.specialty}</p></div></div>
+          <select value={draft.status} onChange={event => updateDraft(mechanic.id, { status: event.target.value as MechanicAttendance['status'] })} className={cn('h-10 rounded-xl border px-3 text-xs font-black outline-none', statusStyle[draft.status])}>{(['Present', 'Absent', 'Sick', 'Leave'] as const).map(status => <option key={status} value={status}>{statusLabel[status]}</option>)}</select>
+          <input value={draft.notes} onChange={event => updateDraft(mechanic.id, { notes: event.target.value })} placeholder="Catatan (opsional)" className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-medium outline-none focus:border-blue-300" />
+          <button onClick={() => save(mechanic.id)} className="h-10 rounded-xl bg-blue-600 px-4 text-[10px] font-black uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-blue-700">{saved ? 'Perbarui' : 'Simpan'}</button>
+        </div>;
+      })}
+      {mechanics.length === 0 && <div className="rounded-[32px] border border-slate-100 bg-white p-12 text-center"><UserCheck className="mx-auto mb-3 h-10 w-10 text-slate-300" /><p className="text-sm font-bold text-slate-600">Belum ada mekanik aktif</p><p className="mt-1 text-xs text-slate-400">Tambahkan atau aktifkan mekanik terlebih dahulu.</p></div>}
+    </div>
+  </div>;
+};
+
+const AttendanceSummary = ({ label, value, className }: { label: string; value: number; className: string }) => <div className={cn('rounded-2xl p-3 text-center', className)}><p className="text-lg font-black">{value}</p><p className="text-[9px] font-black uppercase tracking-wider">{label}</p></div>;
