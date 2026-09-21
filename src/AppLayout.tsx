@@ -52,7 +52,7 @@ import { SupplierForm } from './components/forms/SupplierForm';
 import { PartForm } from './components/forms/PartForm';
 import { CustomerForm } from './components/forms/CustomerForm';
 import { AddStockForm } from './components/forms/AddStockForm';
-import { api, clearAuthToken, getAuthToken } from './services/api';
+import { api, clearAuthToken, getAuthToken, getAuthTokenExpiry, isAuthTokenExpired } from './services/api';
 
 export default function AppLayout() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -71,7 +71,7 @@ export default function AppLayout() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('bengkelpro_user');
-      return saved && getAuthToken() ? JSON.parse(saved) : null;
+      return saved && getAuthToken() && !isAuthTokenExpired() ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
@@ -80,6 +80,34 @@ export default function AppLayout() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [showPOSForm, setShowPOSForm] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // The server remains the authority for JWT validation. This client guard prevents
+  // an expired token stored in localStorage from reopening the dashboard.
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const endSession = () => {
+      clearAuthToken();
+      try { localStorage.removeItem('bengkelpro_user'); } catch {}
+      setCurrentUser(null);
+    };
+
+    if (isAuthTokenExpired()) {
+      endSession();
+      return;
+    }
+
+    const expiry = getAuthTokenExpiry();
+    const timeout = expiry
+      ? window.setTimeout(endSession, Math.max(expiry - Date.now(), 0) + 50)
+      : undefined;
+
+    window.addEventListener('bengkelpro:session-expired', endSession);
+    return () => {
+      if (timeout) window.clearTimeout(timeout);
+      window.removeEventListener('bengkelpro:session-expired', endSession);
+    };
+  }, [currentUser]);
 
   // Business Data States
   const [suppliers, setSuppliers] = useState<Supplier[]>([
@@ -369,6 +397,8 @@ export default function AppLayout() {
 
   // Sync data with PostgreSQL / Prisma backend on mount
   useEffect(() => {
+    if (!currentUser || isAuthTokenExpired()) return;
+
     let isMounted = true;
     async function loadBootstrap() {
       try {
@@ -396,7 +426,7 @@ export default function AppLayout() {
     }
     loadBootstrap();
     return () => { isMounted = false; };
-  }, []);
+  }, [currentUser]);
 
   // Distributor Invoice Handlers
   const handleAddDistributorInvoice = async (newInv: Partial<DistributorInvoice>) => {
