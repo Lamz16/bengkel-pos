@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { format } from 'date-fns';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 import { FileText, X, ShieldCheck, Share2, Printer } from 'lucide-react';
 import { WorkshopService, CompanySettings } from '../types';
@@ -43,51 +43,38 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
   const invoiceNumber = `INV-${service.id.slice(0, 8).toUpperCase()}`;
   const invoiceDate = format(new Date(service.createdAt), 'dd MMM yyyy • HH:mm');
 
-  const buildPreviewPrintMarkup = () => {
-    const source = receiptRef.current;
-    if (!source) throw new Error('Preview nota belum tersedia.');
-
-    // Sertakan stylesheet yang sama agar struktur preview dan hasil cetak memakai layout identik.
-    const stylesheets = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map(element => element.outerHTML)
-      .join('\n');
-    const previewWidth = Math.ceil(source.getBoundingClientRect().width);
-
-    return `<!doctype html>
-      <html><head><meta charset="utf-8"><title>Nota ${invoiceNumber}</title>
-      ${stylesheets}
-      <style>
-        @page { size: ${paperWidth} auto; margin: 0; }
-        html, body { margin: 0; padding: 0; background: #fff !important; }
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .printable-area { width: ${previewWidth}px !important; max-width: none !important; min-height: 0 !important; overflow: visible !important; flex: none !important; }
-        @media print { body { filter: grayscale(1); } }
-      </style></head>
-      <body>${source.outerHTML}</body></html>`;
-  };
-
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (isPrinting) return;
-    const printWindow = window.open('', '_blank', 'width=480,height=720');
-    if (!printWindow) {
-      alert('Popup cetak diblokir browser. Izinkan popup untuk aplikasi ini, lalu coba lagi.');
-      return;
-    }
-
     setIsPrinting(true);
-    printWindow.document.open();
-    printWindow.document.write(buildPreviewPrintMarkup());
-    printWindow.document.close();
 
-    const cleanup = () => {
+    try {
+      // Cetak dari berkas PDF yang sama dengan Share WhatsApp supaya hasil tidak mungkin berbeda.
+      const canvas = await renderReceiptPreview();
+      const file = createPdfFile(canvas);
+      const url = URL.createObjectURL(file);
+      const printWindow = window.open(url, '_blank');
+
+      if (!printWindow) {
+        URL.revokeObjectURL(url);
+        throw new Error('Popup cetak diblokir browser.');
+      }
+
+      const cleanup = () => {
+        setIsPrinting(false);
+        URL.revokeObjectURL(url);
+      };
+      printWindow.addEventListener('afterprint', cleanup, { once: true });
+      window.setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 900);
+      // Fallback apabila browser tidak memancarkan afterprint dari viewer PDF.
+      window.setTimeout(cleanup, 30_000);
+    } catch (error) {
+      console.error(error);
       setIsPrinting(false);
-      printWindow.close();
-    };
-    printWindow.addEventListener('afterprint', cleanup, { once: true });
-    window.setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-    }, 350);
+      alert('PDF nota belum dapat dibuat. Pastikan dependensi aplikasi sudah diperbarui, lalu coba lagi.');
+    }
   };
 
 
