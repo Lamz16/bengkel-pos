@@ -1,0 +1,5 @@
+ALTER TABLE "ServicePartItem"
+  ADD COLUMN IF NOT EXISTS "normalPriceAtTime" DECIMAL(18,2),
+  ADD COLUMN IF NOT EXISTS "wholesaleType" TEXT,
+  ADD COLUMN IF NOT EXISTS "wholesaleValue" DECIMAL(18,2),
+  ADD COLUMN IF NOT EXISTS "wholesaleUnitPrice" DECIMAL(18,2);
