@@ -118,6 +118,7 @@ model SparePart {
   locationStocks   PartLocationStock[]
   purchases        PurchaseRecord[]
   stockHistories   StockHistory[]
+  returnItems      SalesReturnItem[]
   distributorItems DistributorInvoiceItem[]
 
   @@index([categoryId])
@@ -220,7 +221,36 @@ model WorkshopService {
   vehicle                 Vehicle?          @relation(fields: [vehicleId], references: [id])
   mechanic                Mechanic?         @relation(fields: [mechanicId], references: [id])
   partsUsed               ServicePartItem[]
+  returns                 SalesReturn[]
   serviceItems            ServiceLaborItem[]
+}
+
+model SalesReturn {
+  id          String            @id @default(uuid())
+  serviceId   String
+  reason      String?
+  totalAmount Decimal           @db.Decimal(18, 2)
+  createdAt   DateTime          @default(now())
+  service     WorkshopService   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  items       SalesReturnItem[]
+
+  @@index([serviceId, createdAt])
+}
+
+model SalesReturnItem {
+  id            String          @id @default(uuid())
+  salesReturnId String
+  servicePartId String
+  partId        String
+  name          String
+  quantity      Int
+  unitPrice     Decimal         @db.Decimal(18, 2)
+  salesReturn   SalesReturn     @relation(fields: [salesReturnId], references: [id], onDelete: Cascade)
+  servicePart   ServicePartItem @relation(fields: [servicePartId], references: [id])
+  part          SparePart       @relation(fields: [partId], references: [id])
+
+  @@index([servicePartId])
+  @@index([partId])
 }
 
 model ServiceLaborItem {
@@ -239,6 +269,7 @@ model ServicePartItem {
   partId      String
   name        String
   quantity    Int             @default(1)
+  returnedQuantity Int        @default(0)
   priceAtTime Decimal         @db.Decimal(18, 2)
   normalPriceAtTime Decimal?   @db.Decimal(18, 2)
   wholesaleType String?
@@ -251,6 +282,7 @@ model ServicePartItem {
   warrantyExpiresAt DateTime?
   service     WorkshopService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   part        SparePart       @relation(fields: [partId], references: [id])
+  returnItems SalesReturnItem[]
 
   @@index([warrantyExpiresAt])
 }
