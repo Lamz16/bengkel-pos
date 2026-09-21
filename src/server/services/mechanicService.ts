@@ -1,10 +1,11 @@
-import { IMechanicRepository, IDeductionRepository } from '../repositories/interfaces';
-import { Mechanic, MechanicDeduction } from '../../types';
+import { IMechanicRepository, IDeductionRepository, IAttendanceRepository } from '../repositories/interfaces';
+import { Mechanic, MechanicDeduction, MechanicAttendance } from '../../types';
 
 export class MechanicService {
   constructor(
     private mechanicRepo: IMechanicRepository,
-    private deductionRepo: IDeductionRepository
+    private deductionRepo: IDeductionRepository,
+    private attendanceRepo: IAttendanceRepository,
   ) {}
 
   async getMechanics(): Promise<Mechanic[]> {
@@ -37,5 +38,13 @@ export class MechanicService {
 
   async deleteDeduction(id: string): Promise<boolean> {
     return this.deductionRepo.delete(id);
+  }
+
+  async getAttendances(): Promise<MechanicAttendance[]> {
+    return this.attendanceRepo.getAll();
+  }
+
+  async saveAttendance(data: Omit<MechanicAttendance, 'id'>): Promise<MechanicAttendance> {
+    return this.attendanceRepo.upsert(data);
   }
 }
