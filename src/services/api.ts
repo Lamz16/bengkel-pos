@@ -6,6 +6,7 @@ import {
   WorkshopService,
   Mechanic,
   MechanicDeduction,
+  MechanicAttendance,
   Supplier,
   PurchaseRecord,
   Expense,
@@ -27,6 +28,7 @@ export interface BootstrapResponse {
   services: WorkshopService[];
   mechanics: Mechanic[];
   deductions: MechanicDeduction[];
+  attendances: MechanicAttendance[];
   suppliers: Supplier[];
   purchases: PurchaseRecord[];
   expenses: Expense[];
@@ -449,6 +451,18 @@ export const api = {
 
   async deleteDeduction(id: string): Promise<void> {
     await request(`/api/deductions/${id}`, { method: 'DELETE' });
+  },
+
+  // Attendance
+  async getAttendances(): Promise<MechanicAttendance[]> {
+    return request<MechanicAttendance[]>('/api/attendances');
+  },
+
+  async saveAttendance(data: Omit<MechanicAttendance, 'id'>): Promise<MechanicAttendance> {
+    return request<MechanicAttendance>('/api/attendances', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   },
 
   // Suppliers
