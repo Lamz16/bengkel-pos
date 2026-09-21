@@ -69,7 +69,9 @@ export const POSForm: React.FC<POSFormProps> = ({
     type: 'Service' as 'Service' | 'Retail',
     mechanicId: defaultMec ? defaultMec.id : '',
     mechanicName: defaultMec ? defaultMec.name : '',
-    mechanicBonusPercent: defaultMec ? defaultMec.defaultBonusPercent : 15
+    mechanicBonusPercent: defaultMec ? defaultMec.defaultBonusPercent : 15,
+    serviceWarrantyDurationDays: String(settings?.defaultServiceWarrantyDays ?? 7),
+    serviceWarrantyTerms: settings?.serviceWarrantyTerms || settings?.warrantyTerms || ''
   });
   
   const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; purchasePriceAtTime?: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
@@ -587,6 +589,14 @@ export const POSForm: React.FC<POSFormProps> = ({
           </div>
         </div>
 
+        {formData.type === 'Service' && (
+          <div className="mt-4 p-4 rounded-2xl border border-blue-100 bg-blue-50/50 space-y-3">
+            <p className="text-[10px] font-black text-blue-800 uppercase">Garansi Jasa untuk Transaksi Ini</p>
+            <label className="block text-[10px] font-bold text-slate-600">Durasi (hari)<input type="number" min="0" value={formData.serviceWarrantyDurationDays} onChange={e => setFormData({ ...formData, serviceWarrantyDurationDays: e.target.value })} className="mt-1 h-10 w-full rounded-xl border bg-white px-3 text-xs font-bold" /></label>
+            <label className="block text-[10px] font-bold text-slate-600">Ketentuan garansi<textarea value={formData.serviceWarrantyTerms} onChange={e => setFormData({ ...formData, serviceWarrantyTerms: e.target.value })} className="mt-1 min-h-16 w-full rounded-xl border bg-white px-3 py-2 text-xs" /></label>
+          </div>
+        )}
+
         {/* Bill Summary & Promo Calculation */}
         <div className="pt-4 space-y-4 bg-slate-50 -mx-6 px-6 py-6 border-t border-slate-100">
           <div className="space-y-2 pb-2 border-b border-slate-200/60">
@@ -650,7 +660,9 @@ export const POSForm: React.FC<POSFormProps> = ({
                mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
                mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),
                mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
-               mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100)
+               mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100),
+               serviceWarrantyDurationDays: formData.type === 'Retail' ? 0 : Number(formData.serviceWarrantyDurationDays || 0),
+               serviceWarrantyTermsSnapshot: formData.type === 'Retail' ? undefined : formData.serviceWarrantyTerms
              })}
              className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-blue-200 active:scale-95 transition-all disabled:grayscale disabled:opacity-50"
           >
