@@ -240,6 +240,10 @@ model ServicePartItem {
   name        String
   quantity    Int             @default(1)
   priceAtTime Decimal         @db.Decimal(18, 2)
+  normalPriceAtTime Decimal?   @db.Decimal(18, 2)
+  wholesaleType String?
+  wholesaleValue Decimal?      @db.Decimal(18, 2)
+  wholesaleUnitPrice Decimal?  @db.Decimal(18, 2)
   purchasePriceAtTime Decimal? @db.Decimal(18, 2)
   hasProductWarranty Boolean  @default(false)
   warrantyDurationDays Int    @default(0)
