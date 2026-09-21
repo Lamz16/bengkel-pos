@@ -106,6 +106,10 @@ export class WorkshopServiceLayer {
             const duration = warranty?.hasProductWarranty ? warranty.warrantyDurationDays : 0;
             return {
               partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime,
+              normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime,
+              wholesaleType: item.wholesaleType || null,
+              wholesaleValue: item.wholesaleValue || null,
+              wholesaleUnitPrice: item.wholesaleUnitPrice || null,
               hasProductWarranty: !!warranty?.hasProductWarranty,
               warrantyDurationDays: duration,
               warrantyTerms: warranty?.hasProductWarranty ? warranty.warrantyTerms : null,
