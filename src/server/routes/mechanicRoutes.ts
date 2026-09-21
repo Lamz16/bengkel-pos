@@ -12,3 +12,7 @@ export const deductionRouter = Router();
 deductionRouter.get('/', (req, res) => mechanicController.getDeductions(req, res));
 deductionRouter.post('/', (req, res) => mechanicController.createDeduction(req, res));
 deductionRouter.delete('/:id', (req, res) => mechanicController.deleteDeduction(req, res));
+
+export const attendanceRouter = Router();
+attendanceRouter.get('/', (req, res) => mechanicController.getAttendances(req, res));
+attendanceRouter.put('/', (req, res) => mechanicController.saveAttendance(req, res));
