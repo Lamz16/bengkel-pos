@@ -2,7 +2,7 @@ import { CustomerRepository } from './repositories/customerRepository';
 import { VehicleRepository } from './repositories/vehicleRepository';
 import { PartRepository } from './repositories/partRepository';
 import { ServiceRepository } from './repositories/serviceRepository';
-import { MechanicRepository, DeductionRepository } from './repositories/mechanicRepository';
+import { MechanicRepository, DeductionRepository, AttendanceRepository } from './repositories/mechanicRepository';
 import { SupplierRepository } from './repositories/supplierRepository';
 import { FinanceRepository } from './repositories/financeRepository';
 import { SettingsRepository } from './repositories/settingsRepository';
@@ -24,6 +24,7 @@ export const partRepository = new PartRepository();
 export const serviceRepository = new ServiceRepository();
 export const mechanicRepository = new MechanicRepository();
 export const deductionRepository = new DeductionRepository();
+export const attendanceRepository = new AttendanceRepository();
 export const supplierRepository = new SupplierRepository();
 export const financeRepository = new FinanceRepository();
 export const settingsRepository = new SettingsRepository();
@@ -39,7 +40,7 @@ export const workshopService = new WorkshopServiceLayer(
   deductionRepository,
   mechanicRepository
 );
-export const mechanicService = new MechanicService(mechanicRepository, deductionRepository);
+export const mechanicService = new MechanicService(mechanicRepository, deductionRepository, attendanceRepository);
 export const supplierService = new SupplierService(supplierRepository);
 export const financeService = new FinanceService(financeRepository);
 export const settingsService = new SettingsService(settingsRepository, staffRepository);
