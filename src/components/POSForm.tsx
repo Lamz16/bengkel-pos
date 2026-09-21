@@ -37,6 +37,7 @@ interface POSFormProps {
   initialPromoPercent?: number | null;
   onAddCustomer: (c: Customer) => void;
   onAddVehicle: (v: Vehicle) => void;
+  initialCart?: Array<{ partId: string; quantity: number }>;
 }
 
 export const POSForm: React.FC<POSFormProps> = ({ 
@@ -50,7 +51,8 @@ export const POSForm: React.FC<POSFormProps> = ({
   initialCustomer,
   initialPromoPercent,
   onAddCustomer, 
-  onAddVehicle 
+  onAddVehicle,
+  initialCart
 }) => {
   const activeMechanics = useMemo(() => mechanics.filter(m => m.status === 'Active'), [mechanics]);
   const defaultMec = activeMechanics[0] || mechanics[0];
@@ -133,6 +135,23 @@ export const POSForm: React.FC<POSFormProps> = ({
       p.category.toLowerCase().includes(q)
     );
   }, [parts, partSearchQuery]);
+
+  useEffect(() => {
+    if (!initialCart?.length) return;
+    setFormData(prev => ({ ...prev, type: 'Retail' }));
+    setUsedParts(initialCart.map(entry => {
+      const part = parts.find(item => item.id === entry.partId);
+      if (!part) return null;
+      const quantity = Math.max(1, Math.min(entry.quantity, part.stock));
+      return { partId: part.id, name: part.name, quantity, priceAtTime: part.price, normalPriceAtTime: part.price, purchasePriceAtTime: part.purchasePrice, hasProductWarranty: part.hasProductWarranty, warrantyDurationDays: part.warrantyDurationDays, warrantyTerms: part.warrantyTerms };
+    }).filter(Boolean) as any);
+  }, [initialCart, parts]);
+
+  const changePartQuantity = (partId: string, nextQuantity: number) => {
+    const available = parts.find(part => part.id === partId)?.stock || 0;
+    if (nextQuantity < 1 || nextQuantity > available) return;
+    setUsedParts(prev => prev.map(item => item.partId === partId ? { ...item, quantity: nextQuantity } : item));
+  };
 
   const filteredVehicles = useMemo(() => vehicles.filter(v => v.customerId === formData.customerId), [vehicles, formData.customerId]);
 
@@ -634,6 +653,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                       {p.wholesaleType ? <div className="flex justify-between rounded-lg bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-800"><span>Harga grosir: Rp {(p.wholesaleUnitPrice || p.priceAtTime).toLocaleString()} / unit</span><button type="button" onClick={() => clearItemWholesale(p.partId)} className="text-rose-600">Reset</button></div> : <button type="button" onClick={() => { setWholesalePartId(p.partId); setItemWholesaleValue(''); }} className="text-[10px] font-black text-amber-700">+ Atur harga grosir produk ini</button>}
                       {wholesalePartId === p.partId && <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-2 space-y-2"><div className="grid grid-cols-3 gap-1"><button type="button" onClick={() => setItemWholesaleType('percent')} className="h-7 rounded bg-white text-[9px] font-bold">%</button><button type="button" onClick={() => setItemWholesaleType('nominal')} className="h-7 rounded bg-white text-[9px] font-bold">Pot. Rp</button><button type="button" onClick={() => setItemWholesaleType('unit_price')} className="h-7 rounded bg-white text-[9px] font-bold">Harga Rp</button></div><div className="flex gap-1"><input type="number" min="0" value={itemWholesaleValue} onChange={e => setItemWholesaleValue(e.target.value)} placeholder={itemWholesaleType === 'percent' ? '10' : '50000'} className="h-8 min-w-0 flex-1 rounded-lg border px-2 text-[10px]" /><button type="button" onClick={() => applyItemWholesale(p.partId)} className="h-8 rounded-lg bg-amber-600 px-2 text-[10px] font-bold text-white">Terapkan</button><button type="button" onClick={() => setWholesalePartId(null)} className="h-8 rounded-lg border px-2 text-[10px]">Batal</button></div><p className="text-[9px] text-slate-500">Harga normal: Rp {(p.normalPriceAtTime || p.priceAtTime).toLocaleString()} / unit</p></div>}
                     </div>}
+                                        <div className="flex items-center gap-1"><button type="button" disabled={p.quantity <= 1} onClick={() => changePartQuantity(p.partId, p.quantity - 1)} className="h-7 w-7 rounded-lg border text-sm font-black disabled:opacity-30">−</button><span className="min-w-8 text-center text-xs font-black">{p.quantity}</span><button type="button" disabled={p.quantity >= (parts.find(item => item.id === p.partId)?.stock || 0)} onClick={() => changePartQuantity(p.partId, p.quantity + 1)} className="h-7 w-7 rounded-lg border text-sm font-black disabled:opacity-30">+</button></div>
                                         <button onClick={() => setUsedParts(prev => prev.filter(x => x.partId !== p.partId))} className="p-1 text-slate-400 hover:text-rose-500">
                       <X className="w-4 h-4" />
                     </button>
