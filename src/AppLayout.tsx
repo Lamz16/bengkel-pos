@@ -79,6 +79,7 @@ export default function AppLayout() {
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [showPOSForm, setShowPOSForm] = useState(false);
+  const [saleCart, setSaleCart] = useState<Array<{ partId: string; quantity: number }>>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // The server remains the authority for JWT validation. This client guard prevents
@@ -955,6 +956,7 @@ export default function AppLayout() {
                   initialPromoPercent={posInitialPromoPercent}
                   onAddCustomer={handleSaveCustomer}
                   onAddVehicle={handleAddVehicle}
+                  initialCart={saleCart}
                 />
               </motion.div>
             )}
@@ -1007,6 +1009,7 @@ export default function AppLayout() {
                   onDelete={handleDeletePart}
                   onOpenLowStockModal={() => setShowLowStockModal(true)}
                   onOpenMasterDataModal={() => setShowMasterDataModal(true)}
+                  onCheckoutCart={(items) => { setSaleCart(items); setShowPOSForm(true); }}
                 />
               </motion.div>
             )}
