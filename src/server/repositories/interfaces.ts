@@ -5,6 +5,7 @@ import {
   WorkshopService, 
   Mechanic, 
   MechanicDeduction, 
+  MechanicAttendance,
   Supplier, 
   PurchaseRecord, 
   Expense, 
@@ -75,6 +76,11 @@ export interface IDeductionRepository {
   getAll(): Promise<MechanicDeduction[]>;
   create(data: Omit<MechanicDeduction, 'id'>): Promise<MechanicDeduction>;
   delete(id: string): Promise<boolean>;
+}
+
+export interface IAttendanceRepository {
+  getAll(): Promise<MechanicAttendance[]>;
+  upsert(data: Omit<MechanicAttendance, 'id'>): Promise<MechanicAttendance>;
 }
 
 export interface ISupplierRepository {
