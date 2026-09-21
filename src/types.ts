@@ -184,6 +184,7 @@ export interface WorkshopService {
     partId: string; 
     name: string; 
     quantity: number; 
+    returnedQuantity?: number;
     priceAtTime: number;
     normalPriceAtTime?: number;
     wholesaleType?: 'percent' | 'nominal' | 'unit_price';
