@@ -23,8 +23,14 @@ model CompanySettings {
   defaultWarrantyPenalty         Decimal  @default(75000) @db.Decimal(18, 2)
   allowCustomBonusPerTransaction Boolean  @default(true)
   receiptHeader                  String?  @default("NOTA RESMI & RINCIAN SERVIS")
+  serviceReceiptHeader           String   @default("NOTA TRANSAKSI SERVIS")
+  saleReceiptHeader              String   @default("NOTA PEMBELIAN BARANG")
   footerNote                     String   @default("Barang yang sudah dibeli tidak dapat ditukar kecuali perjanjian. Terima kasih atas kepercayaan Anda merawat kendaraan bersama kami.")
+  serviceReceiptFooter           String?  @default("Terima kasih telah mempercayakan kendaraan Anda kepada kami.")
+  saleReceiptFooter              String?  @default("Barang yang sudah dibeli tidak dapat ditukar kecuali perjanjian.")
   warrantyTerms                  String   @default("Garansi servis 7 hari atau 500 KM untuk pengerjaan perbaikan yang sama dengan menunjukkan nota ini.")
+  defaultServiceWarrantyDays     Int      @default(7)
+  serviceWarrantyTerms           String?  @default("Garansi hanya berlaku untuk pengerjaan servis yang sama dengan menunjukkan nota ini.")
   showMechanicOnReceipt          Boolean  @default(true)
   showWarrantyOnReceipt          Boolean  @default(true)
   showOdometerOnReceipt          Boolean  @default(true)
@@ -201,6 +207,12 @@ model WorkshopService {
   warrantyClaimReason     String?
   isMechanicAbsentOnClaim Boolean?          @default(false)
   warrantyDeductionAmount Decimal?          @default(0) @db.Decimal(18, 2)
+  receiptType             String            @default("SERVICE")
+  receiptHeaderSnapshot   String?
+  receiptFooterSnapshot   String?
+  serviceWarrantyDurationDays Int            @default(0)
+  serviceWarrantyTermsSnapshot String?
+  serviceWarrantyExpiresAt DateTime?
   version                 Int               @default(1)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
