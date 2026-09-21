@@ -64,7 +64,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
         Math.round((service.laborFee || 0) * (service.mechanicBonusPercent || 0) / 100);
 
       service.partsUsed.forEach(item => {
-        const quantity = item.quantity || 0;
+        const quantity = Math.max(0, (item.quantity || 0) - (item.returnedQuantity || 0));
         partSales += (item.priceAtTime || 0) * quantity;
         // Snapshot digunakan untuk transaksi baru; harga master hanya fallback untuk data lama.
         partCost += (item.purchasePriceAtTime ?? partPurchasePrices.get(item.partId) ?? 0) * quantity;
