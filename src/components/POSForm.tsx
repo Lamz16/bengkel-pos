@@ -73,7 +73,8 @@ export const POSForm: React.FC<POSFormProps> = ({
     mechanicName: defaultMec ? defaultMec.name : '',
     mechanicBonusPercent: defaultMec ? defaultMec.defaultBonusPercent : 15,
     serviceWarrantyDurationDays: String(settings?.defaultServiceWarrantyDays ?? 7),
-    serviceWarrantyTerms: settings?.serviceWarrantyTerms || settings?.warrantyTerms || ''
+    serviceWarrantyTerms: settings?.serviceWarrantyTerms || settings?.warrantyTerms || '',
+    paymentStatus: 'Unpaid' as 'Unpaid' | 'Paid'
   });
   
   const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; normalPriceAtTime?: number; wholesaleType?: 'percent' | 'nominal' | 'unit_price'; wholesaleValue?: number; wholesaleUnitPrice?: number; purchasePriceAtTime?: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
@@ -678,6 +679,8 @@ export const POSForm: React.FC<POSFormProps> = ({
           </div>
         )}
 
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3"><p className="mb-2 text-[10px] font-black uppercase text-slate-500">Status Pembayaran</p><div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setFormData({ ...formData, paymentStatus: 'Paid' })} className={`h-10 rounded-xl text-xs font-black ${formData.paymentStatus === 'Paid' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Lunas</button><button type="button" onClick={() => setFormData({ ...formData, paymentStatus: 'Unpaid' })} className={`h-10 rounded-xl text-xs font-black ${formData.paymentStatus === 'Unpaid' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600'}`}>Belum Lunas</button></div></div>
+
         {/* Bill Summary & Promo Calculation */}
         <div className="pt-4 space-y-4 bg-slate-50 -mx-6 px-6 py-6 border-t border-slate-100">
           <div className="space-y-2 pb-2 border-b border-slate-200/60">
@@ -737,7 +740,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                totalAmount: grandTotal,
                discountAmount: discountAmount > 0 ? discountAmount : undefined,
                discountReason: discountAmount > 0 ? discountReason : undefined,
-               paymentStatus: 'Unpaid',
+               paymentStatus: formData.paymentStatus,
                mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
                mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),
                mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
