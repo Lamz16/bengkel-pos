@@ -253,7 +253,12 @@ export const POSForm: React.FC<POSFormProps> = ({
         {(['Service', 'Retail'] as const).map((t) => (
           <button
             key={t}
-            onClick={() => setFormData(prev => ({ ...prev, type: t as any }))}
+            onClick={() => {
+              setFormData(prev => ({ ...prev, type: t as any }));
+              handleClearDiscount();
+              setIsWholesaleOpen(false);
+              setWholesaleValue('');
+            }}
             className={cn(
               "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
               formData.type === t ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"
