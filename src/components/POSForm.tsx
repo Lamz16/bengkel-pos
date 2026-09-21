@@ -74,7 +74,10 @@ export const POSForm: React.FC<POSFormProps> = ({
     serviceWarrantyTerms: settings?.serviceWarrantyTerms || settings?.warrantyTerms || ''
   });
   
-  const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; purchasePriceAtTime?: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
+  const [usedParts, setUsedParts] = useState<Array<{ partId: string; name: string; quantity: number; priceAtTime: number; normalPriceAtTime?: number; wholesaleType?: 'percent' | 'nominal' | 'unit_price'; wholesaleValue?: number; wholesaleUnitPrice?: number; purchasePriceAtTime?: number; hasProductWarranty?: boolean; warrantyDurationDays?: number; warrantyTerms?: string }>>([]);
+  const [wholesalePartId, setWholesalePartId] = useState<string | null>(null);
+  const [itemWholesaleType, setItemWholesaleType] = useState<'percent' | 'nominal' | 'unit_price'>('percent');
+  const [itemWholesaleValue, setItemWholesaleValue] = useState('');
   const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>([{ name: '', price: '' }]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [, setDiagnosis] = useState('');
@@ -188,6 +191,18 @@ export const POSForm: React.FC<POSFormProps> = ({
     });
     setShowPartPicker(false);
   };
+
+  const applyItemWholesale = (partId: string) => {
+    const value = Number(itemWholesaleValue);
+    const item = usedParts.find(part => part.partId === partId);
+    if (!item || !Number.isFinite(value) || value <= 0) return;
+    const normal = item.normalPriceAtTime || item.priceAtTime;
+    const unitPrice = itemWholesaleType === 'percent' ? normal * (1 - value / 100) : itemWholesaleType === 'nominal' ? normal - value : value;
+    if ((itemWholesaleType === 'percent' && value > 100) || unitPrice < 0) return alert('Nilai harga grosir tidak valid.');
+    setUsedParts(prev => prev.map(part => part.partId === partId ? { ...part, normalPriceAtTime: normal, priceAtTime: Math.round(unitPrice), wholesaleType: itemWholesaleType, wholesaleValue: value, wholesaleUnitPrice: Math.round(unitPrice) } : part));
+    setWholesalePartId(null); setItemWholesaleValue('');
+  };
+  const clearItemWholesale = (partId: string) => setUsedParts(prev => prev.map(part => part.partId === partId ? { ...part, priceAtTime: part.normalPriceAtTime || part.priceAtTime, wholesaleType: undefined, wholesaleValue: undefined, wholesaleUnitPrice: undefined } : part));
 
   const handleApplyPromoPercent = (percent: number, reason: string) => {
     setDiscountPercent(percent);
@@ -434,7 +449,7 @@ export const POSForm: React.FC<POSFormProps> = ({
           )}
         </div>
 
-        {formData.type === 'Retail' && (
+        {false && formData.type === 'Retail' && (
           <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div><p className="text-xs font-black text-amber-950">Harga Grosir</p><p className="text-[10px] text-amber-800">Untuk pembelian jumlah besar. Potongan berlaku ke seluruh barang pada transaksi ini.</p></div>
@@ -615,7 +630,11 @@ export const POSForm: React.FC<POSFormProps> = ({
                         )}
                       </div>
                     </div>
-                    <button onClick={() => setUsedParts(prev => prev.filter(x => x.partId !== p.partId))} className="p-1 text-slate-400 hover:text-rose-500">
+                    {formData.type === 'Retail' && <div className="mt-2">
+                      {p.wholesaleType ? <div className="flex justify-between rounded-lg bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-800"><span>Harga grosir: Rp {(p.wholesaleUnitPrice || p.priceAtTime).toLocaleString()} / unit</span><button type="button" onClick={() => clearItemWholesale(p.partId)} className="text-rose-600">Reset</button></div> : <button type="button" onClick={() => { setWholesalePartId(p.partId); setItemWholesaleValue(''); }} className="text-[10px] font-black text-amber-700">+ Atur harga grosir produk ini</button>}
+                      {wholesalePartId === p.partId && <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-2 space-y-2"><div className="grid grid-cols-3 gap-1"><button type="button" onClick={() => setItemWholesaleType('percent')} className="h-7 rounded bg-white text-[9px] font-bold">%</button><button type="button" onClick={() => setItemWholesaleType('nominal')} className="h-7 rounded bg-white text-[9px] font-bold">Pot. Rp</button><button type="button" onClick={() => setItemWholesaleType('unit_price')} className="h-7 rounded bg-white text-[9px] font-bold">Harga Rp</button></div><div className="flex gap-1"><input type="number" min="0" value={itemWholesaleValue} onChange={e => setItemWholesaleValue(e.target.value)} placeholder={itemWholesaleType === 'percent' ? '10' : '50000'} className="h-8 min-w-0 flex-1 rounded-lg border px-2 text-[10px]" /><button type="button" onClick={() => applyItemWholesale(p.partId)} className="h-8 rounded-lg bg-amber-600 px-2 text-[10px] font-bold text-white">Terapkan</button><button type="button" onClick={() => setWholesalePartId(null)} className="h-8 rounded-lg border px-2 text-[10px]">Batal</button></div><p className="text-[9px] text-slate-500">Harga normal: Rp {(p.normalPriceAtTime || p.priceAtTime).toLocaleString()} / unit</p></div>}
+                    </div>}
+                                        <button onClick={() => setUsedParts(prev => prev.filter(x => x.partId !== p.partId))} className="p-1 text-slate-400 hover:text-rose-500">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
