@@ -93,6 +93,9 @@ export const POSForm: React.FC<POSFormProps> = ({
   const [showCustomDiscount, setShowCustomDiscount] = useState<boolean>(false);
   const [customDiscountValue, setCustomDiscountValue] = useState<string>('');
   const [customDiscountType, setCustomDiscountType] = useState<'percent' | 'nominal'>('nominal');
+  const [isWholesaleOpen, setIsWholesaleOpen] = useState(false);
+  const [wholesaleValue, setWholesaleValue] = useState('');
+  const [wholesaleType, setWholesaleType] = useState<'percent' | 'nominal'>('percent');
 
   // Customer matching for Loyalty Tracking
   const matchedCustomer = useMemo(() => {
@@ -210,6 +213,19 @@ export const POSForm: React.FC<POSFormProps> = ({
     }
   };
 
+  const handleApplyWholesaleDiscount = () => {
+    const value = Number(wholesaleValue);
+    if (!Number.isFinite(value) || value <= 0) return;
+    if (wholesaleType === 'percent') {
+      if (value > 100) return alert('Potongan persentase maksimal 100%.');
+      handleApplyPromoPercent(value, `Harga Grosir (${value}%)`);
+    } else {
+      if (value > subtotal) return alert('Potongan grosir tidak boleh melebihi subtotal.');
+      handleApplyNominalDiscount(value, `Harga Grosir Rp ${value.toLocaleString('id-ID')}`);
+    }
+    setIsWholesaleOpen(false);
+  };
+
   const handleClearDiscount = () => {
     setDiscountPercent(null);
     setDiscountAmount(0);
@@ -271,7 +287,7 @@ export const POSForm: React.FC<POSFormProps> = ({
           </div>
 
           {/* Real-time Loyalty Banner for Selected/Recognized Customer */}
-          {loyaltyStats && (
+          {formData.type === 'Service' && loyaltyStats && (
             <motion.div 
               initial={{ opacity: 0, y: -5 }} 
               animate={{ opacity: 1, y: 0 }}
@@ -412,6 +428,21 @@ export const POSForm: React.FC<POSFormProps> = ({
             </motion.div>
           )}
         </div>
+
+        {formData.type === 'Retail' && (
+          <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="text-xs font-black text-amber-950">Harga Grosir</p><p className="text-[10px] text-amber-800">Untuk pembelian jumlah besar. Potongan berlaku ke seluruh barang pada transaksi ini.</p></div>
+              <button type="button" onClick={() => setIsWholesaleOpen(value => !value)} className="shrink-0 rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-white">{isWholesaleOpen ? 'Tutup' : 'Atur Harga Grosir'}</button>
+            </div>
+            {discountReason.startsWith('Harga Grosir') && <div className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-[11px] font-bold text-amber-900"><span>{discountReason}</span><button type="button" onClick={handleClearDiscount} className="text-rose-600">Hapus</button></div>}
+            {isWholesaleOpen && <div className="rounded-xl border border-amber-200 bg-white p-3 space-y-3">
+              <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setWholesaleType('percent')} className={`h-9 rounded-lg text-xs font-bold ${wholesaleType === 'percent' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600'}`}>Potongan %</button><button type="button" onClick={() => setWholesaleType('nominal')} className={`h-9 rounded-lg text-xs font-bold ${wholesaleType === 'nominal' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600'}`}>Potongan Rp</button></div>
+              <div className="flex gap-2"><input type="number" min="0" max={wholesaleType === 'percent' ? 100 : subtotal} placeholder={wholesaleType === 'percent' ? 'Contoh: 10' : 'Contoh: 50000'} value={wholesaleValue} onChange={e => setWholesaleValue(e.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border px-3 text-xs font-bold" /><button type="button" onClick={handleApplyWholesaleDiscount} className="h-10 rounded-xl bg-amber-600 px-4 text-xs font-black text-white">Terapkan</button></div>
+              <p className="text-[10px] text-slate-500">Subtotal barang: Rp {totalParts.toLocaleString('id-ID')}</p>
+            </div>}
+          </section>
+        )}
 
         {formData.type === 'Service' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
