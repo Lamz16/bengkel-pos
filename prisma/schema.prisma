@@ -372,10 +372,24 @@ model PurchaseRecord {
 model Expense {
   id        String   @id @default(uuid())
   category  String
+  categoryId String?
   amount    Decimal  @db.Decimal(18, 2)
   note      String
   date      DateTime @default(now())
   createdAt DateTime @default(now())
+  expenseCategory ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+}
+
+model ExpenseCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  expenses    Expense[]
 }
 
 model StockHistory {
