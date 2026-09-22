@@ -177,7 +177,6 @@ export interface WorkshopService {
   vehiclePlate: string;
   vehicleModel: string;
   kilometers: number;
-  serviceType: string;
   complaint: string;
   diagnosis?: string;
   status: ServiceStatus;
