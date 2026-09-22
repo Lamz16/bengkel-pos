@@ -609,12 +609,23 @@ export default function AppLayout() {
   };
 
   const handleUpdateStatus = async (id: string, newStatus: ServiceStatus) => {
-    setServices(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
-    setSelectedServiceId(null);
     try {
-      await api.updateServiceStatus(id, newStatus);
+      const updated = await api.updateServiceStatus(id, newStatus);
+      setServices(prev => prev.map(service => service.id === id ? updated : service));
+      setSelectedServiceId(null);
     } catch (err) {
       console.error('Error updating status in backend:', err);
+      alert(err instanceof Error ? err.message : 'Status transaksi gagal diperbarui.');
+    }
+  };
+
+  const handleMarkServicePaid = async (id: string) => {
+    try {
+      const updated = await api.markServicePaid(id);
+      setServices(prev => prev.map(service => service.id === id ? updated : service));
+    } catch (err) {
+      console.error('Error updating payment status in backend:', err);
+      alert(err instanceof Error ? err.message : 'Status pembayaran gagal diperbarui.');
     }
   };
 
@@ -1158,6 +1169,7 @@ export default function AppLayout() {
                 service={selectedService} 
                 parts={parts}
                 onUpdateStatus={handleUpdateStatus}
+                onMarkPaid={handleMarkServicePaid}
                 onProcessReturn={handleProcessReturn}
                 onOpenWarrantyClaim={(srv) => {
                   setSelectedServiceId(null);
