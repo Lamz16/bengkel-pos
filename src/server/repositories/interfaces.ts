@@ -56,6 +56,7 @@ export interface IServiceRepository {
   getById(id: string): Promise<WorkshopService | null>;
   create(data: WorkshopService): Promise<WorkshopService>;
   updateStatus(id: string, status: string, expectedVersion?: number): Promise<WorkshopService | null>;
+  markPaid(id: string, expectedVersion?: number): Promise<WorkshopService | null>;
   updateWarrantyClaim(data: {
     serviceId: string;
     reason: string;
