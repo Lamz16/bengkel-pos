@@ -80,6 +80,7 @@ export default function AppLayout() {
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [showPOSForm, setShowPOSForm] = useState(false);
+  const [editingService, setEditingService] = useState<WorkshopService | null>(null);
   const [saleCart, setSaleCart] = useState<Array<{ partId: string; quantity: number }>>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -608,6 +609,23 @@ export default function AppLayout() {
     }
   };
 
+  const handleEditService = async (service: WorkshopService) => {
+    try {
+      const updated = await api.updateService(service.id, service);
+      setServices(prev => prev.map(item => item.id === updated.id ? updated : item));
+      const [updatedParts, updatedCustomers] = await Promise.all([api.getParts(), api.getCustomers()]);
+      setParts(updatedParts);
+      setCustomers(updatedCustomers);
+      setShowPOSForm(false);
+      setEditingService(null);
+      setSelectedInvoiceId(updated.id);
+      setActiveTab('pos');
+    } catch (err) {
+      console.error('Error updating service:', err);
+      alert(err instanceof Error ? err.message : 'Transaksi gagal diperbarui.');
+    }
+  };
+
   const handleUpdateStatus = async (id: string, newStatus: ServiceStatus) => {
     try {
       const updated = await api.updateServiceStatus(id, newStatus);
@@ -927,7 +945,7 @@ export default function AppLayout() {
           theme={theme}
           onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
           onClosePOSForm={() => setShowPOSForm(false)}
-          onOpenPOSForm={() => setShowPOSForm(true)}
+          onOpenPOSForm={() => { setEditingService(null); setShowPOSForm(true); }}
         />
 
         {/* Scrollable Viewport */}
@@ -960,7 +978,7 @@ export default function AppLayout() {
                   </div>
                   {(currentUser.role === 'Owner' || currentUser.role === 'Admin') && (
                     <button 
-                      onClick={() => setShowPOSForm(true)} 
+                      onClick={() => { setEditingService(null); setShowPOSForm(true); }}
                       className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100"
                     >
                       New Transaction
@@ -996,6 +1014,7 @@ export default function AppLayout() {
                   <button 
                     onClick={() => {
                       setShowPOSForm(false);
+                      setEditingService(null);
                       setPosInitialCustomer(null);
                       setPosInitialPromoPercent(null);
                     }} 
@@ -1004,11 +1023,11 @@ export default function AppLayout() {
                   >
                     <X className="w-5 h-5" />
                   </button>
-                  <h2 className="text-xl font-black text-slate-900">New Transaction</h2>
+                  <h2 className="text-xl font-black text-slate-900">{editingService ? 'Edit Transaksi' : 'New Transaction'}</h2>
                 </div>
                 <POSForm 
                   onSave={(service) => {
-                    handleNewService(service);
+                    if (editingService) handleEditService(service); else handleNewService(service);
                     setPosInitialCustomer(null);
                     setPosInitialPromoPercent(null);
                   }} 
@@ -1023,6 +1042,7 @@ export default function AppLayout() {
                   onAddCustomer={handleSaveCustomer}
                   onAddVehicle={handleAddVehicle}
                   initialCart={saleCart}
+                  initialService={editingService}
                 />
               </motion.div>
             )}
@@ -1076,7 +1096,7 @@ export default function AppLayout() {
                   onDelete={handleDeletePart}
                   onOpenLowStockModal={() => setShowLowStockModal(true)}
                   onOpenMasterDataModal={() => setShowMasterDataModal(true)}
-                  onCheckoutCart={(items) => { setSaleCart(items); setShowPOSForm(true); }}
+                  onCheckoutCart={(items) => { setEditingService(null); setSaleCart(items); setShowPOSForm(true); }}
                 />
               </motion.div>
             )}
@@ -1093,7 +1113,7 @@ export default function AppLayout() {
                   onSelectCustomerForPOS={(cust, promoPct) => {
                     setPosInitialCustomer(cust);
                     setPosInitialPromoPercent(promoPct || null);
-                    setShowPOSForm(true);
+                    setEditingService(null); setShowPOSForm(true);
                   }}
                 />
               </motion.div>
@@ -1170,6 +1190,7 @@ export default function AppLayout() {
                 parts={parts}
                 onUpdateStatus={handleUpdateStatus}
                 onMarkPaid={handleMarkServicePaid}
+                onEdit={(service) => { setSelectedServiceId(null); setEditingService(service); setShowPOSForm(true); }}
                 onProcessReturn={handleProcessReturn}
                 onOpenWarrantyClaim={(srv) => {
                   setSelectedServiceId(null);
