@@ -55,7 +55,6 @@ export interface IServiceRepository {
   getPaginated(params: PaginationParams): Promise<PaginatedResult<WorkshopService>>;
   getById(id: string): Promise<WorkshopService | null>;
   create(data: WorkshopService): Promise<WorkshopService>;
-  update(id: string, data: WorkshopService, expectedVersion?: number): Promise<WorkshopService | null>;
   updateStatus(id: string, status: string, expectedVersion?: number): Promise<WorkshopService | null>;
   markPaid(id: string, expectedVersion?: number): Promise<WorkshopService | null>;
   updateWarrantyClaim(data: {
