@@ -96,11 +96,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
 
   const topServices = useMemo(() => {
     const counts: Record<string, number> = {};
-    services.forEach(s => {
-      counts[s.serviceType] = (counts[s.serviceType] || 0) + 1;
+    services.forEach(service => {
+      if (service.receiptType === 'SALE') return;
+      (service.serviceItems || []).forEach(item => {
+        const name = item.name?.trim();
+        if (name) counts[name] = (counts[name] || 0) + 1;
+      });
     });
     return Object.entries(counts)
-      .filter(([name]) => name !== 'Retail')
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
   }, [services]);
@@ -224,7 +227,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ services, parts, u
                   </div>
                   <div>
                     <p className="text-xs font-black text-slate-900 uppercase">{s.vehiclePlate}</p>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase">{s.vehicleModel} • {s.serviceType}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">{s.vehicleModel} • {s.receiptType === 'SALE' ? 'Penjualan Barang' : ((s.serviceItems || []).map(item => item.name).filter(Boolean).join(', ') || 'Jasa servis')}</p>
                   </div>
                 </div>
                 <div className="text-right flex items-center gap-3">
