@@ -1,0 +1,3 @@
+ALTER TABLE "CompanySettings"
+  ADD COLUMN IF NOT EXISTS "appTitle" TEXT,
+  ADD COLUMN IF NOT EXISTS "faviconUrl" TEXT;
