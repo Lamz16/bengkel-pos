@@ -405,6 +405,10 @@ export const api = {
     });
   },
 
+  async updateService(id: string, serviceData: WorkshopService): Promise<WorkshopService> {
+    return request<WorkshopService>(`/api/services/${id}`, { method: 'PUT', body: JSON.stringify(serviceData) });
+  },
+
   async updateServiceStatus(id: string, status: ServiceStatus): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${id}/status`, {
       method: 'PUT', body: JSON.stringify({ status }),
