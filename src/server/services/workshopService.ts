@@ -111,6 +111,7 @@ export class WorkshopServiceLayer {
               wholesaleType: item.wholesaleType || null,
               wholesaleValue: item.wholesaleValue || null,
               wholesaleUnitPrice: item.wholesaleUnitPrice || null,
+              purchasePriceAtTime: item.purchasePriceAtTime ?? undefined,
               hasProductWarranty: !!warranty?.hasProductWarranty,
               warrantyDurationDays: duration,
               warrantyTerms: terms,
