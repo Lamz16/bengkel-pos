@@ -11,6 +11,7 @@ import {
   Supplier, 
   PurchaseRecord, 
   Expense,
+  ExpenseCategory,
   User,
   DistributorInvoice,
   PartCategory,
@@ -33,6 +34,7 @@ export interface MemoryStore {
   suppliers: Supplier[];
   purchases: PurchaseRecord[];
   expenses: Expense[];
+  expenseCategories: ExpenseCategory[];
   staff: Array<{ id: string; name: string; role: string; status: string; shifts?: string; email?: string }>;
   distributorInvoices?: DistributorInvoice[];
 }
@@ -218,6 +220,13 @@ export const memoryStore: MemoryStore = {
     }
   ],
   expenses: [],
+  expenseCategories: [
+    { id: 'exp-cat-sparepart', name: 'Pembelian Suku Cadang', description: 'Belanja stok dan komponen' },
+    { id: 'exp-cat-operasional', name: 'Operasional', description: 'Listrik, air, internet, dan kebutuhan harian' },
+    { id: 'exp-cat-sewa', name: 'Sewa Tempat' },
+    { id: 'exp-cat-gaji', name: 'Gaji Karyawan' },
+    { id: 'exp-cat-lainnya', name: 'Lainnya' },
+  ],
   staff: [
     { id: 'STF-1', name: 'Rian Herlambang', role: 'Admin', status: 'Active', shifts: 'Pagi', email: 'rian@bengkelpro.com' },
     { id: 'STF-2', name: 'Budi Hartono', role: 'Admin', status: 'Active', shifts: 'Sore', email: 'budi@bengkelpro.com' }
