@@ -163,7 +163,7 @@ export class WorkshopServiceLayer {
     const discountAmount = Math.max(0, Number(data.discountAmount || 0));
     const effectiveData = { ...data, id, serviceItems, laborFee, totalAmount: Math.max(0, totalParts + laborFee - discountAmount), mechanicBonusAmount: Math.round(laborFee * Number(data.mechanicBonusPercent || 0) / 100) };
 
-    if (!isDbConnected()) return this.serviceRepo.update(id, effectiveData, expectedVersion);
+    if (!isDbConnected()) return (this.serviceRepo as any).update?.(id, effectiveData, expectedVersion) || null;
     await prisma.$transaction(async tx => {
       const previous = await tx.workshopService.findUnique({ where: { id }, include: { partsUsed: true, returns: true } });
       if (!previous) throw new Error('Order servis tidak ditemukan.');
