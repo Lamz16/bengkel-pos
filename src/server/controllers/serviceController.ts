@@ -53,6 +53,19 @@ export class ServiceController {
     }
   }
 
+  async markPaid(req: Request, res: Response) {
+    try {
+      const { version, expectedVersion } = req.body;
+      const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      const updated = await (workshopService as any).serviceRepo.markPaid(req.params.id, expVer);
+      if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan' });
+      res.json(updated);
+    } catch (err: any) {
+      const isConflict = String(err.message).includes('telah diubah oleh kasir');
+      res.status(isConflict ? 409 : 500).json({ error: err.message || 'Gagal memperbarui status pembayaran servis' });
+    }
+  }
+
   async claimWarranty(req: Request, res: Response) {
     try {
       const { reason, isAbsentNextDay } = req.body;
