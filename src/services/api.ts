@@ -10,6 +10,7 @@ import {
   Supplier,
   PurchaseRecord,
   Expense,
+  ExpenseCategory,
   User,
   UserRole,
   ServiceStatus,
@@ -501,6 +502,22 @@ export const api = {
   },
 
   // Expenses
+  async getExpenseCategories(): Promise<ExpenseCategory[]> {
+    return request<ExpenseCategory[]>('/api/expenses/categories');
+  },
+
+  async createExpenseCategory(data: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory> {
+    return request<ExpenseCategory>('/api/expenses/categories', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async updateExpenseCategory(id: string, data: Partial<ExpenseCategory>): Promise<ExpenseCategory> {
+    return request<ExpenseCategory>(`/api/expenses/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+
+  async deleteExpenseCategory(id: string): Promise<void> {
+    await request(`/api/expenses/categories/${id}`, { method: 'DELETE' });
+  },
+
   async getExpenses(): Promise<Expense[]> {
     return request<Expense[]>('/api/expenses');
   },
