@@ -587,7 +587,11 @@ export default function AppLayout() {
       setParts(updatedParts);
       setCustomers(updatedCustomers);
       setShowPOSForm(false);
-      setSelectedInvoiceId(savedService.id);
+      // Transaksi servis/repair belum menampilkan nota saat order baru dibuat.
+      // Nota penjualan langsung tetap ditampilkan segera setelah transaksi berhasil.
+      if (savedService.receiptType === 'SALE') {
+        setSelectedInvoiceId(savedService.id);
+      }
       setActiveTab('pos');
     } catch (err) {
       console.error('Error saving service to backend:', err);
@@ -604,7 +608,9 @@ export default function AppLayout() {
       });
       setServices(prev => [service, ...prev]);
       setShowPOSForm(false);
-      setSelectedInvoiceId(service.id);
+      if (service.receiptType === 'SALE') {
+        setSelectedInvoiceId(service.id);
+      }
       setActiveTab('pos');
     }
   };
