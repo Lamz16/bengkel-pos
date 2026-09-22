@@ -23,9 +23,10 @@ export class ServiceController {
 
   async createService(req: Request, res: Response) {
     try {
-      const { customerName, vehiclePlate, serviceType, totalAmount } = req.body;
-      if (!customerName || !serviceType || totalAmount === undefined || (serviceType !== 'Retail' && !vehiclePlate)) {
-        return res.status(400).json({ error: 'Data order servis tidak lengkap.' });
+      const { customerName, vehiclePlate, receiptType, totalAmount } = req.body;
+      const isSale = receiptType === 'SALE';
+      if (!customerName?.trim() || totalAmount === undefined || (!isSale && !vehiclePlate?.trim())) {
+        return res.status(400).json({ error: 'Data transaksi tidak lengkap.', details: { customerName: !customerName?.trim() ? 'Nama pelanggan wajib diisi.' : undefined, vehiclePlate: !isSale && !vehiclePlate?.trim() ? 'Nomor polisi wajib diisi untuk transaksi servis.' : undefined, totalAmount: totalAmount === undefined ? 'Total transaksi wajib diisi.' : undefined, receiptType: receiptType || 'SERVICE' } });
       }
       const service = await workshopService.createService(req.body);
       res.status(201).json(service);
