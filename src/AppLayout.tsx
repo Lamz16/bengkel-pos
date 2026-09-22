@@ -287,6 +287,16 @@ export default function AppLayout() {
     receiptContactHelp: "WhatsApp CS: 0812-3456-7890"
   });
 
+  useEffect(() => {
+    const title = companySettings.appTitle?.trim() || companySettings.name?.trim() || 'BengkelPro POS';
+    document.title = title;
+
+    const favicon = document.querySelector<HTMLLinkElement>('link#app-favicon')
+      || document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+      || document.head.appendChild(Object.assign(document.createElement('link'), { id: 'app-favicon', rel: 'icon' }));
+    favicon.href = companySettings.faviconUrl || '/favicon.ico';
+  }, [companySettings.appTitle, companySettings.faviconUrl, companySettings.name]);
+
   // Active Modals & Form Dialog States
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
