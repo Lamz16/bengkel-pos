@@ -20,7 +20,6 @@ export class ServiceRepository implements IServiceRepository {
           vehiclePlate: s.vehiclePlate,
           vehicleModel: s.vehicleModel,
           kilometers: s.kilometers,
-          serviceType: s.serviceType,
           complaint: s.complaint,
           diagnosis: s.diagnosis || undefined,
           status: s.status as any,
@@ -86,7 +85,6 @@ export class ServiceRepository implements IServiceRepository {
               { customerName: { contains: search, mode: 'insensitive' as const } },
               { vehiclePlate: { contains: search, mode: 'insensitive' as const } },
               { vehicleModel: { contains: search, mode: 'insensitive' as const } },
-              { serviceType: { contains: search, mode: 'insensitive' as const } },
               { id: { contains: search, mode: 'insensitive' as const } },
             ],
           });
@@ -117,7 +115,6 @@ export class ServiceRepository implements IServiceRepository {
             vehiclePlate: s.vehiclePlate,
             vehicleModel: s.vehicleModel,
             kilometers: s.kilometers,
-            serviceType: s.serviceType,
             complaint: s.complaint,
             diagnosis: s.diagnosis || undefined,
             status: s.status as any,
@@ -173,7 +170,6 @@ export class ServiceRepository implements IServiceRepository {
         s.customerName.toLowerCase().includes(search) ||
         s.vehiclePlate.toLowerCase().includes(search) ||
         s.vehicleModel.toLowerCase().includes(search) ||
-        s.serviceType.toLowerCase().includes(search) ||
         s.id.toLowerCase().includes(search)
       );
     }
@@ -208,7 +204,6 @@ export class ServiceRepository implements IServiceRepository {
             vehiclePlate: s.vehiclePlate,
             vehicleModel: s.vehicleModel,
             kilometers: s.kilometers,
-            serviceType: s.serviceType,
             complaint: s.complaint,
             diagnosis: s.diagnosis || undefined,
             status: s.status as any,
@@ -268,7 +263,6 @@ export class ServiceRepository implements IServiceRepository {
             vehiclePlate: data.vehiclePlate,
             vehicleModel: data.vehicleModel,
             kilometers: data.kilometers,
-            serviceType: data.serviceType,
             complaint: data.complaint,
             diagnosis: data.diagnosis,
             status: data.status,
@@ -281,7 +275,7 @@ export class ServiceRepository implements IServiceRepository {
             mechanicName: data.mechanicName,
             mechanicBonusPercent: data.mechanicBonusPercent,
             mechanicBonusAmount: data.mechanicBonusAmount,
-            receiptType: data.receiptType || (data.serviceType === 'Retail' ? 'SALE' : 'SERVICE'),
+            receiptType: data.receiptType || 'SERVICE',
             receiptHeaderSnapshot: data.receiptHeaderSnapshot,
             receiptFooterSnapshot: data.receiptFooterSnapshot,
             serviceWarrantyDurationDays: data.serviceWarrantyDurationDays || 0,
