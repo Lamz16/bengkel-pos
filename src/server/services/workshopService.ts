@@ -152,6 +152,53 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.updateStatus(id, status);
   }
 
+  async updateService(id: string, data: WorkshopService, expectedVersion?: number): Promise<WorkshopService | null> {
+    if (!data.customerName?.trim() || !data.vehiclePlate?.trim() || !data.vehicleModel?.trim() || !data.serviceType?.trim()) {
+      throw new Error('Data order servis tidak lengkap.');
+    }
+    const serviceItems = (data.serviceItems || []).map(item => ({ name: item.name.trim(), price: Number(item.price || 0) })).filter(item => item.name);
+    if (serviceItems.some(item => !Number.isFinite(item.price) || item.price < 0)) throw new Error('Harga jasa tidak valid.');
+    const laborFee = serviceItems.reduce((total, item) => total + item.price, 0);
+    const totalParts = (data.partsUsed || []).reduce((total, item) => total + Number(item.priceAtTime || 0) * Number(item.quantity || 0), 0);
+    const discountAmount = Math.max(0, Number(data.discountAmount || 0));
+    const effectiveData = { ...data, id, serviceItems, laborFee, totalAmount: Math.max(0, totalParts + laborFee - discountAmount), mechanicBonusAmount: Math.round(laborFee * Number(data.mechanicBonusPercent || 0) / 100) };
+
+    if (!isDbConnected()) return this.serviceRepo.update(id, effectiveData, expectedVersion);
+    await prisma.$transaction(async tx => {
+      const previous = await tx.workshopService.findUnique({ where: { id }, include: { partsUsed: true, returns: true } });
+      if (!previous) throw new Error('Order servis tidak ditemukan.');
+      if (previous.status === 'Done' || previous.returns.length > 0) throw new Error('Transaksi selesai atau yang sudah memiliki retur tidak dapat diedit.');
+      if (expectedVersion !== undefined && previous.version !== expectedVersion) throw new Error(`Order servis '${id}' telah diubah oleh kasir lain. Silakan muat ulang data.`);
+      const previousQuantities = new Map<string, number>();
+      previous.partsUsed.forEach(item => previousQuantities.set(item.partId, (previousQuantities.get(item.partId) || 0) + item.quantity));
+      const nextQuantities = new Map<string, number>();
+      effectiveData.partsUsed.forEach(item => {
+        if (!item.partId || !Number.isInteger(item.quantity) || item.quantity <= 0) throw new Error('Jumlah sparepart tidak valid.');
+        nextQuantities.set(item.partId, (nextQuantities.get(item.partId) || 0) + item.quantity);
+      });
+      for (const partId of new Set([...previousQuantities.keys(), ...nextQuantities.keys()])) {
+        const delta = (nextQuantities.get(partId) || 0) - (previousQuantities.get(partId) || 0);
+        if (!delta) continue;
+        const changed = delta > 0
+          ? await tx.sparePart.updateMany({ where: { id: partId, stock: { gte: delta } }, data: { stock: { decrement: delta } } })
+          : await tx.sparePart.updateMany({ where: { id: partId }, data: { stock: { increment: -delta } } });
+        if (changed.count !== 1) throw new Error('Stok sparepart tidak mencukupi.');
+        await tx.stockHistory.create({ data: { partId, partName: effectiveData.partsUsed.find(item => item.partId === partId)?.name || previous.partsUsed.find(item => item.partId === partId)?.name || 'Sparepart', amount: Math.abs(delta), type: delta > 0 ? 'Out' : 'In', reason: `Penyesuaian transaksi servis ${id}` } });
+      }
+      if (previous.customerId && previous.customerId !== effectiveData.customerId) await tx.customer.update({ where: { id: previous.customerId }, data: { totalServiceCount: { decrement: 1 }, totalSpent: { decrement: previous.totalAmount } } });
+      if (effectiveData.customerId && previous.customerId !== effectiveData.customerId) await tx.customer.update({ where: { id: effectiveData.customerId }, data: { totalServiceCount: { increment: 1 }, totalSpent: { increment: effectiveData.totalAmount }, lastVisitDate: new Date() } });
+      if (previous.customerId && previous.customerId === effectiveData.customerId && Number(previous.totalAmount) !== effectiveData.totalAmount) await tx.customer.update({ where: { id: previous.customerId }, data: { totalSpent: { increment: effectiveData.totalAmount - Number(previous.totalAmount) } } });
+      await tx.workshopService.update({ where: { id }, data: {
+        customerId: effectiveData.customerId || null, customerName: effectiveData.customerName, customerPhone: effectiveData.customerPhone, vehicleId: effectiveData.vehicleId || null,
+        vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel, kilometers: effectiveData.kilometers, serviceType: effectiveData.serviceType, complaint: effectiveData.complaint, diagnosis: effectiveData.diagnosis,
+        laborFee: effectiveData.laborFee, totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus, discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
+        mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName, mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
+        version: { increment: 1 }, serviceItems: { deleteMany: {}, create: serviceItems }, partsUsed: { deleteMany: {}, create: effectiveData.partsUsed.map(item => ({ partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime, normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime, wholesaleType: item.wholesaleType || null, wholesaleValue: item.wholesaleValue || null, wholesaleUnitPrice: item.wholesaleUnitPrice || null, hasProductWarranty: !!item.hasProductWarranty, warrantyDurationDays: item.hasProductWarranty ? item.warrantyDurationDays || 0 : 0, warrantyTerms: item.hasProductWarranty ? item.warrantyTerms || null : null })) },
+      }});
+    });
+    return this.serviceRepo.getById(id);
+  }
+
   async markPaid(id: string): Promise<WorkshopService | null> {
     return this.serviceRepo.markPaid(id);
   }
