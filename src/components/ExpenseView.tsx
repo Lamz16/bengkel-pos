@@ -1,23 +1,29 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Wallet, CreditCard, Trash2 } from 'lucide-react';
-import { Expense } from '../types';
+import { Wallet, CreditCard, Settings2, Trash2 } from 'lucide-react';
+import { Expense, ExpenseCategory } from '../types';
 
 interface ExpenseViewProps {
   expenses: Expense[];
   onAdd: () => void;
   onDelete: (id: string) => void;
+  categories: ExpenseCategory[];
+  onManageCategories: () => void;
 }
 
-export const ExpenseView: React.FC<ExpenseViewProps> = ({ expenses, onAdd, onDelete }) => {
+export const ExpenseView: React.FC<ExpenseViewProps> = ({ expenses, onAdd, onDelete, categories, onManageCategories }) => {
   return (
     <div className="space-y-4 pb-20">
       <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center gap-3 mb-6">
           <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
             <Wallet className="w-5 h-5 text-blue-600" /> Pengeluaran Operasional
           </h2>
+          <button onClick={onManageCategories} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+            <Settings2 className="w-3.5 h-3.5" /> Kelola Kategori
+          </button>
         </div>
+        <p className="text-[10px] text-slate-400 font-bold mb-4">{categories.length} kategori aktif • Pilihan kategori pada form mengikuti data ini.</p>
         <div className="space-y-3">
           {expenses.map((e) => (
             <div key={e.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
