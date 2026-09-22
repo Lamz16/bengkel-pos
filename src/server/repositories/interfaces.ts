@@ -9,6 +9,7 @@ import {
   Supplier, 
   PurchaseRecord, 
   Expense, 
+  ExpenseCategory,
   CompanySettings,
   PaginatedResult,
   StockHistory
@@ -93,6 +94,10 @@ export interface ISupplierRepository {
 
 export interface IFinanceRepository {
   getExpenses(): Promise<Expense[]>;
+  getExpenseCategories(): Promise<ExpenseCategory[]>;
+  createExpenseCategory(data: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory>;
+  updateExpenseCategory(id: string, data: Partial<ExpenseCategory>): Promise<ExpenseCategory>;
+  deleteExpenseCategory(id: string): Promise<void>;
   createExpense(data: Omit<Expense, 'id'>): Promise<Expense>;
   deleteExpense(id: string): Promise<boolean>;
   getPurchases(): Promise<PurchaseRecord[]>;
