@@ -64,8 +64,8 @@ export const POSForm: React.FC<POSFormProps> = ({
         customerName: initialService?.customerName || (initialCustomer ? initialCustomer.name : ''),
         customerPhone: initialService?.customerPhone || (initialCustomer ? initialCustomer.phone : ''),
         vehicleId: initialService?.vehicleId || '', vehiclePlate: initialService?.vehiclePlate || '', vehicleModel: initialService?.vehicleModel || '',
-        km: initialService ? String(initialService.kilometers || '') : '', serviceType: initialService?.serviceType || 'Service', complaint: initialService?.complaint || '', laborFee: '0',
-        type: initialService?.serviceType === 'Retail' ? 'Retail' as const : 'Service' as const,
+        km: initialService ? String(initialService.kilometers || '') : '', complaint: initialService?.complaint || '', laborFee: '0',
+        type: initialService?.receiptType === 'SALE' ? 'Retail' as const : 'Service' as const,
         mechanicId: initialService?.mechanicId || (defaultMec ? defaultMec.id : ''), mechanicName: initialService?.mechanicName || (defaultMec ? defaultMec.name : ''), mechanicBonusPercent: initialService?.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
         serviceWarrantyDurationDays: String(initialService?.serviceWarrantyDurationDays ?? settings?.defaultServiceWarrantyDays ?? 7), serviceWarrantyTerms: initialService?.serviceWarrantyTermsSnapshot || settings?.serviceWarrantyTerms || settings?.warrantyTerms || '', paymentStatus: initialService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Paid'
     });
@@ -185,7 +185,7 @@ export const POSForm: React.FC<POSFormProps> = ({
     }, [subtotal, discountPercent]);
 
     const grandTotal = Math.max(0, subtotal - (discountAmount || 0));
-    const canSubmit = !!formData.customerName.trim() && (formData.type === 'Retail' || (!!formData.vehiclePlate.trim() && !!formData.vehicleModel.trim() && !!formData.serviceType.trim()));
+    const canSubmit = !!formData.customerName.trim() && (formData.type === 'Retail' || (!!formData.vehiclePlate.trim() && !!formData.vehicleModel.trim()));
 
     const handleSelectCustomer = (customer: Customer) => {
         setFormData(prev => ({
@@ -333,7 +333,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                     <button
                         key={t}
                         onClick={() => {
-                            setFormData(prev => ({...prev, type: t as any, serviceType: t}));
+                            setFormData(prev => ({...prev, type: t as any}));
                             handleClearDiscount();
                             setIsWholesaleOpen(false);
                             setWholesaleValue('');
@@ -564,7 +564,6 @@ export const POSForm: React.FC<POSFormProps> = ({
                             <Car className="w-4 h-4 text-blue-600"/> Kendaraan
                         </h4>
                         <div className="grid grid-cols-1 gap-3">
-                            <input value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} placeholder="Jenis servis (contoh: Servis Rutin / Ganti Oli)" className="h-14 px-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm font-bold focus:border-blue-200 transition-all" />
                             <div className="grid grid-cols-2 gap-2">
                                 <input
                                     value={formData.vehiclePlate}
@@ -983,7 +982,6 @@ export const POSForm: React.FC<POSFormProps> = ({
                             vehiclePlate: formData.vehiclePlate || 'RETAIL',
                             vehicleModel: formData.vehicleModel || 'Direct Sale',
                             kilometers: Number(formData.km || 0),
-                            serviceType: formData.type,
                             complaint: formData.complaint,
                             status: initialService?.status || (formData.type === 'Retail' ? 'Done' : 'In Progress'),
                             createdAt: initialService?.createdAt || new Date().toISOString(),
