@@ -99,7 +99,19 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
   const performanceData = useMemo(() => {
     const groups: Record<string, number> = {};
     filteredData.filteredServices.forEach(service => {
-      groups[service.serviceType] = (groups[service.serviceType] || 0) + 1;
+      if (service.receiptType === 'SALE') {
+        groups['Penjualan Barang'] = (groups['Penjualan Barang'] || 0) + 1;
+        return;
+      }
+      const items = service.serviceItems?.filter(item => item.name.trim()) || [];
+      if (items.length === 0) {
+        groups['Jasa servis'] = (groups['Jasa servis'] || 0) + 1;
+        return;
+      }
+      items.forEach(item => {
+        const name = item.name.trim();
+        groups[name] = (groups[name] || 0) + 1;
+      });
     });
     return Object.entries(groups).map(([name, value]) => ({ name, value }));
   }, [filteredData]);
@@ -129,7 +141,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
     const serviceItems = new Map<string, { name: string; quantity: number; revenue: number }>();
 
     filteredData.filteredServices.forEach(service => {
-      if (service.receiptType === 'SALE' || service.serviceType === 'Retail') return;
+      if (service.receiptType === 'SALE') return;
 
       const items = service.serviceItems?.filter(item => item.name.trim()) || [];
       if (items.length > 0) {
@@ -143,8 +155,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
         return;
       }
 
-      // Fallback untuk transaksi lama sebelum rincian jasa per item tersedia.
-      const key = service.serviceType.trim() || 'Jasa servis';
+      // Transaksi tanpa rincian jasa tetap dihitung sebagai jasa servis umum.
+      const key = 'Jasa servis';
       const current = serviceItems.get(key) || { name: key, quantity: 0, revenue: 0 };
       current.quantity += 1;
       current.revenue += service.laborFee || 0;
