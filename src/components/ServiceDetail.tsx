@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, BadgeCheck, CreditCard, Wrench, MapPin, RotateCcw } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, CreditCard, Wrench, MapPin, RotateCcw, Pencil } from 'lucide-react';
 import { WorkshopService, ServiceStatus, SparePart } from '../types';
 import { cn } from '../lib/utils';
 import { formatPartLocation } from '../utils/inventory';
@@ -9,6 +9,7 @@ interface ServiceDetailProps {
   parts?: SparePart[];
   onUpdateStatus: (id: string, s: ServiceStatus) => void;
   onMarkPaid: (id: string) => void;
+  onEdit?: (service: WorkshopService) => void;
   onOpenWarrantyClaim?: (service: WorkshopService) => void;
   onProcessReturn?: (data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }) => Promise<void>;
 }
@@ -17,7 +18,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
   service, 
   parts = [],
   onUpdateStatus, 
-  onMarkPaid,
+  onMarkPaid, onEdit,
   onOpenWarrantyClaim,
   onProcessReturn
 }) => {
@@ -44,6 +45,10 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
           {service.status}
         </span>
       </div>
+
+      {onEdit && service.status !== 'Done' && !service.hasWarrantyClaim && (
+        <button type="button" onClick={() => onEdit(service)} className="w-full py-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-blue-100"><Pencil className="w-4 h-4" /> Edit Transaksi Berjalan</button>
+      )}
 
       {/* Warranty Claim Alert if exists */}
       {service.hasWarrantyClaim && (
