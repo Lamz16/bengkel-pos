@@ -411,6 +411,12 @@ export const api = {
     });
   },
 
+  async markServicePaid(id: string): Promise<WorkshopService> {
+    return request<WorkshopService>(`/api/services/${id}/payment`, {
+      method: 'PUT', body: JSON.stringify({}),
+    });
+  },
+
   async processReturn(serviceId: string, data: { reason?: string; items: Array<{ partId: string; quantity: number }> }): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${serviceId}/returns`, { method: 'POST', body: JSON.stringify(data) });
   },
