@@ -2,6 +2,21 @@ import { Request, Response } from 'express';
 import { financeService } from '../container';
 
 export class FinanceController {
+  async getExpenseCategories(_req: Request, res: Response) {
+    try { res.json(await financeService.getExpenseCategories()); } catch (err: any) { res.status(500).json({ error: err.message || 'Gagal memuat kategori pengeluaran' }); }
+  }
+  async createExpenseCategory(req: Request, res: Response) {
+    try {
+      if (!req.body.name?.trim()) return res.status(400).json({ error: 'Nama kategori pengeluaran wajib diisi.' });
+      res.status(201).json(await financeService.createExpenseCategory(req.body));
+    } catch (err: any) { res.status(err?.code === 'P2002' ? 409 : 500).json({ error: err.message || 'Gagal membuat kategori pengeluaran' }); }
+  }
+  async updateExpenseCategory(req: Request, res: Response) {
+    try { res.json(await financeService.updateExpenseCategory(req.params.id, req.body)); } catch (err: any) { res.status(err?.code === 'P2002' ? 409 : 500).json({ error: err.message || 'Gagal memperbarui kategori pengeluaran' }); }
+  }
+  async deleteExpenseCategory(req: Request, res: Response) {
+    try { await financeService.deleteExpenseCategory(req.params.id); res.json({ success: true }); } catch (err: any) { res.status(500).json({ error: err.message || 'Gagal menghapus kategori pengeluaran' }); }
+  }
   async getExpenses(_req: Request, res: Response) {
     try {
       const expenses = await financeService.getExpenses();
