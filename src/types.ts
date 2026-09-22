@@ -237,9 +237,17 @@ export interface StockHistory {
 export interface Expense {
   id: string;
   category: string;
+  categoryId?: string;
   amount: number;
   note: string;
   date: string;
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description?: string;
+  isActive?: boolean;
 }
 
 export interface Supplier {
