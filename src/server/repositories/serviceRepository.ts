@@ -331,9 +331,12 @@ export class ServiceRepository implements IServiceRepository {
           where: { id },
           data: { 
             status,
+            // Servis yang selesai tidak boleh masih berstatus belum lunas.
+            ...(status === 'Done' ? { paymentStatus: 'Paid' } : {}),
             version: { increment: 1 }
           }
         });
+        return (await this.getAll()).find(service => service.id === id) || null;
       } catch (err: any) {
         console.error('[ServiceRepo] Prisma updateStatus error:', err);
         throw err;
@@ -351,9 +354,31 @@ export class ServiceRepository implements IServiceRepository {
     memoryStore.services[idx] = { 
       ...current, 
       status: status as any,
+      ...(status === 'Done' ? { paymentStatus: 'Paid' as const } : {}),
       version: newVersion
     };
     return memoryStore.services[idx];
+  }
+
+  async markPaid(id: string, expectedVersion?: number): Promise<WorkshopService | null> {
+    if (isDbConnected()) {
+      const current = await prisma.workshopService.findUnique({ where: { id } });
+      if (!current) return null;
+      if (expectedVersion !== undefined && current.version !== expectedVersion) {
+        throw new Error(`Pembayaran servis '${id}' telah diubah oleh kasir lain. Silakan muat ulang data.`);
+      }
+      await prisma.workshopService.update({
+        where: { id },
+        data: { paymentStatus: 'Paid', version: { increment: 1 } },
+      });
+      return (await this.getAll()).find(service => service.id === id) || null;
+    }
+
+    const index = memoryStore.services.findIndex(service => service.id === id);
+    if (index < 0) return null;
+    const current = memoryStore.services[index];
+    memoryStore.services[index] = { ...current, paymentStatus: 'Paid', version: (current.version || 1) + 1 };
+    return memoryStore.services[index];
   }
 
   async updateWarrantyClaim(data: {
