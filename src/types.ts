@@ -6,6 +6,8 @@ export interface CompanySettings {
   // Fitur Profil Bengkel & Branding Platform
   name: string;
   logoUrl?: string;
+  appTitle?: string;
+  faviconUrl?: string;
   slogan: string;
   address: string;
   phone: string;
