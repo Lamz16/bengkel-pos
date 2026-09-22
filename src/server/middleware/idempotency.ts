@@ -66,6 +66,13 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
   res.json = (body: any) => {
     const statusCode = res.statusCode;
 
+    // Validation/business errors must be retryable after the user fixes the form.
+    // Only cache successful writes, never a 4xx response.
+    if (statusCode >= 400) {
+      memoryIdempotencyStore.delete(key);
+      return originalJson(body);
+    }
+
     // Save completed response in memory
     memoryIdempotencyStore.set(key, {
       statusCode,
@@ -75,7 +82,7 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
     });
 
     // Save in DB if connected
-    if (isDbConnected() && statusCode < 500) {
+    if (isDbConnected()) {
       prisma.idempotencyRecord.create({
         data: {
           key,
