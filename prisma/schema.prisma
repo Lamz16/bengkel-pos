@@ -11,6 +11,8 @@ model CompanySettings {
   id                             String   @id @default("settings-default")
   name                           String   @default("BengkelPro Mandiri")
   logoUrl                        String?
+  appTitle                       String?
+  faviconUrl                     String?
   slogan                         String   @default("Solusi Perawatan & Servis Terpercaya")
   address                        String   @default("Jl. Otomotif Raya No. 123, Blok B4, Jakarta Selatan")
   phone                          String   @default("0812-3456-7890")
