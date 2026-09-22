@@ -280,6 +280,43 @@ html[data-theme="dark"] textarea::placeholder {
   opacity: 1;
 }
 
+/* Nota adalah dokumen untuk pelanggan. Paletnya sengaja selalu terang,
+   termasuk pratinjau Pengaturan, modal nota, hasil PDF, dan cetakan. */
+html[data-theme="dark"] .receipt-light,
+html[data-theme="dark"] .receipt-light.bg-white {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+html[data-theme="dark"] .receipt-light .bg-white { background-color: #ffffff !important; }
+html[data-theme="dark"] .receipt-light .bg-slate-50 { background-color: #f8fafc !important; }
+html[data-theme="dark"] .receipt-light .bg-slate-100 { background-color: #f1f5f9 !important; }
+html[data-theme="dark"] .receipt-light .bg-blue-50,
+html[data-theme="dark"] .receipt-light .bg-blue-50\/70 { background-color: #eff6ff !important; }
+html[data-theme="dark"] .receipt-light .bg-emerald-50,
+html[data-theme="dark"] .receipt-light .bg-emerald-50\/70 { background-color: #ecfdf5 !important; }
+
+html[data-theme="dark"] .receipt-light .text-slate-900 { color: #0f172a !important; }
+html[data-theme="dark"] .receipt-light .text-slate-800 { color: #1e293b !important; }
+html[data-theme="dark"] .receipt-light .text-slate-700 { color: #334155 !important; }
+html[data-theme="dark"] .receipt-light .text-slate-600 { color: #475569 !important; }
+html[data-theme="dark"] .receipt-light .text-slate-500 { color: #64748b !important; }
+html[data-theme="dark"] .receipt-light .text-slate-400 { color: #94a3b8 !important; }
+html[data-theme="dark"] .receipt-light .text-blue-900 { color: #1e3a8a !important; }
+html[data-theme="dark"] .receipt-light .text-blue-800 { color: #1e40af !important; }
+html[data-theme="dark"] .receipt-light .text-blue-700 { color: #1d4ed8 !important; }
+html[data-theme="dark"] .receipt-light .text-blue-600 { color: #2563eb !important; }
+html[data-theme="dark"] .receipt-light .text-emerald-900 { color: #064e3b !important; }
+html[data-theme="dark"] .receipt-light .text-emerald-800 { color: #065f46 !important; }
+html[data-theme="dark"] .receipt-light .text-emerald-700 { color: #047857 !important; }
+html[data-theme="dark"] .receipt-light .text-emerald-600 { color: #059669 !important; }
+
+html[data-theme="dark"] .receipt-light .border-slate-50 { border-color: #f8fafc !important; }
+html[data-theme="dark"] .receipt-light .border-slate-100 { border-color: #f1f5f9 !important; }
+html[data-theme="dark"] .receipt-light .border-slate-200 { border-color: #e2e8f0 !important; }
+html[data-theme="dark"] .receipt-light .border-blue-100 { border-color: #dbeafe !important; }
+html[data-theme="dark"] .receipt-light .border-emerald-100 { border-color: #d1fae5 !important; }
+
 html[data-theme="dark"] select option {
   background: #0f172a;
   color: #f1f5f9;
