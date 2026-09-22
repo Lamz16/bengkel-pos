@@ -13,6 +13,7 @@ export async function seedDatabase() {
     create: {
       id: 'settings-default',
       name: 'BengkelPro Mandiri',
+      appTitle: 'BengkelPro POS',
       slogan: 'Solusi Perawatan & Servis Terpercaya',
       address: 'Jl. Otomotif Raya No. 123, Blok B4, Jakarta Selatan',
       phone: '0812-3456-7890',
