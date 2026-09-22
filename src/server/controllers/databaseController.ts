@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { spawn } from 'node:child_process';
 import { staffRepository } from '../container';
 import { verifyPassword } from '../auth';
+import { prisma } from '../db/connection';
 
 const MAX_BACKUP_BYTES = 100 * 1024 * 1024;
 
@@ -31,6 +32,19 @@ function runCommand(command: string, args: string[], env: NodeJS.ProcessEnv): Pr
 }
 
 export class DatabaseController {
+  async getBackupHistory(_req: Request, res: Response) {
+    try {
+      const records = await prisma.databaseBackupRecord.findMany({
+        orderBy: { completedAt: 'desc' },
+        take: 10,
+      });
+      return res.json(records);
+    } catch (error: any) {
+      console.error('[DatabaseBackup] Gagal mengambil riwayat backup:', error);
+      return res.status(500).json({ error: 'Gagal mengambil riwayat backup database.' });
+    }
+  }
+
   async downloadBackup(req: Request, res: Response) {
     const { email, password } = req.body;
     const user = email ? await staffRepository.findByEmail(String(email).trim()) : null;
@@ -39,6 +53,8 @@ export class DatabaseController {
     }
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) return res.status(503).json({ error: 'DATABASE_URL belum dikonfigurasi.' });
+
+    const startedAt = new Date();
 
     try {
       const db = new URL(connectionString);
@@ -63,6 +79,21 @@ export class DatabaseController {
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `bengkel-pos-${database}-${timestamp}.sql`;
+      const completedAt = new Date();
+
+      // Dicatat hanya setelah pg_dump selesai tanpa error, bukan saat tombol backup ditekan.
+      await prisma.databaseBackupRecord.create({
+        data: {
+          databaseName: database,
+          filename,
+          sizeBytes: backup.length,
+          startedAt,
+          completedAt,
+          createdById: user.id,
+          createdByName: user.name,
+        },
+      });
+
       res.setHeader('Content-Type', 'application/sql; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Cache-Control', 'no-store');
