@@ -66,13 +66,16 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
   res.json = (body: any) => {
     const statusCode = res.statusCode;
 
-    // Persist failed writes too, so the exact backend error can be audited.
-    // Remove the memory lock so a corrected request can be retried with a new key.
+    // Persist failed writes before sending the response. This makes backend
+    // validation/Prisma errors immediately auditable in IdempotencyRecord.
     if (statusCode >= 400) {
       memoryIdempotencyStore.delete(key);
       if (isDbConnected()) {
-        prisma.idempotencyRecord.create({ data: { key, path: req.path, statusCode, response: JSON.stringify(body) } })
-          .catch(err => console.warn('[Idempotency] Failed to persist failed request:', err));
+        void prisma.idempotencyRecord.upsert({
+          where: { key },
+          update: { path: req.path, statusCode, response: JSON.stringify(body) },
+          create: { key, path: req.path, statusCode, response: JSON.stringify(body) },
+        }).catch(err => console.error('[Idempotency] Failed to persist failed request:', err));
       }
       return originalJson(body);
     }
@@ -87,13 +90,10 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
 
     // Save in DB if connected
     if (isDbConnected()) {
-      prisma.idempotencyRecord.create({
-        data: {
-          key,
-          path: req.path,
-          statusCode,
-          response: JSON.stringify(body),
-        },
+      void prisma.idempotencyRecord.upsert({
+        where: { key },
+        update: { path: req.path, statusCode, response: JSON.stringify(body) },
+        create: { key, path: req.path, statusCode, response: JSON.stringify(body) },
       }).catch(err => console.warn('[Idempotency] Failed to persist key:', err));
     }
 
