@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Wrench, MapPin, RotateCcw } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, CreditCard, Wrench, MapPin, RotateCcw } from 'lucide-react';
 import { WorkshopService, ServiceStatus, SparePart } from '../types';
 import { cn } from '../lib/utils';
 import { formatPartLocation } from '../utils/inventory';
@@ -8,6 +8,7 @@ interface ServiceDetailProps {
   service: WorkshopService;
   parts?: SparePart[];
   onUpdateStatus: (id: string, s: ServiceStatus) => void;
+  onMarkPaid: (id: string) => void;
   onOpenWarrantyClaim?: (service: WorkshopService) => void;
   onProcessReturn?: (data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }) => Promise<void>;
 }
@@ -16,6 +17,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
   service, 
   parts = [],
   onUpdateStatus, 
+  onMarkPaid,
   onOpenWarrantyClaim,
   onProcessReturn
 }) => {
@@ -143,6 +145,19 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
         </div>
       </div>
 
+      <div className={cn(
+        'p-4 rounded-2xl border flex items-center justify-between gap-3',
+        service.paymentStatus === 'Paid' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'
+      )}>
+        <div className="flex items-center gap-3">
+          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', service.paymentStatus === 'Paid' ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white')}>
+            {service.paymentStatus === 'Paid' ? <BadgeCheck className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
+          </div>
+          <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Status Pembayaran</p><p className={cn('text-sm font-black', service.paymentStatus === 'Paid' ? 'text-emerald-700' : 'text-amber-800')}>{service.paymentStatus === 'Paid' ? 'Lunas' : 'Belum Lunas'}</p></div>
+        </div>
+        {service.paymentStatus !== 'Paid' && <button type="button" onClick={() => onMarkPaid(service.id)} className="shrink-0 px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider">Tandai Lunas</button>}
+      </div>
+
       {service.status === 'Done' && onProcessReturn && service.partsUsed.some(item => item.quantity > (item.returnedQuantity || 0)) && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
           <button type="button" onClick={() => setReturnMode(value => !value)} className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white py-3 text-xs font-black text-amber-800 hover:bg-amber-100">
@@ -173,6 +188,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
             </button>
           ))}
         </div>
+        <p className="text-[10px] text-slate-400 text-center">Saat status diubah ke <b>Done</b>, pembayaran otomatis ditandai lunas.</p>
       </div>
 
       {/* Button to file warranty claim / complaint if completed and not yet filed */}
