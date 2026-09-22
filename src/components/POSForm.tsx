@@ -65,7 +65,7 @@ export const POSForm: React.FC<POSFormProps> = ({
         vehiclePlate: '',
         vehicleModel: '',
         km: '',
-        serviceType: '',
+        serviceType: 'Service',
         complaint: '',
         laborFee: '0',
         type: 'Service' as 'Service' | 'Retail',
@@ -340,7 +340,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                     <button
                         key={t}
                         onClick={() => {
-                            setFormData(prev => ({...prev, type: t as any}));
+                            setFormData(prev => ({...prev, type: t as any, serviceType: t}));
                             handleClearDiscount();
                             setIsWholesaleOpen(false);
                             setWholesaleValue('');
@@ -989,7 +989,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                             vehiclePlate: formData.vehiclePlate || 'RETAIL',
                             vehicleModel: formData.vehicleModel || 'Direct Sale',
                             kilometers: Number(formData.km || 0),
-                            serviceType: formData.type === 'Retail' ? 'Retail' : formData.serviceType,
+                            serviceType: formData.type,
                             complaint: formData.complaint,
                             status: formData.type === 'Retail' ? 'Done' : 'In Progress',
                             createdAt: new Date().toISOString(),
