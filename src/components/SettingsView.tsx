@@ -944,7 +944,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             {/* Simulated Paper Struk */}
-            <div className="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/90 font-sans text-slate-800 space-y-4 relative overflow-hidden">
+            <div className="receipt-light bg-white rounded-3xl p-6 shadow-xl border border-slate-200/90 font-sans text-slate-800 space-y-4 relative overflow-hidden">
               {/* Top Accent Strip */}
               <div className="h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 -mx-6 -mt-6 mb-4" />
 
