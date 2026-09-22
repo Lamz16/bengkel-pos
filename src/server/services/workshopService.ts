@@ -26,33 +26,33 @@ export class WorkshopServiceLayer {
   }
 
   async createService(data: WorkshopService): Promise<WorkshopService> {
-    const serviceItems = data.serviceType === 'Retail' ? [] : (data.serviceItems || []).map(item => ({
+    const serviceItems = data.receiptType === 'SALE' ? [] : (data.serviceItems || []).map(item => ({
       name: item.name.trim(), price: Number(item.price || 0),
     })).filter(item => item.name && item.price >= 0);
-    if (data.serviceType !== 'Retail' && serviceItems.some(item => !Number.isFinite(item.price))) {
+    if (data.receiptType !== 'SALE' && serviceItems.some(item => !Number.isFinite(item.price))) {
       throw new Error('Harga jasa tidak valid.');
     }
-    const laborFee = data.serviceType === 'Retail'
+    const laborFee = data.receiptType === 'SALE'
       ? 0
       : serviceItems.length > 0
         ? serviceItems.reduce((total, item) => total + item.price, 0)
         : Number(data.laborFee || 0);
     // Bonus mekanik hanya berasal dari nilai jasa; nilai sparepart tidak pernah
     // menjadi dasar perhitungan bonus, termasuk transaksi Retail.
-    const bonusPercent = data.serviceType === 'Retail' ? 0 : Number(data.mechanicBonusPercent || 0);
+    const bonusPercent = data.receiptType === 'SALE' ? 0 : Number(data.mechanicBonusPercent || 0);
     const effectiveData: WorkshopService = {
       ...data,
       serviceItems,
       laborFee,
       mechanicBonusPercent: bonusPercent,
-      mechanicBonusAmount: data.serviceType === 'Retail' ? 0 : Math.round((laborFee * bonusPercent) / 100),
+      mechanicBonusAmount: data.receiptType === 'SALE' ? 0 : Math.round((laborFee * bonusPercent) / 100),
     };
     if (isDbConnected()) {
       const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
       const transactionDate = new Date();
       await prisma.$transaction(async tx => {
         const receiptSettings = await tx.companySettings.findFirst();
-        const isSale = effectiveData.serviceType === 'Retail';
+        const isSale = effectiveData.receiptType === 'SALE';
         const serviceWarrantyDurationDays = isSale
           ? 0
           : Math.max(0, Number(effectiveData.serviceWarrantyDurationDays ?? receiptSettings?.defaultServiceWarrantyDays ?? 0));
@@ -88,7 +88,7 @@ export class WorkshopServiceLayer {
           id, customerId: effectiveData.customerId || null, customerName: effectiveData.customerName,
           customerPhone: effectiveData.customerPhone, vehicleId: effectiveData.vehicleId || null,
           vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel,
-          kilometers: effectiveData.kilometers, serviceType: effectiveData.serviceType, complaint: effectiveData.complaint,
+          kilometers: effectiveData.kilometers, complaint: effectiveData.complaint,
           diagnosis: effectiveData.diagnosis, status: effectiveData.status, laborFee: effectiveData.laborFee,
           totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus,
           discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
@@ -153,7 +153,7 @@ export class WorkshopServiceLayer {
   }
 
   async updateService(id: string, data: WorkshopService, expectedVersion?: number): Promise<WorkshopService | null> {
-    if (!data.customerName?.trim() || !data.vehiclePlate?.trim() || !data.vehicleModel?.trim() || !data.serviceType?.trim()) {
+    if (!data.customerName?.trim() || (data.receiptType !== 'SALE' && (!data.vehiclePlate?.trim() || !data.vehicleModel?.trim()))) {
       throw new Error('Data order servis tidak lengkap.');
     }
     const serviceItems = (data.serviceItems || []).map(item => ({ name: item.name.trim(), price: Number(item.price || 0) })).filter(item => item.name);
@@ -190,7 +190,7 @@ export class WorkshopServiceLayer {
       if (previous.customerId && previous.customerId === effectiveData.customerId && Number(previous.totalAmount) !== effectiveData.totalAmount) await tx.customer.update({ where: { id: previous.customerId }, data: { totalSpent: { increment: effectiveData.totalAmount - Number(previous.totalAmount) } } });
       await tx.workshopService.update({ where: { id }, data: {
         customerId: effectiveData.customerId || null, customerName: effectiveData.customerName, customerPhone: effectiveData.customerPhone, vehicleId: effectiveData.vehicleId || null,
-        vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel, kilometers: effectiveData.kilometers, serviceType: effectiveData.serviceType, complaint: effectiveData.complaint, diagnosis: effectiveData.diagnosis,
+        vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel, kilometers: effectiveData.kilometers, complaint: effectiveData.complaint, diagnosis: effectiveData.diagnosis,
         laborFee: effectiveData.laborFee, totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus, discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
         mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName, mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
         version: { increment: 1 }, serviceItems: { deleteMany: {}, create: serviceItems }, partsUsed: { deleteMany: {}, create: effectiveData.partsUsed.map(item => ({ partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime, normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime, wholesaleType: item.wholesaleType || null, wholesaleValue: item.wholesaleValue || null, wholesaleUnitPrice: item.wholesaleUnitPrice || null, hasProductWarranty: !!item.hasProductWarranty, warrantyDurationDays: item.hasProductWarranty ? item.warrantyDurationDays || 0 : 0, warrantyTerms: item.hasProductWarranty ? item.warrantyTerms || null : null })) },
