@@ -152,6 +152,10 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.updateStatus(id, status);
   }
 
+  async markPaid(id: string): Promise<WorkshopService | null> {
+    return this.serviceRepo.markPaid(id);
+  }
+
   async processReturn(data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }): Promise<WorkshopService> {
     if (!isDbConnected()) throw new Error('Retur memerlukan koneksi database.');
     const requests = data.items.filter(item => item.partId && Number.isInteger(item.quantity) && item.quantity > 0);
