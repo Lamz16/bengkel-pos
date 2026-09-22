@@ -177,7 +177,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
         </div>
 
         {/* Struktur ini disengaja sama dengan preview di SettingsView > subtab receipt. */}
-        <div ref={receiptRef} className="printable-area flex-1 overflow-y-auto p-6 sm:p-8 font-sans bg-white text-slate-800 space-y-4">
+        <div ref={receiptRef} className="printable-area receipt-light flex-1 overflow-y-auto p-6 sm:p-8 font-sans bg-white text-slate-800 space-y-4">
           <div className="h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-4" />
 
           <div className="text-center space-y-1 pb-3 border-b border-dashed border-slate-200 receipt-divider">
