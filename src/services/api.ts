@@ -216,6 +216,18 @@ export const api = {
     return request<BootstrapResponse>('/api/bootstrap');
   },
 
+  async getDatabaseBackupHistory(): Promise<Array<{
+    id: string;
+    databaseName: string;
+    filename: string;
+    sizeBytes: number;
+    startedAt: string;
+    completedAt: string;
+    createdByName: string;
+  }>> {
+    return request('/api/database/backup-history');
+  },
+
   async downloadDatabaseBackup(credentials: { email: string; password: string }): Promise<string> {
     const token = getAuthToken();
     const response = await fetch('/api/database/backup', {
