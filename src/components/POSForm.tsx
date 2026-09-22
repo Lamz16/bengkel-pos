@@ -38,6 +38,7 @@ interface POSFormProps {
     onAddCustomer: (c: Customer) => void;
     onAddVehicle: (v: Vehicle) => void;
     initialCart?: Array<{ partId: string; quantity: number }>;
+    initialService?: WorkshopService | null;
 }
 
 export const POSForm: React.FC<POSFormProps> = ({
@@ -52,29 +53,21 @@ export const POSForm: React.FC<POSFormProps> = ({
                                                     initialPromoPercent,
                                                     onAddCustomer,
                                                     onAddVehicle,
-                                                    initialCart
+                                                    initialCart,
+                                                    initialService
                                                 }) => {
     const activeMechanics = useMemo(() => mechanics.filter(m => m.status === 'Active'), [mechanics]);
     const defaultMec = activeMechanics[0] || mechanics[0];
 
     const [formData, setFormData] = useState({
-        customerId: initialCustomer ? initialCustomer.id : '',
-        customerName: initialCustomer ? initialCustomer.name : '',
-        customerPhone: initialCustomer ? initialCustomer.phone : '',
-        vehicleId: '',
-        vehiclePlate: '',
-        vehicleModel: '',
-        km: '',
-        serviceType: 'Service',
-        complaint: '',
-        laborFee: '0',
-        type: 'Service' as 'Service' | 'Retail',
-        mechanicId: defaultMec ? defaultMec.id : '',
-        mechanicName: defaultMec ? defaultMec.name : '',
-        mechanicBonusPercent: defaultMec ? defaultMec.defaultBonusPercent : 15,
-        serviceWarrantyDurationDays: String(settings?.defaultServiceWarrantyDays ?? 7),
-        serviceWarrantyTerms: settings?.serviceWarrantyTerms || settings?.warrantyTerms || '',
-        paymentStatus: 'Unpaid' as 'Unpaid' | 'Paid'
+        customerId: initialService?.customerId || (initialCustomer ? initialCustomer.id : ''),
+        customerName: initialService?.customerName || (initialCustomer ? initialCustomer.name : ''),
+        customerPhone: initialService?.customerPhone || (initialCustomer ? initialCustomer.phone : ''),
+        vehicleId: initialService?.vehicleId || '', vehiclePlate: initialService?.vehiclePlate || '', vehicleModel: initialService?.vehicleModel || '',
+        km: initialService ? String(initialService.kilometers || '') : '', serviceType: initialService?.serviceType || 'Service', complaint: initialService?.complaint || '', laborFee: '0',
+        type: initialService?.serviceType === 'Retail' ? 'Retail' as const : 'Service' as const,
+        mechanicId: initialService?.mechanicId || (defaultMec ? defaultMec.id : ''), mechanicName: initialService?.mechanicName || (defaultMec ? defaultMec.name : ''), mechanicBonusPercent: initialService?.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
+        serviceWarrantyDurationDays: String(initialService?.serviceWarrantyDurationDays ?? settings?.defaultServiceWarrantyDays ?? 7), serviceWarrantyTerms: initialService?.serviceWarrantyTermsSnapshot || settings?.serviceWarrantyTerms || settings?.warrantyTerms || '', paymentStatus: initialService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Paid'
     });
 
     const [usedParts, setUsedParts] = useState<Array<{
@@ -90,11 +83,11 @@ export const POSForm: React.FC<POSFormProps> = ({
         hasProductWarranty?: boolean;
         warrantyDurationDays?: number;
         warrantyTerms?: string
-    }>>([]);
+    }>>(initialService?.partsUsed || []);
     const [wholesalePartId, setWholesalePartId] = useState<string | null>(null);
     const [itemWholesaleType, setItemWholesaleType] = useState<'percent' | 'nominal' | 'unit_price'>('percent');
     const [itemWholesaleValue, setItemWholesaleValue] = useState('');
-    const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>([{name: '', price: ''}]);
+    const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>(initialService?.serviceItems?.length ? initialService.serviceItems.map(item => ({ name: item.name, price: String(item.price) })) : [{name: '', price: ''}]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [, setDiagnosis] = useState('');
     const [showPartPicker, setShowPartPicker] = useState(false);
@@ -104,10 +97,10 @@ export const POSForm: React.FC<POSFormProps> = ({
     const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
     // Customer Loyalty Discount & Promo States
-    const [discountAmount, setDiscountAmount] = useState<number>(0);
+    const [discountAmount, setDiscountAmount] = useState<number>(initialService?.discountAmount || 0);
     const [discountPercent, setDiscountPercent] = useState<number | null>(initialPromoPercent || null);
     const [discountReason, setDiscountReason] = useState<string>(
-        initialPromoPercent ? `Promo Pelanggan Setia (${initialPromoPercent}%)` : ''
+        initialService?.discountReason || (initialPromoPercent ? `Promo Pelanggan Setia (${initialPromoPercent}%)` : '')
     );
     const [showCustomDiscount, setShowCustomDiscount] = useState<boolean>(false);
     const [customDiscountValue, setCustomDiscountValue] = useState<string>('');
@@ -192,7 +185,7 @@ export const POSForm: React.FC<POSFormProps> = ({
     }, [subtotal, discountPercent]);
 
     const grandTotal = Math.max(0, subtotal - (discountAmount || 0));
-    const canSubmit = formData.customerName && (formData.type === 'Retail' || (formData.vehiclePlate && formData.vehicleModel));
+    const canSubmit = !!formData.customerName.trim() && (formData.type === 'Retail' || (!!formData.vehiclePlate.trim() && !!formData.vehicleModel.trim() && !!formData.serviceType.trim()));
 
     const handleSelectCustomer = (customer: Customer) => {
         setFormData(prev => ({
@@ -571,6 +564,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                             <Car className="w-4 h-4 text-blue-600"/> Kendaraan
                         </h4>
                         <div className="grid grid-cols-1 gap-3">
+                            <input value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} placeholder="Jenis servis (contoh: Servis Rutin / Ganti Oli)" className="h-14 px-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm font-bold focus:border-blue-200 transition-all" />
                             <div className="grid grid-cols-2 gap-2">
                                 <input
                                     value={formData.vehiclePlate}
@@ -981,7 +975,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                     <button
                         disabled={!canSubmit}
                         onClick={() => onSave({
-                            id: `SRV-${Math.floor(Math.random() * 1000)}`,
+                            id: initialService?.id || `SRV-${Math.floor(Math.random() * 1000)}`,
                             customerId: formData.customerId,
                             customerName: formData.customerName,
                             customerPhone: formData.customerPhone || undefined,
@@ -991,8 +985,8 @@ export const POSForm: React.FC<POSFormProps> = ({
                             kilometers: Number(formData.km || 0),
                             serviceType: formData.type,
                             complaint: formData.complaint,
-                            status: formData.type === 'Retail' ? 'Done' : 'In Progress',
-                            createdAt: new Date().toISOString(),
+                            status: initialService?.status || (formData.type === 'Retail' ? 'Done' : 'In Progress'),
+                            createdAt: initialService?.createdAt || new Date().toISOString(),
                             partsUsed: usedParts,
                             serviceItems: formData.type === 'Retail' ? [] : serviceItems.map(item => ({
                                 name: item.name.trim(),
@@ -1009,10 +1003,11 @@ export const POSForm: React.FC<POSFormProps> = ({
                             mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100),
                             serviceWarrantyDurationDays: formData.type === 'Retail' ? 0 : Number(formData.serviceWarrantyDurationDays || 0),
                             serviceWarrantyTermsSnapshot: formData.type === 'Retail' ? undefined : formData.serviceWarrantyTerms
+                            ,version: initialService?.version
                         })}
                         className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-blue-200 active:scale-95 transition-all disabled:grayscale disabled:opacity-50"
                     >
-                        {formData.type === 'Retail' ? 'Complete Sale' : 'Submit Order'}
+                        {initialService ? 'Simpan Perubahan Transaksi' : (formData.type === 'Retail' ? 'Complete Sale' : 'Submit Order')}
                     </button>
                 </div>
             </div>
