@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
+import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, ExpenseCategory, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
 import { INITIAL_PARTS } from './constants';
 import { DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_RACKS, DEFAULT_WAREHOUSE_ZONES } from './utils/inventory';
 
@@ -48,6 +48,7 @@ import { DistributorTempoView } from './components/DistributorTempoView';
 // Modular Form Components
 import { StaffForm } from './components/forms/StaffForm';
 import { ExpenseForm } from './components/forms/ExpenseForm';
+import { ExpenseCategoryManager } from './components/ExpenseCategoryManager';
 import { SupplierForm } from './components/forms/SupplierForm';
 import { PartForm } from './components/forms/PartForm';
 import { CustomerForm } from './components/forms/CustomerForm';
@@ -118,6 +119,7 @@ export default function AppLayout() {
     INITIAL_PARTS.map((p, index) => index % 2 === 0 ? { ...p, supplierId: 'SUP-1' } : p)
   );
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
   const [purchases, setPurchases] = useState<PurchaseRecord[]>([
     {
       id: 'PR-1',
@@ -309,6 +311,22 @@ export default function AppLayout() {
   const [masterRacks, setMasterRacks] = useState<WarehouseRack[]>(DEFAULT_WAREHOUSE_RACKS);
   const [masterZones, setMasterZones] = useState<WarehouseZone[]>(DEFAULT_WAREHOUSE_ZONES);
   const [showMasterDataModal, setShowMasterDataModal] = useState(false);
+  const [showExpenseCategoryManager, setShowExpenseCategoryManager] = useState(false);
+
+  const handleCreateExpenseCategory = async (data: Omit<ExpenseCategory, 'id'>) => {
+    const saved = await api.createExpenseCategory(data);
+    setExpenseCategories(prev => [...prev, saved].sort((a, b) => a.name.localeCompare(b.name, 'id')));
+  };
+
+  const handleUpdateExpenseCategory = async (id: string, data: Partial<ExpenseCategory>) => {
+    const saved = await api.updateExpenseCategory(id, data);
+    setExpenseCategories(prev => prev.map(category => category.id === id ? saved : category));
+  };
+
+  const handleDeleteExpenseCategory = async (id: string) => {
+    await api.deleteExpenseCategory(id);
+    setExpenseCategories(prev => prev.filter(category => category.id !== id));
+  };
 
   const handleSaveMasterCategories = async (cats: PartCategory[]) => {
     const added = cats.find(c => !masterCategories.some(old => old.id === c.id));
@@ -411,6 +429,7 @@ export default function AppLayout() {
     async function loadBootstrap() {
       try {
         const data = await api.getBootstrap();
+        const loadedExpenseCategories = await api.getExpenseCategories();
         if (!isMounted) return;
         if (data.settings) setCompanySettings(data.settings);
         if (data.customers && data.customers.length > 0) setCustomers(data.customers);
@@ -428,6 +447,7 @@ export default function AppLayout() {
         if (data.categories?.length) setMasterCategories(data.categories);
         if (data.racks?.length) setMasterRacks(data.racks);
         if (data.zones?.length) setMasterZones(data.zones);
+        setExpenseCategories(loadedExpenseCategories);
         setPostgresConnected(data.postgresConnected);
       } catch (err) {
         console.warn('Backend bootstrap fallback to local initial state:', err);
@@ -1076,6 +1096,8 @@ export default function AppLayout() {
                   expenses={expenses}
                   onAdd={() => setEditingExpense({} as Expense)}
                   onDelete={handleDeleteExpense}
+                  categories={expenseCategories}
+                  onManageCategories={() => setShowExpenseCategoryManager(true)}
                 />
               </motion.div>
             )}
@@ -1264,8 +1286,21 @@ export default function AppLayout() {
             <Modal title={editingExpense.category ? "Catat Pengeluaran" : "Pengeluaran Baru"} onClose={() => setEditingExpense(null)}>
               <ExpenseForm 
                 expense={editingExpense.amount ? editingExpense : undefined} 
+                categories={expenseCategories}
                 onSave={handleSaveExpense}
                 onCancel={() => setEditingExpense(null)}
+              />
+            </Modal>
+          )}
+
+          {showExpenseCategoryManager && (
+            <Modal title="Kelola Kategori Pengeluaran" onClose={() => setShowExpenseCategoryManager(false)}>
+              <ExpenseCategoryManager
+                categories={expenseCategories}
+                onCreate={handleCreateExpenseCategory}
+                onUpdate={handleUpdateExpenseCategory}
+                onDelete={handleDeleteExpenseCategory}
+                onClose={() => setShowExpenseCategoryManager(false)}
               />
             </Modal>
           )}
