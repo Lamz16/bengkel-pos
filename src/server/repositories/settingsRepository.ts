@@ -12,6 +12,8 @@ export class SettingsRepository implements ISettingsRepository {
           return {
             name: found.name,
             logoUrl: found.logoUrl || undefined,
+            appTitle: found.appTitle || undefined,
+            faviconUrl: found.faviconUrl || undefined,
             slogan: found.slogan,
             address: found.address,
             phone: found.phone,
@@ -74,6 +76,8 @@ export class SettingsRepository implements ISettingsRepository {
           ...data,
           name: updated.name,
           logoUrl: updated.logoUrl || undefined,
+          appTitle: updated.appTitle || undefined,
+          faviconUrl: updated.faviconUrl || undefined,
           slogan: updated.slogan,
           address: updated.address,
           phone: updated.phone,
