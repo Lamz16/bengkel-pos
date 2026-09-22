@@ -18,10 +18,8 @@ export class ServiceController {
 
   async createService(req: Request, res: Response) {
     try {
-      let { customerName, vehiclePlate, serviceType, totalAmount } = req.body;
-      // Form POS versi lama belum mengirim jenis servis. Pertahankan order tetap dapat dibuat.
-      if (!serviceType) { serviceType = vehiclePlate ? 'Servis Umum' : 'Retail'; req.body.serviceType = serviceType; }
-      if (!customerName || totalAmount === undefined || (serviceType !== 'Retail' && !vehiclePlate)) {
+      const { customerName, vehiclePlate, serviceType, totalAmount } = req.body;
+      if (!customerName || !serviceType || totalAmount === undefined || (serviceType !== 'Retail' && !vehiclePlate)) {
         return res.status(400).json({ error: 'Data order servis tidak lengkap.' });
       }
       res.status(201).json(await workshopService.createService(req.body));
