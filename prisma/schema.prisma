@@ -207,7 +207,6 @@ model WorkshopService {
   vehiclePlate            String
   vehicleModel            String
   kilometers              Int               @default(0)
-  serviceType             String            @default("Servis Rutin")
   complaint               String
   diagnosis               String?
   status                  String            @default("In Progress") // "Pending" | "In Progress" | "Ready" | "Done"
