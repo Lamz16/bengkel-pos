@@ -66,10 +66,14 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
   res.json = (body: any) => {
     const statusCode = res.statusCode;
 
-    // Validation/business errors must be retryable after the user fixes the form.
-    // Only cache successful writes, never a 4xx response.
+    // Persist failed writes too, so the exact backend error can be audited.
+    // Remove the memory lock so a corrected request can be retried with a new key.
     if (statusCode >= 400) {
       memoryIdempotencyStore.delete(key);
+      if (isDbConnected()) {
+        prisma.idempotencyRecord.create({ data: { key, path: req.path, statusCode, response: JSON.stringify(body) } })
+          .catch(err => console.warn('[Idempotency] Failed to persist failed request:', err));
+      }
       return originalJson(body);
     }
 
