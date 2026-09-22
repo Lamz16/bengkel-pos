@@ -67,6 +67,66 @@ body {
   @apply antialiased text-slate-800 bg-slate-50;
 }
 
+/* Light theme: a cleaner, more structured operational workspace.
+   Keep receipt-light neutral because receipts must preserve their fixed paper layout. */
+@media screen {
+  html:not([data-theme="dark"]) {
+    background: #f3f6fb;
+  }
+
+  html:not([data-theme="dark"]) body {
+    background:
+      radial-gradient(circle at top right, rgb(219 234 254 / 0.7), transparent 30rem),
+      #f3f6fb;
+  }
+
+  html:not([data-theme="dark"]) .bg-slate-50:not(.receipt-light) {
+    background-color: #f7f9fc;
+  }
+
+  html:not([data-theme="dark"]) .bg-white:not(.receipt-light) {
+    background-color: #ffffff;
+  }
+
+  /* Many cards previously used slate-100, so their edges became invisible on white. */
+  html:not([data-theme="dark"]) .border-slate-50:not(.receipt-light) {
+    border-color: #e8eef6;
+  }
+
+  html:not([data-theme="dark"]) .border-slate-100:not(.receipt-light) {
+    border-color: #d9e3ef;
+  }
+
+  html:not([data-theme="dark"]) .border-slate-200:not(.receipt-light) {
+    border-color: #c8d5e4;
+  }
+
+  html:not([data-theme="dark"]) .border-slate-300:not(.receipt-light) {
+    border-color: #b8c7d8;
+  }
+
+  html:not([data-theme="dark"]) .shadow-sm {
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 22px rgb(15 23 42 / 0.045);
+  }
+
+  html:not([data-theme="dark"]) .bg-white.border:not(.receipt-light) {
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.035), 0 10px 26px rgb(15 23 42 / 0.035);
+  }
+
+  html:not([data-theme="dark"]) input:focus-visible,
+  html:not([data-theme="dark"]) select:focus-visible,
+  html:not([data-theme="dark"]) textarea:focus-visible,
+  html:not([data-theme="dark"]) button:focus-visible {
+    outline: 3px solid rgb(59 130 246 / 0.22);
+    outline-offset: 2px;
+  }
+
+  /* Do not let the application shell refresh alter invoice/PDF preview details. */
+  html:not([data-theme="dark"]) .receipt-light .border-slate-50 { border-color: #f8fafc; }
+  html:not([data-theme="dark"]) .receipt-light .border-slate-100 { border-color: #f1f5f9; }
+  html:not([data-theme="dark"]) .receipt-light .border-slate-200 { border-color: #e2e8f0; }
+}
+
 html[data-theme="dark"] {
   color-scheme: dark;
   background: #020617;
