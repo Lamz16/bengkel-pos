@@ -77,6 +77,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
+  const handleFaviconFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/png', 'image/x-icon', 'image/vnd.microsoft.icon', 'image/svg+xml', 'image/webp'].includes(file.type)) {
+      alert('Gunakan favicon PNG, ICO, SVG, atau WebP.');
+      return;
+    }
+    if (file.size > 512 * 1024) {
+      alert('Ukuran favicon maksimal 512 KB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = event => {
+      const faviconUrl = event.target?.result as string;
+      if (faviconUrl) setFormData(prev => ({ ...prev, faviconUrl }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleBatchApplyBonus = () => {
     if (onBatchUpdateMechanicBonus) {
       onBatchUpdateMechanicBonus(formData.defaultMechanicBonusPercent);
@@ -289,6 +308,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="Atau masukkan URL Gambar Logo (https://... atau Data URI)"
                       className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[11px] font-medium text-slate-800 focus:border-blue-500 outline-none transition-all shadow-2xs"
                     />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider ml-1 flex items-center gap-1.5">
+                    <SettingsIcon className="w-3.5 h-3.5 text-blue-600" /> Judul Tab Browser
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.appTitle || ''}
+                    onChange={e => setFormData({ ...formData, appTitle: e.target.value || undefined })}
+                    placeholder={formData.name || 'BengkelPro POS'}
+                    className="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-2xs"
+                  />
+                  <p className="text-[10px] text-slate-500 ml-1">Kosongkan untuk memakai nama aplikasi/bengkel secara otomatis.</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-700 uppercase tracking-wider ml-1 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-blue-600" /> Favicon Tab Browser
+                  </label>
+                  <div className="flex gap-2">
+                    <label className="flex-1 cursor-pointer h-12 px-4 bg-white border border-dashed border-blue-300 hover:border-blue-500 hover:bg-blue-50/50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-blue-700 transition-all">
+                      <Upload className="w-4 h-4" />
+                      <span>{formData.faviconUrl ? 'Ganti Favicon' : 'Upload Favicon'}</span>
+                      <input type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml,image/webp" onChange={handleFaviconFileUpload} className="hidden" />
+                    </label>
+                    {formData.faviconUrl && <button type="button" onClick={() => setFormData({ ...formData, faviconUrl: undefined })} className="px-3.5 h-12 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl"><Trash2 className="w-4 h-4" /></button>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {formData.faviconUrl && <img src={formData.faviconUrl} alt="Preview favicon" className="w-6 h-6 rounded border border-slate-200 object-contain bg-white" />}
+                    <input type="url" value={formData.faviconUrl || ''} onChange={e => setFormData({ ...formData, faviconUrl: e.target.value || undefined })} placeholder="Atau URL favicon (https://...)" className="flex-1 h-10 px-3 bg-white border border-slate-200 rounded-xl text-[11px] font-medium text-slate-800 focus:border-blue-500 outline-none" />
                   </div>
                 </div>
               </div>
