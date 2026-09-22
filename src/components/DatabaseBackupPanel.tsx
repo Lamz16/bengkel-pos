@@ -1,15 +1,43 @@
-import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Database, Download, Loader2, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Database, Download, History, Loader2, ShieldCheck } from 'lucide-react';
 import { api } from '../services/api';
 
 interface DatabaseBackupPanelProps {
   ownerEmail: string;
 }
 
+interface BackupRecord {
+  id: string;
+  databaseName: string;
+  filename: string;
+  sizeBytes: number;
+  startedAt: string;
+  completedAt: string;
+  createdByName: string;
+}
+
+const formatBackupSize = (bytes: number) => bytes < 1024 * 1024
+  ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+  : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+
 export const DatabaseBackupPanel: React.FC<DatabaseBackupPanelProps> = ({ ownerEmail }) => {
   const [password, setPassword] = useState('');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [backupHistory, setBackupHistory] = useState<BackupRecord[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+
+  const loadBackupHistory = async () => {
+    try {
+      setBackupHistory(await api.getDatabaseBackupHistory());
+    } catch (error) {
+      console.error('Gagal memuat riwayat backup:', error);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => { void loadBackupHistory(); }, []);
 
   const handleBackup = async () => {
     if (!password) {
@@ -22,6 +50,7 @@ export const DatabaseBackupPanel: React.FC<DatabaseBackupPanelProps> = ({ ownerE
       const filename = await api.downloadDatabaseBackup({ email: ownerEmail, password });
       setPassword('');
       setMessage({ type: 'success', text: `Backup berhasil diunduh: ${filename}` });
+      await loadBackupHistory();
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Gagal membuat backup database.' });
     } finally {
@@ -49,6 +78,24 @@ export const DatabaseBackupPanel: React.FC<DatabaseBackupPanelProps> = ({ ownerE
           <p className="text-[11px] text-amber-900 leading-relaxed">
             Backup memuat data operasional bengkel. Verifikasi password Owner diwajibkan setiap kali melakukan unduhan.
           </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 space-y-2">
+          <div className="flex items-center gap-2 text-blue-900">
+            <History className="w-4 h-4 text-blue-600" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Backup Terakhir Selesai</span>
+          </div>
+          {isHistoryLoading ? (
+            <p className="text-xs text-slate-500">Memuat riwayat backup...</p>
+          ) : backupHistory[0] ? (
+            <div className="text-xs text-slate-700 space-y-1">
+              <p className="font-black text-slate-900">{new Date(backupHistory[0].completedAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+              <p className="break-all text-[11px] text-slate-500">{backupHistory[0].filename}</p>
+              <p className="text-[11px] text-slate-500">{formatBackupSize(backupHistory[0].sizeBytes)} • oleh {backupHistory[0].createdByName}</p>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500">Belum ada backup yang selesai dan tercatat.</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
