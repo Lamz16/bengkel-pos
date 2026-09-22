@@ -999,6 +999,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                             mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),
                             mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
                             mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100),
+                            receiptType: formData.type === 'Retail' ? 'SALE' : 'SERVICE',
                             serviceWarrantyDurationDays: formData.type === 'Retail' ? 0 : Number(formData.serviceWarrantyDurationDays || 0),
                             serviceWarrantyTermsSnapshot: formData.type === 'Retail' ? undefined : formData.serviceWarrantyTerms
                             ,version: initialService?.version
