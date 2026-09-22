@@ -58,6 +58,21 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+model DatabaseBackupRecord {
+  id            String   @id @default(uuid())
+  databaseName  String
+  filename      String
+  sizeBytes     Int
+  startedAt     DateTime
+  completedAt   DateTime
+  createdById   String
+  createdByName String
+  createdAt     DateTime @default(now())
+
+  @@index([completedAt])
+  @@index([createdById, completedAt])
+}
+
 model Customer {
   id                String            @id @default(uuid())
   name              String
