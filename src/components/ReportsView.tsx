@@ -75,7 +75,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
     const totalExpenses = filteredExpenses.reduce((total, expense) => total + (expense.amount || 0), 0);
     const partProfit = partSales - partCost;
     const serviceProfit = serviceSales - mechanicBonus;
-    const netProfit = partProfit + serviceProfit;
+    // Pengeluaran operasional ikut mengurangi laba bersih.
+    const netProfit = partProfit + serviceProfit - totalExpenses;
 
     return {
       totalSales, totalExpenses, partSales, partCost, partProfit,
@@ -86,7 +87,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ services, expenses, pa
 
   const summaryData = [
     { label: 'Total Penjualan', value: stats.totalSales, description: 'Seluruh transaksi selesai', icon: ReceiptText, color: 'text-blue-700', bg: 'bg-blue-50', iconBg: 'bg-blue-600' },
-    { label: 'Pengeluaran', value: stats.totalExpenses, description: 'Dicatat terpisah, tidak mengurangi laba', icon: WalletCards, color: 'text-rose-700', bg: 'bg-rose-50', iconBg: 'bg-rose-600' },
+    { label: 'Pengeluaran', value: stats.totalExpenses, description: 'Mengurangi laba bersih', icon: WalletCards, color: 'text-rose-700', bg: 'bg-rose-50', iconBg: 'bg-rose-600' },
     { label: 'Laba Bersih', value: stats.netProfit, description: 'Margin barang + laba jasa setelah bonus mekanik', icon: TrendingUp, color: 'text-emerald-700', bg: 'bg-emerald-50', iconBg: 'bg-emerald-600' }
   ];
 
