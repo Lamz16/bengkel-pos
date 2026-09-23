@@ -933,8 +933,8 @@ export const POSForm: React.FC<POSFormProps> = ({
                             Lunas
                         </button>
                     </div>
-                    {formData.paymentStatus !== 'Unpaid' && <div className="grid grid-cols-2 gap-2 mt-2"><select value={initialPaymentMethod} onChange={e => setInitialPaymentMethod(e.target.value as typeof initialPaymentMethod)} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold"><option value="Cash">Cash</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option></select>{formData.paymentStatus === 'Partial' && <input value={initialPaymentAmount} onChange={e => setInitialPaymentAmount(e.target.value.replace(/\D/g, ''))} placeholder="Nominal uang muka" inputMode="numeric" className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold"/>}</div>}
-                    {formData.paymentStatus !== 'Paid' && <label className="block mt-2 text-[10px] font-bold text-slate-600">Jatuh tempo piutang (opsional)<input type="date" value={formData.paymentDueDate} onChange={e => setFormData({...formData, paymentDueDate: e.target.value})} className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs font-bold"/></label>}
+                    {formData.paymentStatus !== 'Unpaid' && <div className="grid grid-cols-2 gap-2 mt-2"><select value={initialPaymentMethod} onChange={e => setInitialPaymentMethod(e.target.value as typeof initialPaymentMethod)} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold"><option value="Cash">Cash</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option></select>{formData.paymentStatus === 'Partial' && <CurrencyInput value={initialPaymentAmount} onValueChange={value => setInitialPaymentAmount(String(value))} placeholder="Nominal uang muka" className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold"/>}</div>}
+                    {formData.paymentStatus !== 'Paid' && <label className="block mt-2 text-[10px] font-bold text-slate-600">Jatuh tempo piutang <span className="font-medium text-slate-400">(kosong = hari ini)</span><input type="date" value={formData.paymentDueDate} onChange={e => setFormData({...formData, paymentDueDate: e.target.value})} className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs font-bold"/></label>}
                 </div>
 
                 {/* Bill Summary & Promo Calculation */}
@@ -1002,7 +1002,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                             discountAmount: discountAmount > 0 ? discountAmount : undefined,
                             discountReason: discountAmount > 0 ? discountReason : undefined,
                             paymentStatus: formData.paymentStatus,
-                            paymentDueDate: formData.paymentDueDate ? new Date(`${formData.paymentDueDate}T23:59:59`).toISOString() : undefined,
+                            paymentDueDate: formData.paymentDueDate ? new Date(`${formData.paymentDueDate}T23:59:59`).toISOString() : new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
                             payments: initialPaid > 0 ? [{ amount: initialPaid, paymentMethod: initialPaymentMethod, paymentDate: new Date().toISOString() }] : [],
                             mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
                             mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),

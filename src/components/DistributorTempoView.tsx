@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { DistributorInvoice, Supplier, SparePart, DistributorInvoiceStatus } from '../types';
 import { cn } from '../lib/utils';
+import { CurrencyInput } from './CurrencyInput';
 
 interface DistributorTempoViewProps {
   invoices: DistributorInvoice[];
@@ -65,7 +66,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
     branchName: 'Bengkel Pusat',
     branchType: 'Pusat' as 'Pusat' | 'Cabang',
     issueDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString().split('T')[0],
+    dueDate: '',
     paymentMethod: 'Transfer',
     notes: '',
     items: [{ partName: '', quantity: 1, unitPrice: 0, totalPrice: 0 }]
@@ -269,10 +270,6 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
       alert('Nama Supplier / Distributor wajib diisi.');
       return;
     }
-    if (!formData.dueDate) {
-      alert('Tanggal Jatuh Tempo wajib diisi.');
-      return;
-    }
     if (formData.items.length === 0 || totalCalculatedAmount <= 0) {
       alert('Harap masukkan minimal 1 barang dengan nominal valid.');
       return;
@@ -290,7 +287,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
         paidAmount: 0,
         remainingAmount: totalCalculatedAmount,
         issueDate: new Date(formData.issueDate).toISOString(),
-        dueDate: new Date(formData.dueDate).toISOString(),
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
         paymentMethod: formData.paymentMethod,
         notes: formData.notes,
         items: formData.items
@@ -304,7 +301,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
         branchName: 'Bengkel Pusat',
         branchType: 'Pusat',
         issueDate: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString().split('T')[0],
+        dueDate: '',
         paymentMethod: 'Transfer',
         notes: '',
         items: [{ partName: '', quantity: 1, unitPrice: 0, totalPrice: 0 }]
@@ -899,7 +896,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
 
                   {/* Due Date */}
                   <div>
-                    <label className="text-[11px] font-bold text-rose-600 uppercase">Tgl. Jatuh Tempo *</label>
+                    <label className="text-[11px] font-bold text-rose-600 uppercase">Tgl. Jatuh Tempo <span className="font-medium text-slate-400">(kosong = hari ini)</span></label>
                     <input
                       type="date"
                       value={formData.dueDate}
@@ -948,11 +945,10 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
                           className="w-16 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 text-center"
                         />
 
-                        <input
-                          type="number"
+                        <CurrencyInput
                           placeholder="Harga Satuan"
                           value={item.unitPrice}
-                          onChange={(e) => handleItemChange(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          onValueChange={(value) => handleItemChange(idx, 'unitPrice', value)}
                           className="w-28 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 text-right"
                         />
 
@@ -1072,10 +1068,9 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 uppercase">Nominal Pembayaran (Rp) *</label>
                   <div className="relative mt-1">
-                    <input
-                      type="number"
+                    <CurrencyInput
                       value={paymentAmount || ''}
-                      onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                      onValueChange={setPaymentAmount}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-900 focus:bg-white focus:border-blue-500 outline-none"
                     />
                     <button

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { WorkshopService, Mechanic } from '../types';
 import { AlertTriangle, UserX, Wrench, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { CurrencyInput } from './CurrencyInput';
 
 interface WarrantyClaimModalProps {
   service: WorkshopService;
@@ -122,12 +123,9 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
         </div>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-rose-500 font-black text-sm">Rp</span>
-          <input
-            type="number"
-            min="0"
-            step="5000"
+          <CurrencyInput
             value={deductionAmount}
-            onChange={e => setDeductionAmount(Number(e.target.value))}
+            onValueChange={setDeductionAmount}
             className="w-full h-14 pl-12 pr-4 bg-white border border-rose-200 rounded-2xl text-base font-black text-rose-700 outline-none focus:border-rose-400 shadow-sm"
           />
         </div>

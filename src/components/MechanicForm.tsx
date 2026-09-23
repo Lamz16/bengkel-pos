@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mechanic } from '../types';
 import { cn } from '../lib/utils';
 import { Wrench, DollarSign, AlertTriangle, UserX } from 'lucide-react';
+import { CurrencyInput } from './CurrencyInput';
 
 interface MechanicFormProps {
   mechanic?: Partial<Mechanic>;
@@ -121,12 +122,9 @@ export const MechanicForm: React.FC<MechanicFormProps> = ({ mechanic, onSave, on
             <label className="text-[10px] font-black text-rose-900/60 uppercase ml-1">Denda Komplain Garansi (Rp)</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 font-bold text-xs">Rp</span>
-              <input 
-                type="number"
-                min="0"
-                step="5000"
+              <CurrencyInput
                 value={formData.warrantyPenaltyAmount}
-                onChange={e => setFormData({ ...formData, warrantyPenaltyAmount: Number(e.target.value) })}
+                onValueChange={value => setFormData({ ...formData, warrantyPenaltyAmount: value })}
                 className="w-full h-12 pl-9 pr-3 bg-white border border-rose-200 rounded-xl outline-none text-xs font-bold text-rose-950"
               />
             </div>
@@ -137,12 +135,9 @@ export const MechanicForm: React.FC<MechanicFormProps> = ({ mechanic, onSave, on
             <label className="text-[10px] font-black text-rose-900/60 uppercase ml-1">Denda Tidak Masuk/Absen (Rp)</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 font-bold text-xs">Rp</span>
-              <input 
-                type="number"
-                min="0"
-                step="5000"
+              <CurrencyInput
                 value={formData.absencePenaltyAmount}
-                onChange={e => setFormData({ ...formData, absencePenaltyAmount: Number(e.target.value) })}
+                onValueChange={value => setFormData({ ...formData, absencePenaltyAmount: value })}
                 className="w-full h-12 pl-9 pr-3 bg-white border border-rose-200 rounded-xl outline-none text-xs font-bold text-rose-950"
               />
             </div>

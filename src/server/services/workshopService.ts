@@ -60,6 +60,14 @@ export class WorkshopServiceLayer {
     };
     if (paidAmount > effectiveData.totalAmount + 0.01) throw new Error('Nominal pembayaran melebihi total tagihan.');
     effectiveData.paymentStatus = paidAmount + 0.01 >= effectiveData.totalAmount ? 'Paid' : paidAmount > 0 ? 'Partial' : 'Unpaid';
+    if (effectiveData.paymentStatus === 'Paid') effectiveData.paymentDueDate = undefined;
+    // Piutang tanpa tanggal yang dipilih kasir tetap memiliki tenggat yang jelas:
+    // hari transaksi. Ini juga melindungi request API yang tidak berasal dari UI.
+    if (effectiveData.paymentStatus !== 'Paid' && !effectiveData.paymentDueDate) {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      effectiveData.paymentDueDate = today.toISOString();
+    }
     if (isDbConnected()) {
       const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
       const transactionDate = new Date();
@@ -207,7 +215,7 @@ export class WorkshopServiceLayer {
       await tx.workshopService.update({ where: { id }, data: {
         customerId: effectiveData.customerId || null, customerName: effectiveData.customerName, customerPhone: effectiveData.customerPhone, vehicleId: effectiveData.vehicleId || null,
         vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel, kilometers: effectiveData.kilometers, complaint: effectiveData.complaint, diagnosis: effectiveData.diagnosis,
-        laborFee: effectiveData.laborFee, totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus, paymentDueDate: effectiveData.paymentDueDate ? new Date(effectiveData.paymentDueDate) : null, discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
+        laborFee: effectiveData.laborFee, totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus, paymentDueDate: effectiveData.paymentStatus === 'Paid' ? null : (effectiveData.paymentDueDate ? new Date(effectiveData.paymentDueDate) : (() => { const today = new Date(); today.setHours(23, 59, 59, 999); return today; })()), discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
         mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName, mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
         version: { increment: 1 }, serviceItems: { deleteMany: {}, create: serviceItems }, partsUsed: { deleteMany: {}, create: effectiveData.partsUsed.map(item => ({ partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime, normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime, wholesaleType: item.wholesaleType || null, wholesaleValue: item.wholesaleValue || null, wholesaleUnitPrice: item.wholesaleUnitPrice || null, hasProductWarranty: !!item.hasProductWarranty, warrantyDurationDays: item.hasProductWarranty ? item.warrantyDurationDays || 0 : 0, warrantyTerms: item.hasProductWarranty ? item.warrantyTerms || null : null })) },
       }});

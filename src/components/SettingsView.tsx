@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { CompanySettings, Mechanic, UserRole, LoyaltyTier } from '../types';
 import { api } from '../services/api';
+import { CurrencyInput } from './CurrencyInput';
 
 interface SettingsViewProps {
   settings: CompanySettings;
@@ -780,12 +781,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </p>
                 <div className="relative pt-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="5000"
+                  <CurrencyInput
                     value={formData.defaultWarrantyPenalty}
-                    onChange={e => setFormData({ ...formData, defaultWarrantyPenalty: Number(e.target.value) })}
+                    onValueChange={value => setFormData({ ...formData, defaultWarrantyPenalty: value })}
                     className="w-full h-11 pl-9 pr-3 bg-white border border-rose-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
                   />
                 </div>
@@ -803,12 +801,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </p>
                 <div className="relative pt-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="5000"
+                  <CurrencyInput
                     value={formData.defaultAbsencePenalty}
-                    onChange={e => setFormData({ ...formData, defaultAbsencePenalty: Number(e.target.value) })}
+                    onValueChange={value => setFormData({ ...formData, defaultAbsencePenalty: value })}
                     className="w-full h-11 pl-9 pr-3 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
                   />
                 </div>
@@ -828,11 +823,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="text-[10px] text-slate-400 uppercase font-bold">Contoh Biaya Jasa:</span>
                   <div className="relative">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">Rp</span>
-                    <input
-                      type="number"
-                      step="10000"
+                    <CurrencyInput
                       value={simLaborFee}
-                      onChange={e => setSimLaborFee(Number(e.target.value))}
+                      onValueChange={setSimLaborFee}
                       className="w-32 h-8 pl-7 pr-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-white outline-none"
                     />
                   </div>

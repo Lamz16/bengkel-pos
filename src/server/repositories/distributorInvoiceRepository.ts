@@ -135,6 +135,7 @@ export class DistributorInvoiceRepository {
   }
 
   async create(data: Omit<DistributorInvoice, 'id'>): Promise<DistributorInvoice> {
+    const dueDate = data.dueDate || new Date().toISOString();
     const id = `INV-DIST-${Date.now().toString().slice(-6)}`;
     const items = data.items || [];
     const totalAmount = data.totalAmount || items.reduce((acc, i) => acc + i.totalPrice, 0);
@@ -148,7 +149,7 @@ export class DistributorInvoiceRepository {
     } else if (paidAmount > 0) {
       status = 'Partial';
     } else {
-      const due = new Date(data.dueDate);
+      const due = new Date(dueDate);
       if (due < new Date()) {
         status = 'Overdue';
       }
@@ -181,7 +182,7 @@ export class DistributorInvoiceRepository {
               paidAmount,
               remainingAmount,
               issueDate: new Date(data.issueDate || Date.now()),
-              dueDate: new Date(data.dueDate),
+              dueDate: new Date(dueDate),
               status,
               paymentMethod: data.paymentMethod || 'Transfer',
               notes: data.notes || null,
