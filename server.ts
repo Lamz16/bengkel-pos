@@ -38,6 +38,9 @@ async function startServer() {
   } catch (err) {
     console.error('Error during initial DB check:', err);
   }
+  if (!isDbReady && process.env.NODE_ENV === 'production') {
+    throw new Error('PostgreSQL wajib tersedia saat menjalankan server production.');
+  }
 
   // ==========================================
   // MODULAR REST API ROUTES (SOLID Architecture)

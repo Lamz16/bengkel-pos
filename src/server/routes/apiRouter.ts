@@ -18,6 +18,7 @@ import { storageLocationRouter } from './storageLocationRoutes';
 import { authorize, requireAuth } from '../auth';
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { systemMonitor } from '../middleware/monitoring';
+import { requireDatabase } from '../middleware/databaseRequired';
 
 export const apiRouter = Router();
 
@@ -39,6 +40,7 @@ apiRouter.get('/monitoring/metrics', (_req: Request, res: Response) => {
 // Authentication is public; every business endpoint below requires a valid Owner/Admin JWT.
 apiRouter.use('/auth', authRouter);
 apiRouter.use(requireAuth, authorize('Owner', 'Admin'));
+apiRouter.use(requireDatabase);
 
 // Apply idempotency check for POST/PUT/PATCH write requests
 apiRouter.use(idempotencyMiddleware);

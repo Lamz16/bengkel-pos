@@ -1,104 +1,63 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma, isDbConnected } from '../db/connection';
 
-interface CachedResponse {
-  statusCode: number;
-  body: any;
-  timestamp: number;
-  isProcessing: boolean;
-}
+const RETENTION_MS = 24 * 60 * 60 * 1000;
+const PROCESSING_STATUS = 102;
 
-const memoryIdempotencyStore = new Map<string, CachedResponse>();
-
+/**
+ * DB is the source of truth, so duplicate writes remain protected even when
+ * the API runs in more than one process. A unique key is inserted before
+ * the handler starts; this closes the old check-then-act race.
+ */
 export async function idempotencyMiddleware(req: Request, res: Response, next: NextFunction) {
-  const idempotencyKey = 
-    (req.headers['x-idempotency-key'] as string) || 
-    (req.headers['idempotency-key'] as string) || 
-    req.body?.idempotencyKey;
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
 
-  if (!idempotencyKey || typeof idempotencyKey !== 'string') {
-    return next();
-  }
+  const suppliedKey = (req.headers['x-idempotency-key'] as string)
+    || (req.headers['idempotency-key'] as string)
+    || req.body?.idempotencyKey;
+  if (!suppliedKey || typeof suppliedKey !== 'string' || suppliedKey.length > 160) return next();
 
-  const key = `idemp:${req.path}:${idempotencyKey}`;
+  const key = `idemp:${req.method}:${req.baseUrl}${req.path}:${suppliedKey}`;
+  if (!isDbConnected()) return next(); // API route rejects DB outages first.
 
-  // 1. Check DB or Memory store for existing key
-  if (isDbConnected()) {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + RETENTION_MS);
+  try {
+    // The expiresAt index keeps this cleanup bounded and the table small.
+    await prisma.idempotencyRecord.deleteMany({ where: { expiresAt: { lt: now } } });
+    await prisma.idempotencyRecord.create({
+      data: {
+        key,
+        path: req.path,
+        statusCode: PROCESSING_STATUS,
+        response: JSON.stringify({ error: 'Transaksi sedang diproses.' }),
+        expiresAt,
+      },
+    });
+  } catch (err: any) {
+    if (err?.code !== 'P2002') return next(err);
+
+    const existing = await prisma.idempotencyRecord.findUnique({ where: { key } });
+    if (!existing || existing.expiresAt < now) return next();
+    if (existing.statusCode === PROCESSING_STATUS) {
+      return res.status(409).json({ error: 'Transaksi dengan kunci yang sama sedang diproses.', code: 'IDEMPOTENCY_IN_PROGRESS' });
+    }
     try {
-      const record = await prisma.idempotencyRecord.findUnique({
-        where: { key },
-      });
-
-      if (record) {
-        console.log(`[Idempotency] Request disadap dari cache DB (Key: ${idempotencyKey})`);
-        return res.status(record.statusCode).json(JSON.parse(record.response));
-      }
-    } catch (err) {
-      console.warn('[Idempotency] Error reading idempotency DB:', err);
+      return res.status(existing.statusCode).json(JSON.parse(existing.response));
+    } catch {
+      return res.status(existing.statusCode).json({ error: 'Respons transaksi sebelumnya tidak dapat dibaca.' });
     }
   }
 
-  const cached = memoryIdempotencyStore.get(key);
-
-  if (cached) {
-    if (cached.isProcessing) {
-      console.warn(`[Idempotency] Request ganda terdeteksi sedang dalam proses! (Key: ${idempotencyKey})`);
-      return res.status(409).json({
-        error: 'Transaksi sedang diproses oleh sistem. Mohon tidak menekan tombol berturut-turut.',
-        isDuplicateAttempt: true,
-      });
-    }
-
-    console.log(`[Idempotency] Request disadap dari memory cache (Key: ${idempotencyKey})`);
-    return res.status(cached.statusCode).json(cached.body);
-  }
-
-  // 2. Mark as processing
-  memoryIdempotencyStore.set(key, {
-    statusCode: 202,
-    body: null,
-    timestamp: Date.now(),
-    isProcessing: true,
-  });
-
-  // Intercept res.json
   const originalJson = res.json.bind(res);
   res.json = (body: any) => {
-    const statusCode = res.statusCode;
-
-    // Persist failed writes before sending the response. This makes backend
-    // validation/Prisma errors immediately auditable in IdempotencyRecord.
-    if (statusCode >= 400) {
-      memoryIdempotencyStore.delete(key);
-      if (isDbConnected()) {
-        void prisma.idempotencyRecord.upsert({
-          where: { key },
-          update: { path: req.path, statusCode, response: JSON.stringify(body) },
-          create: { key, path: req.path, statusCode, response: JSON.stringify(body) },
-        }).catch(err => console.error('[Idempotency] Failed to persist failed request:', err));
-      }
-      return originalJson(body);
-    }
-
-    // Save completed response in memory
-    memoryIdempotencyStore.set(key, {
-      statusCode,
-      body,
-      timestamp: Date.now(),
-      isProcessing: false,
-    });
-
-    // Save in DB if connected
-    if (isDbConnected()) {
-      void prisma.idempotencyRecord.upsert({
-        where: { key },
-        update: { path: req.path, statusCode, response: JSON.stringify(body) },
-        create: { key, path: req.path, statusCode, response: JSON.stringify(body) },
-      }).catch(err => console.warn('[Idempotency] Failed to persist key:', err));
-    }
-
+    // The lock already exists before the handler executes. A second request
+    // sees PENDING and cannot create a duplicate while this response is saved.
+    void prisma.idempotencyRecord.update({
+      where: { key },
+      data: { path: req.path, statusCode: res.statusCode, response: JSON.stringify(body), expiresAt },
+    }).catch(error => console.error('[Idempotency] Gagal menyimpan respons:', error));
     return originalJson(body);
   };
-
   next();
 }

@@ -38,6 +38,10 @@ export function isDbConnected(): boolean {
   return isPostgresConnected;
 }
 
+export function isProduction(): boolean {
+  return process.env.NODE_ENV === 'production';
+}
+
 export async function checkDbConnection(): Promise<boolean> {
   if (!process.env.DATABASE_URL) {
     console.log('ℹ️ [DB] DATABASE_URL tidak ditemukan. Menggunakan fallback storage dalam memori untuk preview.');
@@ -58,7 +62,7 @@ export async function checkDbConnection(): Promise<boolean> {
     return true;
   } catch (error: any) {
     isPostgresConnected = false;
-    console.warn('⚠️ [DB] Tidak dapat terhubung ke PostgreSQL. Mengaktifkan fallback data:', error.message || error);
+    console.warn('⚠️ [DB] Tidak dapat terhubung ke PostgreSQL:', error.message || error);
     return false;
   }
 }
