@@ -421,6 +421,11 @@ export const api = {
     if (params.status && params.status !== 'All') query.set('status', params.status);
     return request<PaginatedResult<WorkshopService>>(`/api/services?${query.toString()}`);
   },
+  async getReceivables(params: { page?: number; limit?: number; search?: string } = {}): Promise<PaginatedResult<WorkshopService>> {
+    const query = new URLSearchParams({ page: String(params.page || 1), limit: String(params.limit || 25) });
+    if (params.search?.trim()) query.set('search', params.search.trim());
+    return request<PaginatedResult<WorkshopService>>(`/api/services/receivables?${query}`);
+  },
 
   async createService(serviceData: WorkshopService): Promise<WorkshopService> {
     return request<WorkshopService>('/api/services', {

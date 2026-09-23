@@ -4,6 +4,7 @@ import { serviceController } from '../controllers/serviceController';
 export const serviceRouter = Router();
 
 serviceRouter.get('/', (req, res) => serviceController.getServices(req, res));
+serviceRouter.get('/receivables', (req, res) => serviceController.getReceivables(req, res));
 serviceRouter.post('/', (req, res) => serviceController.createService(req, res));
 serviceRouter.put('/:id', (req, res) => serviceController.updateService(req, res));
 serviceRouter.put('/:id/status', (req, res) => serviceController.updateStatus(req, res));

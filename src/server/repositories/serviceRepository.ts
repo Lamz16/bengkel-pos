@@ -95,6 +95,9 @@ export class ServiceRepository implements IServiceRepository {
         if (status && status !== 'All') {
           whereConditions.push({ status });
         }
+        if (params.paymentStatus) {
+          whereConditions.push({ paymentStatus: { in: params.paymentStatus === 'OVERDUE' ? ['Unpaid', 'Partial'] : [params.paymentStatus] } });
+        }
 
         const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 

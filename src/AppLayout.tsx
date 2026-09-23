@@ -46,6 +46,7 @@ import { WarrantyClaimModal } from './components/WarrantyClaimModal';
 import { ManualDeductionForm } from './components/ManualDeductionForm';
 import { DistributorTempoView } from './components/DistributorTempoView';
 import { ActivityLogView } from './components/ActivityLogView';
+import { ReceivablesView } from './components/ReceivablesView';
 
 // Modular Form Components
 import { StaffForm } from './components/forms/StaffForm';
@@ -426,6 +427,7 @@ export default function AppLayout() {
   const navItems: NavItem[] = useMemo(() => [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Owner', 'Admin'] },
     { id: 'pos', label: 'Transaksi', icon: PaymentIcon, roles: ['Owner', 'Admin'] },
+    { id: 'receivables', label: 'Piutang', icon: Wallet, roles: ['Owner', 'Admin'] },
     { id: 'pos_history', label: 'Antrean', icon: Wrench, roles: ['Owner', 'Admin'] },
     { id: 'distributor_tempo', label: 'Nota Tempo', icon: CalendarIcon, roles: ['Owner', 'Admin'] },
     { id: 'mechanics', label: 'Mekanik & Gaji', icon: Award, roles: ['Owner', 'Admin'] },
@@ -1017,6 +1019,10 @@ export default function AppLayout() {
                   onQueryChange={loadServices}
                 />
               </motion.div>
+            )}
+
+            {!showPOSForm && activeTab === 'receivables' && (
+              <motion.div key="receivables" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}><ReceivablesView onSelect={setSelectedServiceId} /></motion.div>
             )}
 
             {!showPOSForm && activeTab === 'pos_history' && (

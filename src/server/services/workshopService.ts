@@ -26,6 +26,10 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.getPaginated(params);
   }
 
+  async getReceivables(params: PaginationParams): Promise<PaginatedResult<WorkshopService>> {
+    return this.serviceRepo.getPaginated({ ...params, paymentStatus: 'OVERDUE' });
+  }
+
   async getServiceById(id: string): Promise<WorkshopService | null> {
     return this.serviceRepo.getById(id);
   }

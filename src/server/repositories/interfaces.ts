@@ -20,6 +20,7 @@ export interface PaginationParams {
   limit?: number;
   search?: string;
   status?: string;
+  paymentStatus?: string;
 }
 
 export interface ICustomerRepository {

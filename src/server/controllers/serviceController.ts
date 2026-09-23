@@ -25,6 +25,15 @@ export class ServiceController {
     }
   }
 
+  async getReceivables(req: Request, res: Response) {
+    try {
+      const page = Math.max(1, Number(req.query.page || 1));
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit || 25)));
+      const result = await workshopService.getReceivables({ page, limit, search: req.query.search as string | undefined });
+      res.json(result);
+    } catch (err: any) { res.status(500).json({ error: err.message || 'Gagal memuat piutang.' }); }
+  }
+
   async createService(req: Request, res: Response) {
     try {
       const { customerName, vehiclePlate, receiptType, totalAmount } = req.body;
