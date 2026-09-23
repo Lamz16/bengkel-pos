@@ -223,6 +223,13 @@ export const api = {
     if (params.status && params.status !== 'all') query.set('status', params.status);
     return request<ActivityLogPage>(`/api/logs?${query.toString()}`);
   },
+  async exportActivityLogs(status: 'all' | 'success' | 'error'): Promise<Blob> {
+    const token = getAuthToken();
+    const query = status === 'all' ? '' : `?status=${status}`;
+    const res = await fetch(`/api/logs/export${query}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) throw new Error('Gagal mengekspor log aktivitas.');
+    return res.blob();
+  },
   // Bootstrap
   async getBootstrap(): Promise<BootstrapResponse> {
     return request<BootstrapResponse>('/api/bootstrap');
