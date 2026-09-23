@@ -228,8 +228,8 @@ export interface WorkshopService {
 
 export type ServicePaymentMethod = 'Cash' | 'Transfer' | 'QRIS';
 export interface ServicePayment {
-  id: string;
-  serviceId: string;
+  id?: string;
+  serviceId?: string;
   amount: number;
   paymentMethod: ServicePaymentMethod;
   referenceNo?: string;

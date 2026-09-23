@@ -45,6 +45,8 @@ export class WorkshopServiceLayer {
     // Bonus mekanik hanya berasal dari nilai jasa; nilai sparepart tidak pernah
     // menjadi dasar perhitungan bonus, termasuk transaksi Retail.
     const bonusPercent = data.receiptType === 'SALE' ? 0 : Number(data.mechanicBonusPercent || 0);
+    const requestedPayments = (data.payments || []).map(payment => ({ amount: Number(payment.amount || 0), paymentMethod: payment.paymentMethod, referenceNo: payment.referenceNo, notes: payment.notes, paymentDate: payment.paymentDate })).filter(payment => Number.isFinite(payment.amount) && payment.amount > 0);
+    const paidAmount = requestedPayments.reduce((sum, payment) => sum + payment.amount, 0);
     const effectiveData: WorkshopService = {
       ...data,
       serviceItems,
@@ -52,6 +54,9 @@ export class WorkshopServiceLayer {
       mechanicBonusPercent: bonusPercent,
       mechanicBonusAmount: data.receiptType === 'SALE' ? 0 : Math.round((laborFee * bonusPercent) / 100),
     };
+    if (paidAmount > effectiveData.totalAmount + 0.01) throw new Error('Nominal pembayaran melebihi total tagihan.');
+    if (effectiveData.receiptType === 'SALE' && paidAmount + 0.01 < effectiveData.totalAmount) throw new Error('Penjualan langsung wajib dibayar lunas saat transaksi dibuat.');
+    effectiveData.paymentStatus = paidAmount + 0.01 >= effectiveData.totalAmount ? 'Paid' : paidAmount > 0 ? 'Partial' : 'Unpaid';
     if (isDbConnected()) {
       const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
       const transactionDate = new Date();
@@ -105,6 +110,7 @@ export class WorkshopServiceLayer {
           serviceWarrantyDurationDays,
           serviceWarrantyTermsSnapshot,
           serviceWarrantyExpiresAt: serviceWarrantyDurationDays > 0 ? new Date(transactionDate.getTime() + serviceWarrantyDurationDays * 86_400_000) : null,
+          payments: requestedPayments.length ? { create: requestedPayments.map(payment => ({ amount: payment.amount, paymentMethod: payment.paymentMethod!, referenceNo: payment.referenceNo || null, notes: payment.notes || null, paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : transactionDate })) } : undefined,
           serviceItems: { create: (effectiveData.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
           partsUsed: { create: (effectiveData.partsUsed || []).map(item => {
             const warranty = partWarranty.get(item.partId);

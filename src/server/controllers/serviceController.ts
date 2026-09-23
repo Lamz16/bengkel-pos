@@ -45,7 +45,7 @@ export class ServiceController {
     try {
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
-      const before = await workshopService.getService(req.params.id);
+      const before = await workshopService.getServiceById(req.params.id);
       const updated = await workshopService.updateService(req.params.id, req.body, expVer);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
       await recordAudit(req, { action: 'Mengubah transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Transaksi ${updated.invoiceNumber || updated.id} diperbarui.` });
@@ -64,7 +64,7 @@ export class ServiceController {
         return res.status(400).json({ error: 'Status pengerjaan servis wajib diisi.' });
       }
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
-      const before = await workshopService.getService(req.params.id);
+      const before = await workshopService.getServiceById(req.params.id);
       const updated = await (workshopService as any).serviceRepo.updateStatus(req.params.id, status, expVer);
       if (!updated) {
         return res.status(404).json({ error: 'Order servis tidak ditemukan' });
@@ -81,7 +81,7 @@ export class ServiceController {
     try {
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
-      const before = await workshopService.getService(req.params.id);
+      const before = await workshopService.getServiceById(req.params.id);
       const updated = await (workshopService as any).serviceRepo.markPaid(req.params.id, expVer);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan' });
       await recordAudit(req, { action: 'Melunasi transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran transaksi ${updated.invoiceNumber || updated.id} ditandai lunas.` });
@@ -94,7 +94,7 @@ export class ServiceController {
 
   async addPayment(req: Request, res: Response) {
     try {
-      const before = await workshopService.getService(req.params.id);
+      const before = await workshopService.getServiceById(req.params.id);
       const updated = await workshopService.addPayment(req.params.id, req.body);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
       await recordAudit(req, { action: 'Mencatat pembayaran transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran ${req.body.paymentMethod} sebesar ${Number(req.body.amount).toLocaleString('id-ID')} dicatat untuk transaksi ${updated.invoiceNumber || updated.id}.` });
@@ -121,7 +121,7 @@ export class ServiceController {
     }
   }  async processReturn(req: Request, res: Response) {
     try {
-      const before = await workshopService.getService(req.params.id);
+      const before = await workshopService.getServiceById(req.params.id);
       const result = await workshopService.processReturn({ serviceId: req.params.id, reason: req.body.reason, items: req.body.items || [] });
       await recordAudit(req, { action: 'Memproses retur transaksi', entity: 'WorkshopService', entityId: result.id, before, after: result, description: `Retur diproses untuk transaksi ${result.invoiceNumber || result.id}.` });
       res.json(result);
