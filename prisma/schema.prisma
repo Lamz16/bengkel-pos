@@ -488,6 +488,7 @@ model ActivityLog {
   statusCode  Int
   success     Boolean
   description String   @db.Text
+  technicalDetail String? @db.Text
 
   @@index([createdAt])
   @@index([statusCode, createdAt])

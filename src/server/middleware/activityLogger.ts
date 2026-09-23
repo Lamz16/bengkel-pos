@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { isDbConnected, prisma } from '../db/connection';
+import { randomUUID } from 'crypto';
 
 function describe(req: Request, statusCode: number, body: unknown) {
   const resource = req.path.split('/').filter(Boolean)[0] || 'sistem';
@@ -14,6 +15,8 @@ export function activityLogger(req: Request, res: Response, next: NextFunction) 
   // Avoid recursively logging requests made to read the audit log itself.
   if (!isDbConnected() || req.path.startsWith('/logs')) return next();
   let responseBody: unknown;
+  const startedAt = Date.now();
+  const requestId = randomUUID();
   const originalJson = res.json.bind(res);
   res.json = (body: unknown) => {
     responseBody = body;
@@ -33,6 +36,19 @@ export function activityLogger(req: Request, res: Response, next: NextFunction) 
         statusCode: res.statusCode,
         success: res.statusCode >= 200 && res.statusCode < 400,
         description: describe(req, res.statusCode, responseBody),
+        technicalDetail: JSON.stringify({
+          requestId,
+          method: req.method,
+          endpoint: req.originalUrl || req.url,
+          statusCode: res.statusCode,
+          durationMs: Date.now() - startedAt,
+          query: req.query,
+          response: responseBody,
+          error: res.locals.activityError ? {
+            message: res.locals.activityError.message,
+            stack: res.locals.activityError.stack,
+          } : undefined,
+        }, null, 2),
       },
     }).catch(error => console.error('[ActivityLog] Gagal menyimpan log:', error));
   });

@@ -122,7 +122,7 @@ export interface ApiHealthStatus {
   postgresConnected?: boolean;
 }
 export interface ActivityLogPage {
-  data: Array<{ id: string; createdAt: string; userName?: string | null; role?: string | null; action: string; statusCode: number; success: boolean; description: string }>;
+  data: Array<{ id: string; createdAt: string; userName?: string | null; role?: string | null; action: string; statusCode: number; success: boolean; description: string; technicalDetail?: string | null }>;
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 

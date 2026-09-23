@@ -5,6 +5,7 @@ import fs from 'fs';
 import { checkDbConnection, isDbConnected } from './src/server/db/connection';
 import { apiRouter } from './src/server/routes';
 import { performanceMonitoringMiddleware, errorMonitoringMiddleware } from './src/server/middleware/monitoring';
+import { startActivityLogCleanup } from './src/server/services/activityLogCleanup';
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
@@ -41,6 +42,7 @@ async function startServer() {
   if (!isDbReady && process.env.NODE_ENV === 'production') {
     throw new Error('PostgreSQL wajib tersedia saat menjalankan server production.');
   }
+  if (isDbReady) startActivityLogCleanup();
 
   // ==========================================
   // MODULAR REST API ROUTES (SOLID Architecture)

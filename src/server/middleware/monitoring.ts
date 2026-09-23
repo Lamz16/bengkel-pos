@@ -87,6 +87,7 @@ export function performanceMonitoringMiddleware(req: Request, res: Response, nex
 export function errorMonitoringMiddleware(err: any, req: Request, res: Response, next: NextFunction) {
   const statusCode = err.status || err.statusCode || 500;
   systemMonitor.logError(req, err, statusCode);
+  res.locals.activityError = err;
 
   res.status(statusCode).json({
     error: err.message || 'Terjadi kesalahan pada server',
