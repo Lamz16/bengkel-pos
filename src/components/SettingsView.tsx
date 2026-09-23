@@ -1021,7 +1021,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 )}
                 {formData.receiptHeader && (
                   <div className="pt-2">
-                    <span className="text-[9px] font-black uppercase bg-slate-100 px-2.5 py-0.5 rounded text-slate-700">
+                    <span className="text-[9px] font-black uppercase text-slate-700">
                       {formData.receiptHeader}
                     </span>
                   </div>
@@ -1048,7 +1048,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="text-slate-400 block font-bold">Kendaraan:</span>
-                  <span className="font-mono font-black text-slate-900 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                  <span className="font-mono font-black text-slate-900 uppercase">
                     B 4567 ABC
                   </span>
                   <span className="text-[9px] text-slate-500 block">Honda Vario 160</span>
@@ -1099,7 +1099,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               {/* Total Card */}
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex justify-between items-center">
+              <div className="py-2 flex justify-between items-center">
                 <div>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Pembayaran</span>
                   <span className="text-[10px] font-black text-emerald-600 uppercase">Lunas (Tunai)</span>
@@ -1109,7 +1109,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               {/* Warranty Notice (if enabled) */}
               {formData.showWarrantyOnReceipt && formData.warrantyTerms && (
-                <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1">
+                <div className="py-2 space-y-1">
                   <div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider">
                     <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                     <span>Ketentuan Garansi Servis:</span>
@@ -1122,7 +1122,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               {/* Contact Help */}
               {formData.receiptContactHelp && (
-                <div className="text-center text-[10px] text-slate-600 font-bold bg-slate-50 p-2 rounded-lg">
+                <div className="text-center text-[10px] text-slate-600 font-bold py-1">
                   📞 {formData.receiptContactHelp}
                 </div>
               )}

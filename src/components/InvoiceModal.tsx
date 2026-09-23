@@ -185,7 +185,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{settings.slogan || 'Slogan Bengkel Anda'}</p>
             {settings.address && <p className="text-[9px] text-slate-400 font-medium leading-tight max-w-[240px] mx-auto">{settings.address}</p>}
             {settings.phone && <p className="text-[9px] font-bold text-blue-600">Telp/WA: {settings.phone}</p>}
-            {receiptHeader && <div className="pt-2"><span className="text-[9px] font-black uppercase bg-slate-100 px-2.5 py-0.5 rounded text-slate-700">{receiptHeader}</span></div>}
+            {receiptHeader && <div className="pt-2"><span className="text-[9px] font-black uppercase text-slate-700">{receiptHeader}</span></div>}
           </div>
 
           <div className="grid grid-cols-2 text-[10px] gap-2 pb-3 border-b border-dashed border-slate-200 receipt-divider">
@@ -198,7 +198,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             </div>
             <div className="text-right">
               <span className="text-slate-400 block font-bold">Kendaraan:</span>
-              <span className="font-mono font-black text-slate-900 uppercase bg-slate-100 px-1.5 py-0.5 rounded">{service.vehiclePlate}</span>
+              <span className="font-mono font-black text-slate-900 uppercase">{service.vehiclePlate}</span>
               <span className="text-[9px] text-slate-500 block">{service.vehicleModel}</span>
             </div>
             {settings.showOdometerOnReceipt && service.kilometers > 0 && <div><span className="text-slate-400 block font-bold">Kilometer (KM):</span><span className="font-bold text-slate-800 font-mono">{service.kilometers.toLocaleString('id-ID')} KM</span></div>}
@@ -211,16 +211,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             {(service.discountAmount || 0) > 0 && <div className="flex justify-between items-start pt-2 text-emerald-700"><div><p className="font-bold">{service.discountReason || 'Diskon Transaksi'}</p><p className="text-[9px]">Potongan harga</p></div><span className="font-bold">- {rupiah(service.discountAmount)}</span></div>}
           </div>
 
-          <div className="receipt-total bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex justify-between items-center">
+          <div className="receipt-total py-2 flex justify-between items-center">
             <div><span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Pembayaran</span><span className="text-[10px] font-black text-emerald-600 uppercase">{service.paymentStatus === 'Paid' ? 'Lunas' : 'Belum Lunas'}</span></div>
             <span className="text-lg font-black text-blue-600 tracking-tight">{rupiah(service.totalAmount)}</span>
           </div>
 
-          {settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 && <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Ketentuan Garansi Servis:</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{settings.warrantyTerms}</p></div>}
+          {settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Ketentuan Garansi Servis:</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{settings.warrantyTerms}</p></div>}
 
-          {productWarrantyItems.length > 0 && <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl space-y-1"><div className="flex items-center gap-1.5 text-emerald-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /><span>Garansi Produk / Sparepart</span></div>{productWarrantyItems.map((item, index) => <p key={`${item.partId}-${index}`} className="text-[10px] text-emerald-800"><b>{item.name}</b> — {item.warrantyDurationDays} hari{item.warrantyExpiresAt ? `, sampai ${format(new Date(item.warrantyExpiresAt), 'dd MMM yyyy')}` : ''}</p>)}</div>}
+          {productWarrantyItems.length > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-emerald-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /><span>Garansi Produk / Sparepart</span></div>{productWarrantyItems.map((item, index) => <p key={`${item.partId}-${index}`} className="text-[10px] text-emerald-800"><b>{item.name}</b> — {item.warrantyDurationDays} hari{item.warrantyExpiresAt ? `, sampai ${format(new Date(item.warrantyExpiresAt), 'dd MMM yyyy')}` : ''}</p>)}</div>}
 
-          {settings.receiptContactHelp && <div className="text-center text-[10px] text-slate-600 font-bold bg-slate-50 p-2 rounded-lg">📞 {settings.receiptContactHelp}</div>}
+          {settings.receiptContactHelp && <div className="text-center text-[10px] text-slate-600 font-bold py-1">📞 {settings.receiptContactHelp}</div>}
           <div className="text-center space-y-1 pt-2"><p className="text-[10px] font-black uppercase tracking-wider text-slate-700">{settings.name || 'BENGKEL KITA'} • TERIMA KASIH</p><p className="text-[9px] text-slate-400 font-medium leading-normal max-w-[280px] mx-auto italic">"{receiptFooter}"</p></div>
           <div className="pt-2 text-center text-[10px] font-mono text-slate-300">- - - - - - - - - - - - - - - - - - - - - - -</div>
         </div>
