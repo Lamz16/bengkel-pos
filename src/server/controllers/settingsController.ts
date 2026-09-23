@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { settingsService } from '../container';
+import { recordAudit } from '../services/auditLogService';
 
 export class SettingsController {
   async getSettings(_req: Request, res: Response) {
@@ -13,7 +14,9 @@ export class SettingsController {
 
   async updateSettings(req: Request, res: Response) {
     try {
+      const before = await settingsService.getSettings();
       const updated = await settingsService.updateSettings(req.body);
+      await recordAudit(req, { action: 'Mengubah pengaturan bengkel', entity: 'CompanySettings', entityId: updated.id || 'settings-default', before, after: updated, description: 'Pengaturan bengkel diperbarui.' });
       res.json(updated);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Gagal memperbarui pengaturan bengkel' });

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { workshopService } from '../container';
+import { recordAudit } from '../services/auditLogService';
 
 export class ServiceController {
   async getServices(req: Request, res: Response) {
@@ -32,6 +33,7 @@ export class ServiceController {
         return res.status(400).json({ error: 'Data transaksi tidak lengkap.', details: { customerName: !customerName?.trim() ? 'Nama pelanggan wajib diisi.' : undefined, vehiclePlate: !isSale && !vehiclePlate?.trim() ? 'Nomor polisi wajib diisi untuk transaksi servis.' : undefined, totalAmount: totalAmount === undefined ? 'Total transaksi wajib diisi.' : undefined, receiptType: receiptType || 'SERVICE' } });
       }
       const service = await workshopService.createService(req.body);
+      await recordAudit(req, { action: 'Membuat transaksi', entity: 'WorkshopService', entityId: service.id, after: service, description: `Transaksi ${service.invoiceNumber || service.id} dibuat.` });
       res.status(201).json(service);
     } catch (err: any) {
       const status = String(err.message).includes('tidak mencukupi') ? 409 : 500;
@@ -43,8 +45,10 @@ export class ServiceController {
     try {
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      const before = await workshopService.getService(req.params.id);
       const updated = await workshopService.updateService(req.params.id, req.body, expVer);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
+      await recordAudit(req, { action: 'Mengubah transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Transaksi ${updated.invoiceNumber || updated.id} diperbarui.` });
       res.json(updated);
     } catch (err: any) {
       const message = err.message || 'Gagal mengubah order servis';
@@ -60,10 +64,12 @@ export class ServiceController {
         return res.status(400).json({ error: 'Status pengerjaan servis wajib diisi.' });
       }
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      const before = await workshopService.getService(req.params.id);
       const updated = await (workshopService as any).serviceRepo.updateStatus(req.params.id, status, expVer);
       if (!updated) {
         return res.status(404).json({ error: 'Order servis tidak ditemukan' });
       }
+      await recordAudit(req, { action: 'Mengubah status transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Status transaksi ${updated.invoiceNumber || updated.id} diubah menjadi ${status}.` });
       res.json(updated);
     } catch (err: any) {
       const isConflict = String(err.message).includes('Optimistic Lock') || String(err.message).includes('telah diubah oleh kasir');
@@ -75,8 +81,10 @@ export class ServiceController {
     try {
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      const before = await workshopService.getService(req.params.id);
       const updated = await (workshopService as any).serviceRepo.markPaid(req.params.id, expVer);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan' });
+      await recordAudit(req, { action: 'Melunasi transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran transaksi ${updated.invoiceNumber || updated.id} ditandai lunas.` });
       res.json(updated);
     } catch (err: any) {
       const isConflict = String(err.message).includes('telah diubah oleh kasir');
@@ -101,7 +109,9 @@ export class ServiceController {
     }
   }  async processReturn(req: Request, res: Response) {
     try {
+      const before = await workshopService.getService(req.params.id);
       const result = await workshopService.processReturn({ serviceId: req.params.id, reason: req.body.reason, items: req.body.items || [] });
+      await recordAudit(req, { action: 'Memproses retur transaksi', entity: 'WorkshopService', entityId: result.id, before, after: result, description: `Retur diproses untuk transaksi ${result.invoiceNumber || result.id}.` });
       res.json(result);
     } catch (err: any) {
       const message = err.message || 'Gagal memproses retur barang';

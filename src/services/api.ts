@@ -122,7 +122,7 @@ export interface ApiHealthStatus {
   postgresConnected?: boolean;
 }
 export interface ActivityLogPage {
-  data: Array<{ id: string; createdAt: string; userName?: string | null; role?: string | null; action: string; statusCode: number; success: boolean; description: string; technicalDetail?: string | null }>;
+  data: Array<{ id: string; createdAt: string; userName?: string | null; role?: string | null; action: string; statusCode: number; success: boolean; category: string; entity?: string | null; entityId?: string | null; changedFields?: string | null; beforeData?: string | null; afterData?: string | null; description: string; technicalDetail?: string | null }>;
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
@@ -218,15 +218,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  async getActivityLogs(params: { page?: number; status?: 'all' | 'success' | 'error' } = {}): Promise<ActivityLogPage> {
+  async getActivityLogs(params: { page?: number; status?: 'all' | 'success' | 'error'; category?: 'all' | 'activity' | 'audit' } = {}): Promise<ActivityLogPage> {
     const query = new URLSearchParams({ page: String(params.page || 1), limit: '25' });
     if (params.status && params.status !== 'all') query.set('status', params.status);
+    if (params.category && params.category !== 'all') query.set('category', params.category);
     return request<ActivityLogPage>(`/api/logs?${query.toString()}`);
   },
-  async exportActivityLogs(status: 'all' | 'success' | 'error'): Promise<Blob> {
+  async exportActivityLogs(status: 'all' | 'success' | 'error', category: 'all' | 'activity' | 'audit' = 'all'): Promise<Blob> {
     const token = getAuthToken();
-    const query = status === 'all' ? '' : `?status=${status}`;
-    const res = await fetch(`/api/logs/export${query}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    const query = new URLSearchParams(); if (status !== 'all') query.set('status', status); if (category !== 'all') query.set('category', category);
+    const res = await fetch(`/api/logs/export${query.size ? `?${query}` : ''}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) throw new Error('Gagal mengekspor log aktivitas.');
     return res.blob();
   },

@@ -487,12 +487,20 @@ model ActivityLog {
   action      String
   statusCode  Int
   success     Boolean
+  category    String   @default("ACTIVITY")
+  entity      String?
+  entityId    String?
+  changedFields String? @db.Text
+  beforeData  String?  @db.Text
+  afterData   String?  @db.Text
   description String   @db.Text
   technicalDetail String? @db.Text
 
   @@index([createdAt])
   @@index([statusCode, createdAt])
   @@index([role, createdAt])
+  @@index([category, createdAt])
+  @@index([entity, entityId, createdAt])
 }
 
 

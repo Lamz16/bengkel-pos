@@ -11,7 +11,8 @@ export class ActivityLogController {
       const page = Math.max(1, Number(req.query.page || 1));
       const limit = Math.min(100, Math.max(1, Number(req.query.limit || 25)));
       const status = this.getFilter(req.query.status);
-      const where = status === undefined ? {} : { success: status };
+      const category = req.query.category === 'audit' ? 'AUDIT' : req.query.category === 'activity' ? 'ACTIVITY' : undefined;
+      const where = { ...(status === undefined ? {} : { success: status }), ...(category ? { category } : {}) };
       const [total, data] = await Promise.all([
         prisma.activityLog.count({ where }),
         prisma.activityLog.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit }),
@@ -25,7 +26,8 @@ export class ActivityLogController {
   async export(req: Request, res: Response) {
     try {
       const status = this.getFilter(req.query.status);
-      const where = status === undefined ? {} : { success: status };
+      const category = req.query.category === 'audit' ? 'AUDIT' : req.query.category === 'activity' ? 'ACTIVITY' : undefined;
+      const where = { ...(status === undefined ? {} : { success: status }), ...(category ? { category } : {}) };
       const filename = `bengkel-pos-log-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
       res.status(200);
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -48,6 +50,9 @@ export class ActivityLogController {
             try { res.write(`${JSON.stringify(JSON.parse(log.technicalDetail), null, 2)}\\n`); }
             catch { res.write(`${log.technicalDetail}\\n`); }
           }
+          if (log.changedFields) res.write(`Field berubah: ${log.changedFields}\\n`);
+          if (log.beforeData) res.write(`Sebelum:\\n${log.beforeData}\\n`);
+          if (log.afterData) res.write(`Sesudah:\\n${log.afterData}\\n`);
           res.write('\\n');
         }
         if (batch.length < 500) break;
