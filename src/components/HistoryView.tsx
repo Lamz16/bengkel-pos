@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, History, Printer } from 'lucide-react';
 import { WorkshopService } from '../types';
 import { cn } from '../lib/utils';
@@ -8,26 +8,35 @@ interface HistoryViewProps {
   onSelect: (id: string) => void;
   onPrint: (id: string) => void;
   initialFilter?: string;
+  pagination?: { page: number; limit: number; total: number; totalPages: number };
+  isLoading?: boolean;
+  onQueryChange?: (query: { page: number; search: string; status: string }) => void;
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({ 
   services, 
   onSelect, 
   onPrint, 
-  initialFilter 
+  initialFilter,
+  pagination,
+  isLoading = false,
+  onQueryChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState(initialFilter || 'All');
   
-  const filtered = useMemo(() => {
-    return services.filter(s => {
-      const matchSearch = s.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          s.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          s.vehicleModel.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchStatus = statusFilter === 'All' || s.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [services, searchTerm, statusFilter]);
+  useEffect(() => {
+    if (!onQueryChange) return;
+    const timer = window.setTimeout(() => {
+      onQueryChange({ page: 1, search: searchTerm, status: statusFilter });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchTerm, statusFilter, onQueryChange]);
+
+  const changePage = (page: number) => {
+    if (!onQueryChange || !pagination || page < 1 || page > pagination.totalPages) return;
+    onQueryChange({ page, search: searchTerm, status: statusFilter });
+  };
 
   return (
     <div className="space-y-4">
@@ -56,7 +65,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       </div>
 
       <div className="space-y-3">
-        {filtered.map((service) => (
+        {services.map((service) => (
           <div 
             key={service.id} 
             onClick={() => onSelect(service.id)}
@@ -112,13 +121,23 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             </button>
           </div>
         ))}
-        {filtered.length === 0 && (
+        {!isLoading && services.length === 0 && (
           <div className="p-12 text-center opacity-40">
             <History className="w-12 h-12 mx-auto mb-2" />
             <p className="text-xs font-black uppercase tracking-widest">No matching history</p>
           </div>
         )}
+        {isLoading && <div className="p-8 text-center text-xs font-bold text-slate-400">Memuat transaksi…</div>}
       </div>
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <p className="text-[10px] font-bold text-slate-400">Halaman {pagination.page} dari {pagination.totalPages} · {pagination.total} transaksi</p>
+          <div className="flex gap-2">
+            <button onClick={() => changePage(pagination.page - 1)} disabled={pagination.page <= 1 || isLoading} className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold disabled:opacity-40">Sebelumnya</button>
+            <button onClick={() => changePage(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages || isLoading} className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold disabled:opacity-40">Berikutnya</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

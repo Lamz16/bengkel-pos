@@ -5,7 +5,8 @@ import {
   IDeductionRepository,
   IMechanicRepository 
 } from '../repositories/interfaces';
-import { WorkshopService } from '../../types';
+import { PaginatedResult, WorkshopService } from '../../types';
+import { PaginationParams } from '../repositories/interfaces';
 import { isDbConnected, prisma } from '../db/connection';
 
 export class WorkshopServiceLayer {
@@ -19,6 +20,10 @@ export class WorkshopServiceLayer {
 
   async getServices(): Promise<WorkshopService[]> {
     return this.serviceRepo.getAll();
+  }
+
+  async getPaginatedServices(params: PaginationParams): Promise<PaginatedResult<WorkshopService>> {
+    return this.serviceRepo.getPaginated(params);
   }
 
   async getServiceById(id: string): Promise<WorkshopService | null> {

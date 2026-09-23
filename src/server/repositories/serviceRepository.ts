@@ -72,7 +72,7 @@ export class ServiceRepository implements IServiceRepository {
 
   async getPaginated(params: PaginationParams): Promise<PaginatedResult<WorkshopService>> {
     const page = Math.max(1, params.page || 1);
-    const limit = Math.max(1, params.limit || 10);
+    const limit = Math.min(100, Math.max(1, params.limit || 25));
     const search = params.search?.trim().toLowerCase() || '';
     const status = params.status;
 

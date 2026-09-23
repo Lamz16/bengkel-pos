@@ -4,6 +4,7 @@ import {
   Vehicle,
   SparePart,
   WorkshopService,
+  PaginatedResult,
   Mechanic,
   MechanicDeduction,
   MechanicAttendance,
@@ -27,6 +28,7 @@ export interface BootstrapResponse {
   vehicles: Vehicle[];
   parts: SparePart[];
   services: WorkshopService[];
+  servicesPagination?: PaginatedResult<WorkshopService>['pagination'];
   mechanics: Mechanic[];
   deductions: MechanicDeduction[];
   attendances: MechanicAttendance[];
@@ -394,8 +396,13 @@ export const api = {
   },
 
   // Services
-  async getServices(): Promise<WorkshopService[]> {
-    return request<WorkshopService[]>('/api/services');
+  async getServices(params: { page?: number; limit?: number; search?: string; status?: string } = {}): Promise<PaginatedResult<WorkshopService>> {
+    const query = new URLSearchParams();
+    query.set('page', String(params.page || 1));
+    query.set('limit', String(params.limit || 25));
+    if (params.search?.trim()) query.set('search', params.search.trim());
+    if (params.status && params.status !== 'All') query.set('status', params.status);
+    return request<PaginatedResult<WorkshopService>>(`/api/services?${query.toString()}`);
   },
 
   async createService(serviceData: WorkshopService): Promise<WorkshopService> {

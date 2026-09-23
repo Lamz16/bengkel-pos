@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
   LayoutDashboard, 
   Wrench, 
@@ -255,6 +255,19 @@ export default function AppLayout() {
       mechanicBonusAmount: 7000
     }
   ]);
+  const [servicesPagination, setServicesPagination] = useState({ page: 1, limit: 25, total: 0, totalPages: 1 });
+  const [isServicesLoading, setIsServicesLoading] = useState(false);
+
+  const loadServices = useCallback(async (params: { page?: number; search?: string; status?: string } = {}) => {
+    setIsServicesLoading(true);
+    try {
+      const result = await api.getServices({ limit: 25, ...params });
+      setServices(result.data);
+      setServicesPagination(result.pagination);
+    } finally {
+      setIsServicesLoading(false);
+    }
+  }, []);
 
   // Company Settings
   const [companySettings, setCompanySettings] = useState<CompanySettings>({
@@ -444,7 +457,8 @@ export default function AppLayout() {
         if (data.customers && data.customers.length > 0) setCustomers(data.customers);
         if (data.vehicles && data.vehicles.length > 0) setVehicles(data.vehicles);
         if (data.parts && data.parts.length > 0) setParts(data.parts);
-        if (data.services && data.services.length > 0) setServices(data.services);
+        if (data.services) setServices(data.services);
+        if (data.servicesPagination) setServicesPagination(data.servicesPagination);
         if (data.mechanics && data.mechanics.length > 0) setMechanics(data.mechanics);
         if (data.deductions) setDeductions(data.deductions);
         if (data.attendances) setAttendances(data.attendances);
@@ -528,11 +542,10 @@ export default function AppLayout() {
     try {
       const updatedSrv = await api.applyWarrantyClaim(data);
       setServices(prev => prev.map(s => s.id === data.serviceId ? updatedSrv : s));
-      const [updatedServices, updatedDeductions] = await Promise.all([
-        api.getServices(),
+      const [, updatedDeductions] = await Promise.all([
+        loadServices({ page: servicesPagination.page }),
         api.getDeductions()
       ]);
-      setServices(updatedServices);
       setDeductions(updatedDeductions);
     } catch (err) {
       console.error('Error applying warranty claim:', err);
@@ -993,6 +1006,9 @@ export default function AppLayout() {
                   services={services} 
                   onSelect={setSelectedServiceId} 
                   onPrint={setSelectedInvoiceId} 
+                  pagination={servicesPagination}
+                  isLoading={isServicesLoading}
+                  onQueryChange={loadServices}
                 />
               </motion.div>
             )}
@@ -1008,6 +1024,9 @@ export default function AppLayout() {
                   onSelect={setSelectedServiceId} 
                   onPrint={setSelectedInvoiceId}
                   initialFilter="In Progress" 
+                  pagination={servicesPagination}
+                  isLoading={isServicesLoading}
+                  onQueryChange={loadServices}
                 />
               </motion.div>
             )}

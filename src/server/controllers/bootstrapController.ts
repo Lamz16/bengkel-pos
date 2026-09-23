@@ -20,7 +20,7 @@ export class BootstrapController {
         customers,
         vehicles,
         parts,
-        services,
+        servicePage,
         mechanics,
         deductions,
         attendances,
@@ -37,7 +37,10 @@ export class BootstrapController {
         customerService.getCustomers(),
         customerService.getVehicles(),
         inventoryService.getParts(),
-        workshopService.getServices(),
+        // Riwayat transaksi adalah tabel yang paling cepat tumbuh. Bootstrap
+        // hanya membawa halaman pertama agar login tidak mengirim seluruh
+        // data transaksi dan seluruh itemnya ke browser.
+        workshopService.getPaginatedServices({ page: 1, limit: 25 }),
         mechanicService.getMechanics(),
         mechanicService.getDeductions(),
         mechanicService.getAttendances(),
@@ -56,7 +59,8 @@ export class BootstrapController {
         customers,
         vehicles,
         parts,
-        services,
+        services: servicePage.data,
+        servicesPagination: servicePage.pagination,
         mechanics,
         deductions,
         attendances,

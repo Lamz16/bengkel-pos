@@ -4,18 +4,21 @@ import { workshopService } from '../container';
 export class ServiceController {
   async getServices(req: Request, res: Response) {
     try {
-      const page = req.query.page ? Number(req.query.page) : undefined;
-      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const requestedPage = Number(req.query.page || 1);
+      const requestedLimit = Number(req.query.limit || 25);
+      const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+      // Batas ini menjaga satu respons tetap kecil, termasuk ketika sebuah
+      // transaksi mempunyai banyak item sparepart/jasa.
+      const limit = Number.isSafeInteger(requestedLimit)
+        ? Math.min(Math.max(requestedLimit, 1), 100)
+        : 25;
       const search = req.query.search as string | undefined;
       const status = req.query.status as string | undefined;
 
-      if (page || limit || search || status) {
-        const paginated = await (workshopService as any).serviceRepo.getPaginated({ page, limit, search, status });
-        return res.json(paginated);
-      }
-
-      const services = await workshopService.getServices();
-      res.json(services);
+      // Riwayat transaksi selalu dipaginasi. Jangan kembalikan seluruh tabel
+      // saat parameter query tidak diberikan.
+      const paginated = await workshopService.getPaginatedServices({ page, limit, search, status });
+      return res.json(paginated);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Gagal memuat daftar servis' });
     }
