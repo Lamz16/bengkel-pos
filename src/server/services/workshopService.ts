@@ -209,6 +209,27 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.markPaid(id);
   }
 
+  async addPayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string }): Promise<WorkshopService | null> {
+    if (!isDbConnected()) throw new Error('Pembayaran transaksi memerlukan koneksi database.');
+    const amount = Number(data.amount);
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error('Nominal pembayaran harus lebih besar dari nol.');
+    if (!['Cash', 'Transfer', 'QRIS'].includes(data.paymentMethod)) throw new Error('Metode pembayaran tidak valid.');
+    const paymentDate = data.paymentDate ? new Date(data.paymentDate) : new Date();
+    if (Number.isNaN(paymentDate.getTime())) throw new Error('Tanggal pembayaran tidak valid.');
+
+    await prisma.$transaction(async tx => {
+      const service = await tx.workshopService.findUnique({ where: { id }, include: { payments: true } });
+      if (!service) throw new Error('Order servis tidak ditemukan.');
+      const paid = service.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+      const remaining = Number(service.totalAmount) - paid;
+      if (amount > remaining + 0.01) throw new Error(`Nominal melebihi sisa tagihan (${remaining.toLocaleString('id-ID')}).`);
+      const nextPaid = paid + amount;
+      await tx.servicePayment.create({ data: { serviceId: id, amount, paymentMethod: data.paymentMethod, referenceNo: data.referenceNo || null, notes: data.notes || null, paymentDate } });
+      await tx.workshopService.update({ where: { id }, data: { paymentStatus: nextPaid + 0.01 >= Number(service.totalAmount) ? 'Paid' : 'Partial', version: { increment: 1 } } });
+    });
+    return this.serviceRepo.getById(id);
+  }
+
   async processReturn(data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }): Promise<WorkshopService> {
     if (!isDbConnected()) throw new Error('Retur memerlukan koneksi database.');
     const requests = data.items.filter(item => item.partId && Number.isInteger(item.quantity) && item.quantity > 0);

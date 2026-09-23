@@ -92,6 +92,18 @@ export class ServiceController {
     }
   }
 
+  async addPayment(req: Request, res: Response) {
+    try {
+      const before = await workshopService.getService(req.params.id);
+      const updated = await workshopService.addPayment(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
+      await recordAudit(req, { action: 'Mencatat pembayaran transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran ${req.body.paymentMethod} sebesar ${Number(req.body.amount).toLocaleString('id-ID')} dicatat untuk transaksi ${updated.invoiceNumber || updated.id}.` });
+      res.status(201).json(updated);
+    } catch (err: any) {
+      res.status(/nominal|metode|tanggal|melebihi/.test(String(err.message)) ? 400 : 500).json({ error: err.message || 'Gagal mencatat pembayaran transaksi.' });
+    }
+  }
+
   async claimWarranty(req: Request, res: Response) {
     try {
       const { reason, isAbsentNextDay } = req.body;

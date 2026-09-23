@@ -444,6 +444,9 @@ export const api = {
       method: 'PUT', body: JSON.stringify({}),
     });
   },
+  async addServicePayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string }): Promise<WorkshopService> {
+    return request<WorkshopService>(`/api/services/${id}/payments`, { method: 'POST', body: JSON.stringify(data) });
+  },
 
   async processReturn(serviceId: string, data: { reason?: string; items: Array<{ partId: string; quantity: number }> }): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${serviceId}/returns`, { method: 'POST', body: JSON.stringify(data) });

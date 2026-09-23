@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, BadgeCheck, CreditCard, Wrench, MapPin, RotateCcw, Pencil } from 'lucide-react';
-import { WorkshopService, ServiceStatus, SparePart } from '../types';
+import { WorkshopService, ServiceStatus, SparePart, ServicePaymentMethod } from '../types';
 import { cn } from '../lib/utils';
 import { formatPartLocation } from '../utils/inventory';
 
@@ -8,7 +8,7 @@ interface ServiceDetailProps {
   service: WorkshopService;
   parts?: SparePart[];
   onUpdateStatus: (id: string, s: ServiceStatus) => void;
-  onMarkPaid: (id: string) => void;
+  onAddPayment: (id: string, payment: { amount: number; paymentMethod: ServicePaymentMethod; referenceNo?: string; notes?: string }) => Promise<void>;
   onEdit?: (service: WorkshopService) => void;
   onOpenWarrantyClaim?: (service: WorkshopService) => void;
   onProcessReturn?: (data: { serviceId: string; reason?: string; items: Array<{ partId: string; quantity: number }> }) => Promise<void>;
@@ -18,7 +18,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
   service, 
   parts = [],
   onUpdateStatus, 
-  onMarkPaid, onEdit,
+  onAddPayment, onEdit,
   onOpenWarrantyClaim,
   onProcessReturn
 }) => {
@@ -26,9 +26,16 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
   const [returnReason, setReturnReason] = useState('');
   const [returnQty, setReturnQty] = useState<Record<string, number>>({});
   const [isReturning, setIsReturning] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<ServicePaymentMethod>('Cash');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
   const calculatedBonus = service.mechanicBonusAmount !== undefined 
     ? service.mechanicBonusAmount 
     : Math.round(((service.laborFee || 0) * (service.mechanicBonusPercent || 0)) / 100);
+  const paidAmount = (service.payments || []).reduce((total, payment) => total + payment.amount, 0);
+  const legacyPaidAmount = service.paymentStatus === 'Paid' && paidAmount === 0 ? service.totalAmount : paidAmount;
+  const remainingAmount = Math.max(0, service.totalAmount - legacyPaidAmount);
 
   return (
     <div className="space-y-6">
@@ -150,17 +157,11 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
         </div>
       </div>
 
-      <div className={cn(
-        'p-4 rounded-2xl border flex items-center justify-between gap-3',
-        service.paymentStatus === 'Paid' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'
-      )}>
-        <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', service.paymentStatus === 'Paid' ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white')}>
-            {service.paymentStatus === 'Paid' ? <BadgeCheck className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
-          </div>
-          <div><p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Status Pembayaran</p><p className={cn('text-sm font-black', service.paymentStatus === 'Paid' ? 'text-emerald-700' : 'text-amber-800')}>{service.paymentStatus === 'Paid' ? 'Lunas' : 'Belum Lunas'}</p></div>
-        </div>
-        {service.paymentStatus !== 'Paid' && <button type="button" onClick={() => onMarkPaid(service.id)} className="shrink-0 px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider">Tandai Lunas</button>}
+      <div className={cn('p-4 rounded-2xl border space-y-3', service.paymentStatus === 'Paid' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200')}>
+        <div className="flex items-center gap-3"><div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', service.paymentStatus === 'Paid' ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white')}>{service.paymentStatus === 'Paid' ? <BadgeCheck className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}</div><div><p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Status Pembayaran</p><p className={cn('text-sm font-black', service.paymentStatus === 'Paid' ? 'text-emerald-700' : 'text-amber-800')}>{service.paymentStatus === 'Paid' ? 'Lunas' : service.paymentStatus === 'Partial' ? 'Bayar Sebagian' : 'Belum Lunas'}</p></div></div>
+        <div className="grid grid-cols-3 gap-2 text-center text-[10px]"><div><p className="text-slate-400 font-bold">TAGIHAN</p><p className="font-black">Rp {service.totalAmount.toLocaleString()}</p></div><div><p className="text-slate-400 font-bold">TERBAYAR</p><p className="font-black text-emerald-700">Rp {legacyPaidAmount.toLocaleString()}</p></div><div><p className="text-slate-400 font-bold">SISA</p><p className="font-black text-amber-700">Rp {remainingAmount.toLocaleString()}</p></div></div>
+        {(service.payments || []).length > 0 && <div className="border-t border-amber-200/70 pt-2 space-y-1">{service.payments!.map(payment => <div key={payment.id} className="flex justify-between text-[10px] text-slate-600"><span>{new Date(payment.paymentDate).toLocaleString('id-ID')} · <b>{payment.paymentMethod}</b>{payment.referenceNo ? ` (${payment.referenceNo})` : ''}</span><b>Rp {payment.amount.toLocaleString()}</b></div>)}</div>}
+        {remainingAmount > 0 && <div className="border-t border-amber-200/70 pt-3 grid grid-cols-2 gap-2"><input value={paymentAmount} onChange={event => setPaymentAmount(event.target.value.replace(/\D/g, ''))} placeholder="Nominal bayar" inputMode="numeric" className="h-10 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold"/><select value={paymentMethod} onChange={event => setPaymentMethod(event.target.value as ServicePaymentMethod)} className="h-10 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold"><option value="Cash">Cash</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option></select>{paymentMethod !== 'Cash' && <input value={paymentReference} onChange={event => setPaymentReference(event.target.value)} placeholder="No. referensi (opsional)" className="col-span-2 h-10 rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold"/>}<button type="button" disabled={isSavingPayment || !Number(paymentAmount)} onClick={async () => { setIsSavingPayment(true); try { await onAddPayment(service.id, { amount: Number(paymentAmount), paymentMethod, referenceNo: paymentReference || undefined }); setPaymentAmount(''); setPaymentReference(''); } catch (error: any) { alert(error.message || 'Pembayaran gagal dicatat.'); } finally { setIsSavingPayment(false); } }} className="col-span-2 h-11 rounded-xl bg-emerald-600 text-xs font-black text-white disabled:opacity-60">{isSavingPayment ? 'Menyimpan...' : 'Catat Pembayaran'}</button></div>}
       </div>
 
       {service.status === 'Done' && onProcessReturn && service.partsUsed.some(item => item.quantity > (item.returnedQuantity || 0)) && (

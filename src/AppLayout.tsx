@@ -657,13 +657,13 @@ export default function AppLayout() {
     }
   };
 
-  const handleMarkServicePaid = async (id: string) => {
+  const handleAddServicePayment = async (id: string, payment: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string }) => {
     try {
-      const updated = await api.markServicePaid(id);
+      const updated = await api.addServicePayment(id, payment);
       setServices(prev => prev.map(service => service.id === id ? updated : service));
     } catch (err) {
-      console.error('Error updating payment status in backend:', err);
-      alert(err instanceof Error ? err.message : 'Status pembayaran gagal diperbarui.');
+      console.error('Error adding payment in backend:', err);
+      throw err;
     }
   };
 
@@ -1218,7 +1218,7 @@ export default function AppLayout() {
                 service={selectedService} 
                 parts={parts}
                 onUpdateStatus={handleUpdateStatus}
-                onMarkPaid={handleMarkServicePaid}
+                onAddPayment={handleAddServicePayment}
                 onEdit={(service) => { setSelectedServiceId(null); setEditingService(service); setShowPOSForm(true); }}
                 onProcessReturn={handleProcessReturn}
                 onOpenWarrantyClaim={(srv) => {

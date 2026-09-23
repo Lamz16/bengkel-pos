@@ -201,7 +201,8 @@ export interface WorkshopService {
   serviceItems?: Array<{ name: string; price: number }>;
   laborFee: number;
   totalAmount: number;
-  paymentStatus: 'Unpaid' | 'Paid';
+  paymentStatus: 'Unpaid' | 'Partial' | 'Paid';
+  payments?: ServicePayment[];
   // Customer loyalty discount & promo tracking
   discountAmount?: number;
   discountReason?: string;
@@ -223,6 +224,17 @@ export interface WorkshopService {
   serviceWarrantyTermsSnapshot?: string;
   serviceWarrantyExpiresAt?: string;
   version?: number;
+}
+
+export type ServicePaymentMethod = 'Cash' | 'Transfer' | 'QRIS';
+export interface ServicePayment {
+  id: string;
+  serviceId: string;
+  amount: number;
+  paymentMethod: ServicePaymentMethod;
+  referenceNo?: string;
+  notes?: string;
+  paymentDate: string;
 }
 
 export interface StockHistory {

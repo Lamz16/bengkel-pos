@@ -8,7 +8,7 @@ export class ServiceRepository implements IServiceRepository {
     if (isDbConnected()) {
       try {
         const list = await prisma.workshopService.findMany({
-          include: { partsUsed: true, serviceItems: true },
+          include: { partsUsed: true, serviceItems: true, payments: { orderBy: { paymentDate: 'desc' } } },
           orderBy: { createdAt: 'desc' }
         });
         return list.map(s => ({
@@ -44,6 +44,7 @@ export class ServiceRepository implements IServiceRepository {
           laborFee: Number(s.laborFee),
           totalAmount: Number(s.totalAmount),
           paymentStatus: s.paymentStatus as any,
+          payments: s.payments.map(payment => ({ id: payment.id, serviceId: payment.serviceId, amount: Number(payment.amount), paymentMethod: payment.paymentMethod as any, referenceNo: payment.referenceNo || undefined, notes: payment.notes || undefined, paymentDate: payment.paymentDate.toISOString() })),
           discountAmount: s.discountAmount == null ? undefined : Number(s.discountAmount),
           discountReason: s.discountReason || undefined,
           mechanicId: s.mechanicId || undefined,
@@ -99,7 +100,7 @@ export class ServiceRepository implements IServiceRepository {
         const total = await prisma.workshopService.count({ where });
         const list = await prisma.workshopService.findMany({
           where,
-          include: { partsUsed: true, serviceItems: true },
+          include: { partsUsed: true, serviceItems: true, payments: { orderBy: { paymentDate: 'desc' } } },
           orderBy: { createdAt: 'desc' },
           skip: (page - 1) * limit,
           take: limit,
@@ -138,6 +139,7 @@ export class ServiceRepository implements IServiceRepository {
             laborFee: Number(s.laborFee),
             totalAmount: Number(s.totalAmount),
             paymentStatus: s.paymentStatus as any,
+            payments: s.payments.map(payment => ({ id: payment.id, serviceId: payment.serviceId, amount: Number(payment.amount), paymentMethod: payment.paymentMethod as any, referenceNo: payment.referenceNo || undefined, notes: payment.notes || undefined, paymentDate: payment.paymentDate.toISOString() })),
             discountAmount: s.discountAmount == null ? undefined : Number(s.discountAmount),
             discountReason: s.discountReason || undefined,
             mechanicId: s.mechanicId || undefined,
@@ -192,7 +194,7 @@ export class ServiceRepository implements IServiceRepository {
       try {
         const s = await prisma.workshopService.findUnique({
           where: { id },
-          include: { partsUsed: true, serviceItems: true }
+          include: { partsUsed: true, serviceItems: true, payments: { orderBy: { paymentDate: 'desc' } } }
         });
         if (s) {
           return {
@@ -227,6 +229,7 @@ export class ServiceRepository implements IServiceRepository {
             laborFee: Number(s.laborFee),
             totalAmount: Number(s.totalAmount),
             paymentStatus: s.paymentStatus as any,
+            payments: s.payments.map(payment => ({ id: payment.id, serviceId: payment.serviceId, amount: Number(payment.amount), paymentMethod: payment.paymentMethod as any, referenceNo: payment.referenceNo || undefined, notes: payment.notes || undefined, paymentDate: payment.paymentDate.toISOString() })),
             discountAmount: s.discountAmount == null ? undefined : Number(s.discountAmount),
             discountReason: s.discountReason || undefined,
             mechanicId: s.mechanicId || undefined,
@@ -323,12 +326,7 @@ export class ServiceRepository implements IServiceRepository {
 
         await prisma.workshopService.update({
           where: { id },
-          data: { 
-            status,
-            // Servis yang selesai tidak boleh masih berstatus belum lunas.
-            ...(status === 'Done' ? { paymentStatus: 'Paid' } : {}),
-            version: { increment: 1 }
-          }
+          data: { status, version: { increment: 1 } }
         });
         return (await this.getAll()).find(service => service.id === id) || null;
       } catch (err: any) {
@@ -348,7 +346,6 @@ export class ServiceRepository implements IServiceRepository {
     memoryStore.services[idx] = { 
       ...current, 
       status: status as any,
-      ...(status === 'Done' ? { paymentStatus: 'Paid' as const } : {}),
       version: newVersion
     };
     return memoryStore.services[idx];

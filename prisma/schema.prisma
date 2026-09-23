@@ -212,7 +212,7 @@ model WorkshopService {
   status                  String            @default("In Progress") // "Pending" | "In Progress" | "Ready" | "Done"
   laborFee                Decimal           @default(0) @db.Decimal(18, 2)
   totalAmount             Decimal           @default(0) @db.Decimal(18, 2)
-  paymentStatus           String            @default("Unpaid") // "Unpaid" | "Paid"
+  paymentStatus           String            @default("Unpaid") // "Unpaid" | "Partial" | "Paid"
   discountAmount          Decimal?          @default(0) @db.Decimal(18, 2)
   discountReason          String?
   mechanicId              String?
@@ -239,6 +239,22 @@ model WorkshopService {
   partsUsed               ServicePartItem[]
   returns                 SalesReturn[]
   serviceItems            ServiceLaborItem[]
+  payments                ServicePayment[]
+}
+
+model ServicePayment {
+  id            String          @id @default(uuid())
+  serviceId     String
+  amount        Decimal         @db.Decimal(18, 2)
+  paymentMethod String
+  referenceNo   String?
+  notes         String?
+  paymentDate   DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  service       WorkshopService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, paymentDate])
+  @@index([paymentMethod, paymentDate])
 }
 
 model SalesReturn {
