@@ -476,6 +476,24 @@ model IdempotencyRecord {
   @@index([expiresAt])
 }
 
+model ActivityLog {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  userId      String?
+  userName    String?
+  role        String?
+  method      String
+  path        String
+  action      String
+  statusCode  Int
+  success     Boolean
+  description String   @db.Text
+
+  @@index([createdAt])
+  @@index([statusCode, createdAt])
+  @@index([role, createdAt])
+}
+
 
 model RackLevel {
   id        String @id @default(uuid())

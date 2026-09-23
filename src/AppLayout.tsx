@@ -12,6 +12,7 @@ import {
   Settings, 
   Award,
   Calendar as CalendarIcon,
+  ScrollText,
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -44,6 +45,7 @@ import { MechanicForm } from './components/MechanicForm';
 import { WarrantyClaimModal } from './components/WarrantyClaimModal';
 import { ManualDeductionForm } from './components/ManualDeductionForm';
 import { DistributorTempoView } from './components/DistributorTempoView';
+import { ActivityLogView } from './components/ActivityLogView';
 
 // Modular Form Components
 import { StaffForm } from './components/forms/StaffForm';
@@ -78,7 +80,7 @@ export default function AppLayout() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => window.location.pathname === '/log' ? 'logs' : 'dashboard');
   const [showPOSForm, setShowPOSForm] = useState(false);
   const [editingService, setEditingService] = useState<WorkshopService | null>(null);
   const [saleCart, setSaleCart] = useState<Array<{ partId: string; quantity: number }>>([]);
@@ -432,6 +434,7 @@ export default function AppLayout() {
     { id: 'suppliers', label: 'Pemasok', icon: Store, roles: ['Owner'] },
     { id: 'expenses', label: 'Pengeluaran', icon: Wallet, roles: ['Owner'] },
     { id: 'reports', label: 'Laporan', icon: TrendingUp, roles: ['Owner'] },
+    { id: 'logs', label: 'Log Sistem', icon: ScrollText, roles: ['Owner'] },
     { id: 'staff', label: 'Pengguna', icon: UserCircle, roles: ['Owner'] },
     { id: 'settings', label: 'Pengaturan', icon: Settings, roles: ['Owner', 'Admin'] },
   ], []);
@@ -984,6 +987,9 @@ export default function AppLayout() {
                   onNavigateToInventory={() => setActiveTab('inventory')}
                 />
               </motion.div>
+            )}
+            {!showPOSForm && activeTab === 'logs' && currentUser.role === 'Owner' && (
+              <motion.div key="logs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}><ActivityLogView /></motion.div>
             )}
 
             {!showPOSForm && activeTab === 'pos' && (

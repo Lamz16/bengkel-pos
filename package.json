@@ -17,6 +17,7 @@
     "db:migrate:product-warranty": "prisma db execute --file prisma/migrations/20260920160000_product_warranty_snapshots/migration.sql --schema prisma/schema.prisma",
     "db:migrate:service-labor-items": "prisma db execute --file prisma/migrations/20260920170000_service_labor_items/migration.sql --schema prisma/schema.prisma",
     "db:migrate:scale": "prisma db execute --file prisma/migrations/20260923040000_scale_indexes_and_idempotency_retention/migration.sql --schema prisma/schema.prisma",
+    "db:migrate:activity-logs": "prisma db execute --file prisma/migrations/20260923050000_activity_logs/migration.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts"
   },
   "prisma": {

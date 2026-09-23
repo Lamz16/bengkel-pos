@@ -121,6 +121,10 @@ export interface ApiHealthStatus {
   latencyMs?: number;
   postgresConnected?: boolean;
 }
+export interface ActivityLogPage {
+  data: Array<{ id: string; createdAt: string; userName?: string | null; role?: string | null; action: string; statusCode: number; success: boolean; description: string }>;
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
 
 export const ENDPOINTS = {
   SERVICES: {
@@ -214,6 +218,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  async getActivityLogs(params: { page?: number; status?: 'all' | 'success' | 'error' } = {}): Promise<ActivityLogPage> {
+    const query = new URLSearchParams({ page: String(params.page || 1), limit: '25' });
+    if (params.status && params.status !== 'all') query.set('status', params.status);
+    return request<ActivityLogPage>(`/api/logs?${query.toString()}`);
+  },
   // Bootstrap
   async getBootstrap(): Promise<BootstrapResponse> {
     return request<BootstrapResponse>('/api/bootstrap');

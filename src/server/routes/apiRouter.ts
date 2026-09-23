@@ -19,6 +19,8 @@ import { authorize, requireAuth } from '../auth';
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { systemMonitor } from '../middleware/monitoring';
 import { requireDatabase } from '../middleware/databaseRequired';
+import { activityLogger } from '../middleware/activityLogger';
+import { activityLogRouter } from './activityLogRoutes';
 
 export const apiRouter = Router();
 
@@ -41,12 +43,14 @@ apiRouter.get('/monitoring/metrics', (_req: Request, res: Response) => {
 apiRouter.use('/auth', authRouter);
 apiRouter.use(requireAuth, authorize('Owner', 'Admin'));
 apiRouter.use(requireDatabase);
+apiRouter.use(activityLogger);
 
 // Apply idempotency check for POST/PUT/PATCH write requests
 apiRouter.use(idempotencyMiddleware);
 
 // Bootstrap initial data
 apiRouter.get('/bootstrap', (req, res) => bootstrapController.getBootstrapData(req, res));
+apiRouter.use('/logs', activityLogRouter);
 
 // Resource routes
 apiRouter.use('/customers', customerRouter);
