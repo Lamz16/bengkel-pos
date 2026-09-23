@@ -506,6 +506,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <span className="text-xs font-black text-blue-700 uppercase">🥈 Silver Member</span>
                     <span className="text-[10px] font-bold text-slate-500">Tier 1</span>
                   </div>
+                  <div className="space-y-1"><label className="text-[9px] font-bold text-slate-500 uppercase">Nama Tier</label><input value={formData.loyaltySilverName ?? 'Silver'} onChange={e => setFormData({ ...formData, loyaltySilverName: e.target.value })} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900" placeholder="Contoh: Member" /></div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-slate-500 uppercase">Min. Servis / Transaksi</label>
                     <input
@@ -538,6 +539,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <span className="text-xs font-black text-amber-600 uppercase">🥇 Gold Member</span>
                     <span className="text-[10px] font-bold text-slate-500">Tier 2</span>
                   </div>
+                  <div className="space-y-1"><label className="text-[9px] font-bold text-slate-500 uppercase">Nama Tier</label><input value={formData.loyaltyGoldName ?? 'Gold'} onChange={e => setFormData({ ...formData, loyaltyGoldName: e.target.value })} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900" placeholder="Contoh: Prioritas" /></div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-slate-500 uppercase">Min. Servis / Transaksi</label>
                     <input
@@ -570,6 +572,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <span className="text-xs font-black text-purple-700 uppercase">👑 VIP Member</span>
                     <span className="text-[10px] font-bold text-slate-500">Top Tier</span>
                   </div>
+                  <div className="space-y-1"><label className="text-[9px] font-bold text-slate-500 uppercase">Nama Tier</label><input value={formData.loyaltyVipName ?? 'VIP'} onChange={e => setFormData({ ...formData, loyaltyVipName: e.target.value })} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900" placeholder="Contoh: Istimewa" /></div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-bold text-slate-500 uppercase">Min. Servis / Transaksi</label>
                     <input

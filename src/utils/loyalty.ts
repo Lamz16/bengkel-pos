@@ -33,6 +33,9 @@ export function getCustomerLoyaltyStats(
   const silverDiscount = settings?.loyaltySilverDiscountPercent ?? 5;
   const goldDiscount = settings?.loyaltyGoldDiscountPercent ?? 10;
   const vipDiscount = settings?.loyaltyVipDiscountPercent ?? 15;
+  const silverName = settings?.loyaltySilverName?.trim() || 'Silver';
+  const goldName = settings?.loyaltyGoldName?.trim() || 'Gold';
+  const vipName = settings?.loyaltyVipName?.trim() || 'VIP';
 
   // Filter services related to this customer (by ID or matching name/phone)
   const customerServices = allServices.filter(s => 
@@ -66,31 +69,34 @@ export function getCustomerLoyaltyStats(
   if (totalVisits >= vipThreshold) {
     tier = 'VIP';
     eligibleDiscountPercent = vipDiscount;
-    eligiblePromoTitle = `Diskon VIP Spesial ${vipDiscount}%`;
+    eligiblePromoTitle = `Diskon ${vipName} ${vipDiscount}%`;
     visitsToNextTier = 0;
     nextTier = null;
   } else if (totalVisits >= goldThreshold) {
     tier = 'Gold';
     eligibleDiscountPercent = goldDiscount;
-    eligiblePromoTitle = `Diskon Gold Member ${goldDiscount}%`;
+    eligiblePromoTitle = `Diskon ${goldName} ${goldDiscount}%`;
     visitsToNextTier = vipThreshold - totalVisits;
     nextTier = 'VIP';
   } else if (totalVisits >= silverThreshold) {
     tier = 'Silver';
     eligibleDiscountPercent = silverDiscount;
-    eligiblePromoTitle = `Diskon Pelanggan Setia ${silverDiscount}%`;
+    eligiblePromoTitle = `Diskon ${silverName} ${silverDiscount}%`;
     visitsToNextTier = goldThreshold - totalVisits;
     nextTier = 'Gold';
   } else if (totalVisits > 0) {
     tier = 'Bronze';
     eligibleDiscountPercent = 0;
-    eligiblePromoTitle = `Menuju Silver (${silverThreshold - totalVisits}x servis lagi)`;
+    eligiblePromoTitle = `Menuju ${silverName} (${silverThreshold - totalVisits}x servis lagi)`;
     visitsToNextTier = silverThreshold - totalVisits;
     nextTier = 'Silver';
   }
 
   // Visual Styling configs
   const badgeConfig = getLoyaltyBadgeConfig(tier);
+  if (tier === 'Silver') badgeConfig.label = silverName;
+  if (tier === 'Gold') badgeConfig.label = goldName;
+  if (tier === 'VIP') badgeConfig.label = vipName;
 
   return {
     totalVisits,

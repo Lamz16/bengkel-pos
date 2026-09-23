@@ -1,0 +1,4 @@
+ALTER TABLE "CompanySettings"
+  ADD COLUMN IF NOT EXISTS "loyaltySilverName" TEXT DEFAULT 'Silver',
+  ADD COLUMN IF NOT EXISTS "loyaltyGoldName" TEXT DEFAULT 'Gold',
+  ADD COLUMN IF NOT EXISTS "loyaltyVipName" TEXT DEFAULT 'VIP';

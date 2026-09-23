@@ -40,8 +40,11 @@ export interface CompanySettings {
 
   // Program Loyalitas & Promo Pelanggan Setia
   loyaltySilverVisits?: number; // e.g. 3
+  loyaltySilverName?: string;
   loyaltyGoldVisits?: number; // e.g. 6
+  loyaltyGoldName?: string;
   loyaltyVipVisits?: number; // e.g. 10
+  loyaltyVipName?: string;
   loyaltySilverDiscountPercent?: number; // e.g. 5%
   loyaltyGoldDiscountPercent?: number; // e.g. 10%
   loyaltyVipDiscountPercent?: number; // e.g. 15%

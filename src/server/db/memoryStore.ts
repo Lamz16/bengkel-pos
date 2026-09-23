@@ -65,8 +65,11 @@ export const memoryStore: MemoryStore = {
     showCustomerPhoneOnReceipt: true,
     receiptContactHelp: "WhatsApp CS: 0812-3456-7890",
     loyaltySilverVisits: 3,
+    loyaltySilverName: 'Silver',
     loyaltyGoldVisits: 6,
+    loyaltyGoldName: 'Gold',
     loyaltyVipVisits: 10,
+    loyaltyVipName: 'VIP',
     loyaltySilverDiscountPercent: 5,
     loyaltyGoldDiscountPercent: 10,
     loyaltyVipDiscountPercent: 15
