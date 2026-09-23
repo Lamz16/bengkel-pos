@@ -21,6 +21,7 @@
     "db:migrate:activity-log-details": "prisma db execute --file prisma/migrations/20260923060000_activity_log_technical_details/migration.sql --schema prisma/schema.prisma",
     "db:migrate:audit-trail": "prisma db execute --file prisma/migrations/20260923070000_activity_audit_trail/migration.sql --schema prisma/schema.prisma",
     "db:migrate:service-payments": "prisma db execute --file prisma/migrations/20260923080000_service_split_payments/migration.sql --schema prisma/schema.prisma",
+    "db:migrate:payment-due-date": "prisma db execute --file prisma/migrations/20260923090000_service_payment_due_date/migration.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts"
   },
   "prisma": {

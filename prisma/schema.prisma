@@ -213,6 +213,7 @@ model WorkshopService {
   laborFee                Decimal           @default(0) @db.Decimal(18, 2)
   totalAmount             Decimal           @default(0) @db.Decimal(18, 2)
   paymentStatus           String            @default("Unpaid") // "Unpaid" | "Partial" | "Paid"
+  paymentDueDate          DateTime?
   discountAmount          Decimal?          @default(0) @db.Decimal(18, 2)
   discountReason          String?
   mechanicId              String?

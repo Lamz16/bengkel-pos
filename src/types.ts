@@ -202,6 +202,7 @@ export interface WorkshopService {
   laborFee: number;
   totalAmount: number;
   paymentStatus: 'Unpaid' | 'Partial' | 'Paid';
+  paymentDueDate?: string;
   payments?: ServicePayment[];
   // Customer loyalty discount & promo tracking
   discountAmount?: number;

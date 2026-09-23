@@ -67,7 +67,7 @@ export const POSForm: React.FC<POSFormProps> = ({
         km: initialService ? String(initialService.kilometers || '') : '', complaint: initialService?.complaint || '', laborFee: '0',
         type: initialService?.receiptType === 'SALE' ? 'Retail' as const : 'Service' as const,
         mechanicId: initialService?.mechanicId || (defaultMec ? defaultMec.id : ''), mechanicName: initialService?.mechanicName || (defaultMec ? defaultMec.name : ''), mechanicBonusPercent: initialService?.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
-        serviceWarrantyDurationDays: String(initialService?.serviceWarrantyDurationDays ?? settings?.defaultServiceWarrantyDays ?? 7), serviceWarrantyTerms: initialService?.serviceWarrantyTermsSnapshot || settings?.serviceWarrantyTerms || settings?.warrantyTerms || '', paymentStatus: initialService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Partial' | 'Paid'
+        serviceWarrantyDurationDays: String(initialService?.serviceWarrantyDurationDays ?? settings?.defaultServiceWarrantyDays ?? 7), serviceWarrantyTerms: initialService?.serviceWarrantyTermsSnapshot || settings?.serviceWarrantyTerms || settings?.warrantyTerms || '', paymentStatus: initialService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Partial' | 'Paid', paymentDueDate: initialService?.paymentDueDate ? initialService.paymentDueDate.slice(0, 10) : ''
     });
     const [initialPaymentMethod, setInitialPaymentMethod] = useState<'Cash' | 'Transfer' | 'QRIS'>('Cash');
     const [initialPaymentAmount, setInitialPaymentAmount] = useState('');
@@ -921,19 +921,20 @@ export const POSForm: React.FC<POSFormProps> = ({
 
                 <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3"><p
                     className="mb-2 text-[10px] font-black uppercase text-slate-500">Status Pembayaran</p>
-                    <div className={`grid ${formData.type === 'Retail' ? 'grid-cols-1' : 'grid-cols-3'} gap-2`}>
+                    <div className="grid grid-cols-3 gap-2">
                         <button type="button" onClick={() => setFormData({...formData, paymentStatus: 'Paid'})}
                                 className={`h-10 rounded-xl text-xs font-black ${formData.paymentStatus === 'Paid' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Lunas
                         </button>
-                        {formData.type === 'Service' && <button type="button" onClick={() => setFormData({...formData, paymentStatus: 'Partial'})}
+                        <button type="button" onClick={() => setFormData({...formData, paymentStatus: 'Partial'})}
                                 className={`h-10 rounded-xl text-xs font-black ${formData.paymentStatus === 'Partial' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Uang Muka
-                        </button>}
-                        {formData.type === 'Service' && <button type="button" onClick={() => setFormData({...formData, paymentStatus: 'Unpaid'})}
+                        </button>
+                        <button type="button" onClick={() => setFormData({...formData, paymentStatus: 'Unpaid'})}
                                 className={`h-10 rounded-xl text-xs font-black ${formData.paymentStatus === 'Unpaid' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600'}`}>Belum
                             Lunas
-                        </button>}
+                        </button>
                     </div>
                     {formData.paymentStatus !== 'Unpaid' && <div className="grid grid-cols-2 gap-2 mt-2"><select value={initialPaymentMethod} onChange={e => setInitialPaymentMethod(e.target.value as typeof initialPaymentMethod)} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold"><option value="Cash">Cash</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option></select>{formData.paymentStatus === 'Partial' && <input value={initialPaymentAmount} onChange={e => setInitialPaymentAmount(e.target.value.replace(/\D/g, ''))} placeholder="Nominal uang muka" inputMode="numeric" className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-bold"/>}</div>}
+                    {formData.paymentStatus !== 'Paid' && <label className="block mt-2 text-[10px] font-bold text-slate-600">Jatuh tempo piutang (opsional)<input type="date" value={formData.paymentDueDate} onChange={e => setFormData({...formData, paymentDueDate: e.target.value})} className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-xs font-bold"/></label>}
                 </div>
 
                 {/* Bill Summary & Promo Calculation */}
@@ -979,7 +980,7 @@ export const POSForm: React.FC<POSFormProps> = ({
 
                     <button
                         disabled={!canSubmit}
-                        onClick={() => { const initialPaid = formData.paymentStatus === 'Paid' ? grandTotal : Number(initialPaymentAmount || 0); if (formData.type === 'Retail' && formData.paymentStatus !== 'Paid') return alert('Penjualan langsung wajib dibayar lunas.'); if (formData.paymentStatus === 'Partial' && (!initialPaid || initialPaid >= grandTotal)) return alert('Nominal uang muka harus lebih besar dari nol dan kurang dari total tagihan.'); onSave({
+                        onClick={() => { const initialPaid = formData.paymentStatus === 'Paid' ? grandTotal : Number(initialPaymentAmount || 0); if (formData.paymentStatus === 'Partial' && (!initialPaid || initialPaid >= grandTotal)) return alert('Nominal uang muka harus lebih besar dari nol dan kurang dari total tagihan.'); onSave({
                             id: initialService?.id || `SRV-${Math.floor(Math.random() * 1000)}`,
                             customerId: formData.customerId,
                             customerName: formData.customerName,
@@ -1001,6 +1002,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                             discountAmount: discountAmount > 0 ? discountAmount : undefined,
                             discountReason: discountAmount > 0 ? discountReason : undefined,
                             paymentStatus: formData.paymentStatus,
+                            paymentDueDate: formData.paymentDueDate ? new Date(`${formData.paymentDueDate}T23:59:59`).toISOString() : undefined,
                             payments: initialPaid > 0 ? [{ amount: initialPaid, paymentMethod: initialPaymentMethod, paymentDate: new Date().toISOString() }] : [],
                             mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
                             mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),

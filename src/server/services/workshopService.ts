@@ -55,7 +55,6 @@ export class WorkshopServiceLayer {
       mechanicBonusAmount: data.receiptType === 'SALE' ? 0 : Math.round((laborFee * bonusPercent) / 100),
     };
     if (paidAmount > effectiveData.totalAmount + 0.01) throw new Error('Nominal pembayaran melebihi total tagihan.');
-    if (effectiveData.receiptType === 'SALE' && paidAmount + 0.01 < effectiveData.totalAmount) throw new Error('Penjualan langsung wajib dibayar lunas saat transaksi dibuat.');
     effectiveData.paymentStatus = paidAmount + 0.01 >= effectiveData.totalAmount ? 'Paid' : paidAmount > 0 ? 'Partial' : 'Unpaid';
     if (isDbConnected()) {
       const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
@@ -101,6 +100,7 @@ export class WorkshopServiceLayer {
           kilometers: effectiveData.kilometers, complaint: effectiveData.complaint,
           diagnosis: effectiveData.diagnosis, status: effectiveData.status, laborFee: effectiveData.laborFee,
           totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus,
+          paymentDueDate: effectiveData.paymentDueDate ? new Date(effectiveData.paymentDueDate) : null,
           discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
           mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName,
           mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
@@ -203,7 +203,7 @@ export class WorkshopServiceLayer {
       await tx.workshopService.update({ where: { id }, data: {
         customerId: effectiveData.customerId || null, customerName: effectiveData.customerName, customerPhone: effectiveData.customerPhone, vehicleId: effectiveData.vehicleId || null,
         vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel, kilometers: effectiveData.kilometers, complaint: effectiveData.complaint, diagnosis: effectiveData.diagnosis,
-        laborFee: effectiveData.laborFee, totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus, discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
+        laborFee: effectiveData.laborFee, totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus, paymentDueDate: effectiveData.paymentDueDate ? new Date(effectiveData.paymentDueDate) : null, discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
         mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName, mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
         version: { increment: 1 }, serviceItems: { deleteMany: {}, create: serviceItems }, partsUsed: { deleteMany: {}, create: effectiveData.partsUsed.map(item => ({ partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime, normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime, wholesaleType: item.wholesaleType || null, wholesaleValue: item.wholesaleValue || null, wholesaleUnitPrice: item.wholesaleUnitPrice || null, hasProductWarranty: !!item.hasProductWarranty, warrantyDurationDays: item.hasProductWarranty ? item.warrantyDurationDays || 0 : 0, warrantyTerms: item.hasProductWarranty ? item.warrantyTerms || null : null })) },
       }});
@@ -231,7 +231,8 @@ export class WorkshopServiceLayer {
       if (amount > remaining + 0.01) throw new Error(`Nominal melebihi sisa tagihan (${remaining.toLocaleString('id-ID')}).`);
       const nextPaid = paid + amount;
       await tx.servicePayment.create({ data: { serviceId: id, amount, paymentMethod: data.paymentMethod, referenceNo: data.referenceNo || null, notes: data.notes || null, paymentDate } });
-      await tx.workshopService.update({ where: { id }, data: { paymentStatus: nextPaid + 0.01 >= Number(service.totalAmount) ? 'Paid' : 'Partial', version: { increment: 1 } } });
+      const isPaid = nextPaid + 0.01 >= Number(service.totalAmount);
+      await tx.workshopService.update({ where: { id }, data: { paymentStatus: isPaid ? 'Paid' : 'Partial', ...(isPaid ? { paymentDueDate: null } : {}), version: { increment: 1 } } });
     });
     return this.serviceRepo.getById(id);
   }
