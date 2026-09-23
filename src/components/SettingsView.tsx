@@ -21,9 +21,11 @@ import {
   Image as ImageIcon,
   Upload,
   Trash2,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Plus
 } from 'lucide-react';
-import { CompanySettings, Mechanic, UserRole } from '../types';
+import { CompanySettings, Mechanic, UserRole, LoyaltyTier } from '../types';
+import { api } from '../services/api';
 
 interface SettingsViewProps {
   settings: CompanySettings;
@@ -32,6 +34,7 @@ interface SettingsViewProps {
   onUpdateSettings: (newSettings: CompanySettings) => void;
   onBatchUpdateMechanicBonus?: (newPercent: number) => void;
   onOpenMasterDataModal?: () => void;
+  onLoyaltyTiersChanged?: (tiers: LoyaltyTier[]) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -40,12 +43,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   currentUserRole = 'Owner',
   onUpdateSettings,
   onBatchUpdateMechanicBonus,
-  onOpenMasterDataModal
+  onOpenMasterDataModal,
+  onLoyaltyTiersChanged
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'profile' | 'bonus' | 'receipt'>('profile');
   const [formData, setFormData] = useState<CompanySettings>(settings);
   const [savedNotification, setSavedNotification] = useState<string | null>(null);
   const [simLaborFee, setSimLaborFee] = useState<number>(100000);
+  const [newTier, setNewTier] = useState({ name: '', minimumVisits: 0, discountPercent: 0 });
+
+  const loyaltyTiers = [...(settings.loyaltyTiers || [])].sort((a, b) => a.minimumVisits - b.minimumVisits || a.sortOrder - b.sortOrder);
+  const saveTier = async (tier: LoyaltyTier) => {
+    try {
+      const updated = await api.updateLoyaltyTier(tier.id, tier);
+      onLoyaltyTiersChanged?.(loyaltyTiers.map(item => item.id === updated.id ? updated : item));
+      showNotification(`Tier ${updated.name} disimpan.`);
+    } catch (err: any) { alert(err.message || 'Gagal menyimpan tier loyalitas.'); }
+  };
+  const deleteTier = async (id: string) => {
+    if (!confirm('Hapus tier ini? Pelanggan akan otomatis dihitung ulang ke tier yang tersisa.')) return;
+    try { await api.deleteLoyaltyTier(id); onLoyaltyTiersChanged?.(loyaltyTiers.filter(item => item.id !== id)); showNotification('Tier dihapus.'); } catch (err: any) { alert(err.message || 'Gagal menghapus tier.'); }
+  };
+  const addTier = async () => {
+    try {
+      const tier = await api.createLoyaltyTier({ ...newTier, sortOrder: loyaltyTiers.length + 1, isActive: true });
+      onLoyaltyTiersChanged?.([...loyaltyTiers, tier]); setNewTier({ name: '', minimumVisits: 0, discountPercent: 0 }); showNotification(`Tier ${tier.name} ditambahkan.`);
+    } catch (err: any) { alert(err.message || 'Gagal menambah tier.'); }
+  };
 
   const showNotification = (msg: string) => {
     setSavedNotification(msg);
@@ -499,7 +523,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+              <div className="space-y-3 pt-1">
+                {loyaltyTiers.map((tier, index) => (
+                  <div key={tier.id} className="grid grid-cols-1 md:grid-cols-[auto_1fr_150px_150px_auto_auto] gap-2 items-end p-3 bg-white rounded-xl border border-amber-200">
+                    <span className="text-[10px] font-black text-amber-700 pb-2">#{index + 1}</span>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase">Nama Tier<input value={tier.name} onChange={e => onLoyaltyTiersChanged?.(loyaltyTiers.map(item => item.id === tier.id ? { ...item, name: e.target.value } : item))} className="mt-1 w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900" /></label>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase">Min. Kunjungan<input type="number" min="0" value={tier.minimumVisits} onChange={e => onLoyaltyTiersChanged?.(loyaltyTiers.map(item => item.id === tier.id ? { ...item, minimumVisits: Number(e.target.value) } : item))} className="mt-1 w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" /></label>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase">Diskon (%)<input type="number" min="0" max="100" value={tier.discountPercent} onChange={e => onLoyaltyTiersChanged?.(loyaltyTiers.map(item => item.id === tier.id ? { ...item, discountPercent: Number(e.target.value) } : item))} className="mt-1 w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" /></label>
+                    <button type="button" onClick={() => saveTier(tier)} className="h-10 px-3 rounded-lg bg-blue-600 text-white text-[10px] font-black">Simpan</button>
+                    <button type="button" onClick={() => deleteTier(tier.id)} className="h-10 px-3 rounded-lg bg-rose-50 text-rose-600 text-[10px] font-black">Hapus</button>
+                  </div>
+                ))}
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_150px_150px_auto] gap-2 items-end p-3 border border-dashed border-amber-300 rounded-xl">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Tier Baru<input value={newTier.name} onChange={e => setNewTier({ ...newTier, name: e.target.value })} placeholder="Contoh: Platinum" className="mt-1 w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold" /></label>
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Min. Kunjungan<input type="number" min="0" value={newTier.minimumVisits} onChange={e => setNewTier({ ...newTier, minimumVisits: Number(e.target.value) })} className="mt-1 w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold" /></label>
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Diskon (%)<input type="number" min="0" max="100" value={newTier.discountPercent} onChange={e => setNewTier({ ...newTier, discountPercent: Number(e.target.value) })} className="mt-1 w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold" /></label>
+                  <button type="button" onClick={addTier} className="h-10 px-4 rounded-lg bg-amber-500 text-white text-[10px] font-black flex items-center justify-center gap-1"><Plus className="w-3.5 h-3.5" /> Tambah</button>
+                </div>
+              </div>
+              {false && <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
                 {/* Silver */}
                 <div className="p-4 bg-white rounded-xl border border-amber-200 space-y-3">
                   <div className="flex items-center justify-between">
@@ -598,7 +640,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
                   </div>
                 </div>
-              </div>
+              </div>}
             </div>
 
             {/* Profile Role Overview */}

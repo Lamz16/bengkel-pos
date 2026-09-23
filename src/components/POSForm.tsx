@@ -20,7 +20,7 @@ import {
 import {WorkshopService, SparePart, Customer, Vehicle, Mechanic, CompanySettings} from '../types';
 import {CurrencyInput} from './CurrencyInput';
 import {getAIDiagnosis} from '../services/geminiService';
-import {getCustomerLoyaltyStats} from '../utils/loyalty';
+import {getCustomerLoyaltyStats, getActiveLoyaltyTiers} from '../utils/loyalty';
 import {formatPartLocation} from '../utils/inventory';
 import {Modal} from './Modal';
 import {cn} from '../lib/utils';
@@ -1130,7 +1130,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                             <div className="max-h-60 overflow-y-auto space-y-2">
                                 {filteredCustomers.map(c => {
                                     const stats = getCustomerLoyaltyStats(c, services, settings);
-                                    const isFrequent = stats.totalVisits >= (settings?.loyaltySilverVisits ?? 3);
+                                    const isFrequent = stats.totalVisits >= (getActiveLoyaltyTiers(settings)[0]?.minimumVisits ?? 3);
 
                                     return (
                                         <button

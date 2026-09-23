@@ -42,6 +42,16 @@ export async function seedDatabase() {
     },
   });
 
+  await Promise.all([
+    { id: 'legacy-silver', name: 'Silver', minimumVisits: 3, discountPercent: 5, sortOrder: 1 },
+    { id: 'legacy-gold', name: 'Gold', minimumVisits: 6, discountPercent: 10, sortOrder: 2 },
+    { id: 'legacy-vip', name: 'VIP', minimumVisits: 10, discountPercent: 15, sortOrder: 3 },
+  ].map(tier => prisma.loyaltyTier.upsert({
+    where: { companySettingsId_name: { companySettingsId: 'settings-default', name: tier.name } },
+    update: {},
+    create: { ...tier, companySettingsId: 'settings-default' },
+  })));
+
   // 2. Users / Staff (bcrypt, tidak pernah simpan password plaintext)
   const demoPasswordHash = await bcrypt.hash('akundemo', 12);
   await prisma.user.upsert({

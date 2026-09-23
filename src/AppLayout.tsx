@@ -1202,6 +1202,7 @@ export default function AppLayout() {
                   mechanics={mechanics}
                   currentUserRole={currentUser.role}
                   onUpdateSettings={handleUpdateSettings}
+                  onLoyaltyTiersChanged={(tiers) => setCompanySettings(prev => ({ ...prev, loyaltyTiers: tiers }))}
                   onBatchUpdateMechanicBonus={(newPercent) => {
                     setMechanics(prev => prev.map(m => ({ ...m, defaultBonusPercent: newPercent })));
                     setCompanySettings(prev => ({ ...prev, defaultMechanicBonusPercent: newPercent }));

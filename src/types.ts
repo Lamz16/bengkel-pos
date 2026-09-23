@@ -48,6 +48,16 @@ export interface CompanySettings {
   loyaltySilverDiscountPercent?: number; // e.g. 5%
   loyaltyGoldDiscountPercent?: number; // e.g. 10%
   loyaltyVipDiscountPercent?: number; // e.g. 15%
+  loyaltyTiers?: LoyaltyTier[];
+}
+
+export interface LoyaltyTier {
+  id: string;
+  name: string;
+  minimumVisits: number;
+  discountPercent: number;
+  sortOrder: number;
+  isActive: boolean;
 }
 
 export interface User {
@@ -95,7 +105,7 @@ export interface MechanicAttendance {
   version?: number;
 }
 
-export type CustomerTier = 'New' | 'Bronze' | 'Silver' | 'Gold' | 'VIP';
+export type CustomerTier = string;
 
 export interface Customer {
   id: string;

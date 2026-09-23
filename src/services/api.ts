@@ -334,6 +334,10 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+  async getLoyaltyTiers(): Promise<import('../types').LoyaltyTier[]> { return request('/api/settings/loyalty-tiers'); },
+  async createLoyaltyTier(data: Omit<import('../types').LoyaltyTier, 'id'>): Promise<import('../types').LoyaltyTier> { return request('/api/settings/loyalty-tiers', { method: 'POST', body: JSON.stringify(data) }); },
+  async updateLoyaltyTier(id: string, data: Partial<import('../types').LoyaltyTier>): Promise<import('../types').LoyaltyTier> { return request(`/api/settings/loyalty-tiers/${id}`, { method: 'PUT', body: JSON.stringify(data) }); },
+  async deleteLoyaltyTier(id: string): Promise<void> { await request(`/api/settings/loyalty-tiers/${id}`, { method: 'DELETE' }); },
 
   // Customers
   async getCustomers(): Promise<Customer[]> {

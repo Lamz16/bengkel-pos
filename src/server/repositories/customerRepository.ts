@@ -224,7 +224,7 @@ export class CustomerRepository implements ICustomerRepository {
   async incrementStats(id: string, serviceAmount: number): Promise<void> {
     if (isDbConnected()) {
       try {
-        await prisma.customer.update({
+        const updatedCustomer = await prisma.customer.update({
           where: { id },
           data: {
             totalServiceCount: { increment: 1 },
@@ -232,6 +232,11 @@ export class CustomerRepository implements ICustomerRepository {
             lastVisitDate: new Date()
           }
         });
+        const tier = await prisma.loyaltyTier.findFirst({
+          where: { companySettingsId: 'settings-default', isActive: true, minimumVisits: { lte: updatedCustomer.totalServiceCount } },
+          orderBy: [{ minimumVisits: 'desc' }, { sortOrder: 'desc' }],
+        });
+        await prisma.customer.update({ where: { id }, data: { loyaltyTier: tier?.name || 'Bronze' } });
       } catch (err) {
         console.error('[CustomerRepo] Prisma incrementStats error:', err);
       }
@@ -241,10 +246,9 @@ export class CustomerRepository implements ICustomerRepository {
     if (cIdx !== -1) {
       const currentCount = (memoryStore.customers[cIdx].totalServiceCount || 0) + 1;
       const currentSpent = (memoryStore.customers[cIdx].totalSpent || 0) + serviceAmount;
-      let loyaltyTier: any = memoryStore.customers[cIdx].loyaltyTier || 'Bronze';
-      if (currentCount >= 10) loyaltyTier = 'VIP';
-      else if (currentCount >= 6) loyaltyTier = 'Gold';
-      else if (currentCount >= 3) loyaltyTier = 'Silver';
+      const loyaltyTier = memoryStore.loyaltyTiers
+        .filter(tier => tier.isActive && tier.minimumVisits <= currentCount)
+        .sort((a, b) => b.minimumVisits - a.minimumVisits || b.sortOrder - a.sortOrder)[0]?.name || 'Bronze';
 
       memoryStore.customers[cIdx] = {
         ...memoryStore.customers[cIdx],

@@ -23,6 +23,7 @@
     "db:migrate:service-payments": "prisma db execute --file prisma/migrations/20260923080000_service_split_payments/migration.sql --schema prisma/schema.prisma",
     "db:migrate:payment-due-date": "prisma db execute --file prisma/migrations/20260923090000_service_payment_due_date/migration.sql --schema prisma/schema.prisma",
     "db:migrate:loyalty-tier-names": "prisma db execute --file prisma/migrations/20260923093000_custom_loyalty_tier_names/migration.sql --schema prisma/schema.prisma",
+    "db:migrate:dynamic-loyalty-tiers": "prisma db execute --file prisma/migrations/20260923094500_dynamic_loyalty_tiers/migration.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts"
   },
   "prisma": {

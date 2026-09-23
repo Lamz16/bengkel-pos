@@ -24,7 +24,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Customer, WorkshopService, CompanySettings } from '../types';
-import { getCustomerLoyaltyStats, generateWhatsAppPromoMessage, CustomerLoyaltyStats } from '../utils/loyalty';
+import { getCustomerLoyaltyStats, generateWhatsAppPromoMessage, CustomerLoyaltyStats, getActiveLoyaltyTiers } from '../utils/loyalty';
 import { Modal } from './Modal';
 import { format } from 'date-fns';
 
@@ -67,13 +67,16 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   // Overall Loyalty Summary Metrics
   const summary = useMemo(() => {
     const totalCust = customersWithStats.length;
-    const frequentCust = customersWithStats.filter(item => item.stats.totalVisits >= (settings?.loyaltySilverVisits ?? 3)).length;
-    const vipGoldCust = customersWithStats.filter(item => item.stats.totalVisits >= (settings?.loyaltyGoldVisits ?? 6)).length;
+    const tiers = getActiveLoyaltyTiers(settings);
+    const frequentMin = tiers[0]?.minimumVisits ?? 3;
+    const topMin = tiers[1]?.minimumVisits ?? frequentMin;
+    const frequentCust = customersWithStats.filter(item => item.stats.totalVisits >= frequentMin).length;
+    const vipGoldCust = customersWithStats.filter(item => item.stats.totalVisits >= topMin).length;
     const totalLoyalSpent = customersWithStats
-      .filter(item => item.stats.totalVisits >= (settings?.loyaltySilverVisits ?? 3))
+      .filter(item => item.stats.totalVisits >= frequentMin)
       .reduce((acc, curr) => acc + curr.stats.totalSpent, 0);
 
-    return { totalCust, frequentCust, vipGoldCust, totalLoyalSpent };
+    return { totalCust, frequentCust, vipGoldCust, totalLoyalSpent, frequentMin };
   }, [customersWithStats, settings]);
 
   // Filter and Sort Customers
@@ -87,8 +90,9 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         if (!matchesSearch) return false;
 
         // Tier filter
-        const silverMin = settings?.loyaltySilverVisits ?? 3;
-        const goldMin = settings?.loyaltyGoldVisits ?? 6;
+        const tiers = getActiveLoyaltyTiers(settings);
+        const silverMin = tiers[0]?.minimumVisits ?? 3;
+        const goldMin = tiers[1]?.minimumVisits ?? silverMin;
 
         if (tierFilter === 'frequent') return stats.totalVisits >= silverMin;
         if (tierFilter === 'vip_gold') return stats.totalVisits >= goldMin;
@@ -285,7 +289,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
           </div>
         ) : (
           filtered.map(({ customer, stats }) => {
-            const isFrequent = stats.totalVisits >= (settings?.loyaltySilverVisits ?? 3);
+            const isFrequent = stats.totalVisits >= (getActiveLoyaltyTiers(settings)[0]?.minimumVisits ?? 3);
 
             return (
               <div 

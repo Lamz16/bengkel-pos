@@ -7,7 +7,9 @@ export class SettingsRepository implements ISettingsRepository {
   async get(): Promise<CompanySettings> {
     if (isDbConnected()) {
       try {
-        const found = await prisma.companySettings.findFirst();
+        const found = await prisma.companySettings.findFirst({
+          include: { loyaltyTiers: { orderBy: [{ minimumVisits: 'asc' }, { sortOrder: 'asc' }] } },
+        });
         if (found) {
           return {
             name: found.name,
@@ -48,35 +50,40 @@ export class SettingsRepository implements ISettingsRepository {
             loyaltySilverDiscountPercent: found.loyaltySilverDiscountPercent || undefined,
             loyaltyGoldDiscountPercent: found.loyaltyGoldDiscountPercent || undefined,
             loyaltyVipDiscountPercent: found.loyaltyVipDiscountPercent || undefined,
+            loyaltyTiers: found.loyaltyTiers.map(tier => ({
+              id: tier.id, name: tier.name, minimumVisits: tier.minimumVisits,
+              discountPercent: tier.discountPercent, sortOrder: tier.sortOrder, isActive: tier.isActive,
+            })),
           };
         }
       } catch (err) {
         console.error('[SettingsRepo] Prisma get error:', err);
       }
     }
-    return memoryStore.settings;
+    return { ...memoryStore.settings, loyaltyTiers: memoryStore.loyaltyTiers };
   }
 
   async update(data: Partial<CompanySettings>): Promise<CompanySettings> {
+    const { loyaltyTiers: _loyaltyTiers, ...settingsData } = data;
     if (isDbConnected()) {
       try {
         const updated = await prisma.companySettings.upsert({
           where: { id: 'settings-default' },
-          update: data,
+          update: settingsData,
           create: {
             id: 'settings-default',
-            name: data.name || "BengkelPro Mandiri",
-            slogan: data.slogan || "Solusi Perawatan & Servis Terpercaya",
-            address: data.address || "Jl. Otomotif Raya No. 123",
-            phone: data.phone || "0812-3456-7890",
-            footerNote: data.footerNote || "Terima kasih",
-            warrantyTerms: data.warrantyTerms || "Garansi 7 hari",
-            ...data
+            name: settingsData.name || "BengkelPro Mandiri",
+            slogan: settingsData.slogan || "Solusi Perawatan & Servis Terpercaya",
+            address: settingsData.address || "Jl. Otomotif Raya No. 123",
+            phone: settingsData.phone || "0812-3456-7890",
+            footerNote: settingsData.footerNote || "Terima kasih",
+            warrantyTerms: settingsData.warrantyTerms || "Garansi 7 hari",
+            ...settingsData
           },
         });
         return {
           ...memoryStore.settings,
-          ...data,
+          ...settingsData,
           name: updated.name,
           logoUrl: updated.logoUrl || undefined,
           appTitle: updated.appTitle || undefined,
@@ -89,7 +96,7 @@ export class SettingsRepository implements ISettingsRepository {
         console.error('[SettingsRepo] Prisma update error:', err);
       }
     }
-    memoryStore.settings = { ...memoryStore.settings, ...data };
-    return memoryStore.settings;
+    memoryStore.settings = { ...memoryStore.settings, ...settingsData };
+    return { ...memoryStore.settings, loyaltyTiers: memoryStore.loyaltyTiers };
   }
 }

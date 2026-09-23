@@ -17,10 +17,12 @@ import {
   PartCategory,
   WarehouseRack,
   WarehouseZone
+  , LoyaltyTier
 } from '../../types';
 
 export interface MemoryStore {
   settings: CompanySettings;
+  loyaltyTiers: LoyaltyTier[];
   users: User[];
   customers: Customer[];
   vehicles: Vehicle[];
@@ -40,6 +42,11 @@ export interface MemoryStore {
 }
 
 export const memoryStore: MemoryStore = {
+  loyaltyTiers: [
+    { id: 'loyalty-silver', name: 'Silver', minimumVisits: 3, discountPercent: 5, sortOrder: 1, isActive: true },
+    { id: 'loyalty-gold', name: 'Gold', minimumVisits: 6, discountPercent: 10, sortOrder: 2, isActive: true },
+    { id: 'loyalty-vip', name: 'VIP', minimumVisits: 10, discountPercent: 15, sortOrder: 3, isActive: true },
+  ],
   settings: {
     name: "BengkelPro Mandiri",
     logoUrl: undefined,

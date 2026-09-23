@@ -47,7 +47,25 @@ model CompanySettings {
   loyaltySilverDiscountPercent   Float?   @default(5)
   loyaltyGoldDiscountPercent     Float?   @default(10)
   loyaltyVipDiscountPercent      Float?   @default(15)
+  loyaltyTiers                   LoyaltyTier[]
   updatedAt                      DateTime @updatedAt
+}
+
+model LoyaltyTier {
+  id              String          @id @default(uuid())
+  companySettingsId String        @default("settings-default")
+  name            String
+  minimumVisits   Int
+  discountPercent Float           @default(0)
+  sortOrder       Int             @default(0)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  companySettings CompanySettings @relation(fields: [companySettingsId], references: [id], onDelete: Cascade)
+
+  @@unique([companySettingsId, name])
+  @@unique([companySettingsId, minimumVisits])
+  @@index([companySettingsId, isActive, minimumVisits])
 }
 
 model User {
