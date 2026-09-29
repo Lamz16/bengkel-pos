@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "bengkelpro-pos",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,17 +13,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
-    "db:migrate:variants": "prisma db execute --file prisma/migrations/20260920143000_product_variants_and_inventory_indexes/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:product-warranty": "prisma db execute --file prisma/migrations/20260920160000_product_warranty_snapshots/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:service-labor-items": "prisma db execute --file prisma/migrations/20260920170000_service_labor_items/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:scale": "prisma db execute --file prisma/migrations/20260923040000_scale_indexes_and_idempotency_retention/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:activity-logs": "prisma db execute --file prisma/migrations/20260923050000_activity_logs/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:activity-log-details": "prisma db execute --file prisma/migrations/20260923060000_activity_log_technical_details/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:audit-trail": "prisma db execute --file prisma/migrations/20260923070000_activity_audit_trail/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:service-payments": "prisma db execute --file prisma/migrations/20260923080000_service_split_payments/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:payment-due-date": "prisma db execute --file prisma/migrations/20260923090000_service_payment_due_date/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:loyalty-tier-names": "prisma db execute --file prisma/migrations/20260923093000_custom_loyalty_tier_names/migration.sql --schema prisma/schema.prisma",
-    "db:migrate:dynamic-loyalty-tiers": "prisma db execute --file prisma/migrations/20260923094500_dynamic_loyalty_tiers/migration.sql --schema prisma/schema.prisma",
+    "db:setup": "npm run db:generate && npm run db:migrate && npm run db:seed",
     "db:seed": "tsx prisma/seed.ts"
   },
   "prisma": {

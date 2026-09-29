@@ -16,7 +16,7 @@ process.on('uncaughtException', (err) => {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Performance Monitoring Middleware
   app.use(performanceMonitoringMiddleware);

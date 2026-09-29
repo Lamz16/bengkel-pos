@@ -129,21 +129,19 @@ Setelah PostgreSQL berjalan dan file `.env` siap, jalankan urutan perintah Prism
    npm run db:generate
    ```
 
-2. **Database baru/kosong — push schema untuk membuat seluruh tabel:**
+2. **Database baru maupun server produksi — jalankan seluruh migration:**
    ```bash
-   npm run db:push
+   npm run db:migrate
    ```
-
-   **Database lokal lama yang sebelumnya dibuat dengan `db:push` — jalankan migrasi variasi ini sekali (tanpa reset data):**
-   ```bash
-   npm run db:migrate:variants
-   npm run db:generate
-   ```
-   Migration akan membuat produk induk dari stok yang ada lalu menambahkan kolom variasi ukuran, indeks lokasi rak, dan relasi stok per variasi. Jangan gunakan `--force-reset`.
 
 3. **Seeding Data Awal (Memasukkan data sampel awal):**
    ```bash
    npm run db:seed
+   ```
+
+   Untuk clone atau server baru, ketiga langkah di atas dapat dijalankan sekaligus:
+   ```bash
+   npm run db:setup
    ```
 
 > 🎉 Data awal seperti informasi bengkel, akun pengguna default, sampel mekanik, daftar suku cadang, dan riwayat pelanggan sekarang telah siap di database PostgreSQL lokal Anda!
@@ -186,10 +184,9 @@ Berikut daftar perintah npm yang dapat digunakan dalam proyek ini:
 | `npm run build` | Melakukan *generate* Prisma Client & *bundling* aplikasi untuk produksi (`dist/`) |
 | `npm run start` | Menjalankan server produksi terkompilasi (`dist/server.cjs`) |
 | `npm run db:generate` | Menghasilkan kode Prisma Client berdasarkan `prisma/schema.prisma` |
-| `npm run db:push` | Menyinkronkan struktur schema Prisma ke PostgreSQL tanpa file migrasi |
-| `npm run db:migrate` | Menerapkan migration produksi, termasuk normalisasi master kategori/rak/gudang dan variasi produk |
-| `npm run db:migrate:variants` | Menerapkan migrasi variasi produk ke database lokal lama yang dibuat dengan `db:push` |
-| `npm run db:migrate:product-warranty` | Menerapkan kolom garansi produk dan snapshot garansi pada nota tanpa reset data |
+| `npm run db:push` | Menyinkronkan schema tanpa riwayat migration; hanya untuk eksperimen lokal, bukan deployment |
+| `npm run db:migrate` | Menerapkan seluruh migration secara aman untuk database baru/produksi |
+| `npm run db:setup` | Generate Prisma Client, migration, lalu seed—untuk clone atau server baru |
 | `npm run db:seed` | Menjalankan file `prisma/seed.ts` untuk mengisi data sampel awal |
 | `npm run lint` | Memeriksa validasi tipe data TypeScript (`tsc --noEmit`) |
 
