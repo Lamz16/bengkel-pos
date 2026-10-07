@@ -4,12 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="update atur stock and plus minus margin left">
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/seed.ts" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/seed.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/db/memoryStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/db/memoryStore.ts" afterDir="false" />
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="add initate completed">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -194,7 +190,10 @@
       <workItem from="1790037669127" duration="8423000" />
       <workItem from="1790068712070" duration="2637000" />
       <workItem from="1790127708096" duration="14157000" />
-      <workItem from="1790683990557" duration="1503000" />
+      <workItem from="1790683990557" duration="1699000" />
+      <workItem from="1791167429542" duration="16000" />
+      <workItem from="1791280561325" duration="381000" />
+      <workItem from="1791340723248" duration="333000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -220,7 +219,15 @@
       <option name="project" value="LOCAL" />
       <updated>1789963374087</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="add initate completed">
+      <option name="closed" value="true" />
+      <created>1790685531401</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1790685531401</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -240,6 +247,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="update sidebar" />
     <MESSAGE value="update atur stock and plus minus margin left" />
-    <option name="LAST_COMMIT_MESSAGE" value="update atur stock and plus minus margin left" />
+    <MESSAGE value="add initate completed" />
+    <option name="LAST_COMMIT_MESSAGE" value="add initate completed" />
   </component>
 </project>
