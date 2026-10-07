@@ -8,6 +8,7 @@ interface StaffFormProps {
 }
 
 export const StaffForm: React.FC<StaffFormProps> = ({ staff, onSave, onCancel }) => {
+  const isEditing = Boolean(staff?.id);
   const [formData, setFormData] = useState(staff || {
     id: 'STF-' + Math.floor(Math.random() * 1000),
     name: '',
@@ -90,21 +91,21 @@ export const StaffForm: React.FC<StaffFormProps> = ({ staff, onSave, onCancel })
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Password Login Karyawan</label>
+        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Password Login Karyawan {isEditing && '(opsional)'}</label>
         <input 
-          required
-          minLength={8}
+          required={!isEditing}
+          minLength={formData.password ? 8 : undefined}
           type="password"
           value={formData.password}
           onChange={e => setFormData({ ...formData, password: e.target.value })}
           className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-bold shadow-inner"
-          placeholder="Password untuk login karyawan"
+          placeholder={isEditing ? 'Kosongkan untuk mempertahankan password' : 'Password untuk login karyawan'}
         />
       </div>
 
       <div className="flex gap-2 pt-4">
         <button onClick={onCancel} className="flex-1 h-14 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs tracking-widest">Batal</button>
-        <button disabled={!formData.name || !formData.email || formData.password.length < 8} onClick={() => onSave(formData)} className="flex-1 h-14 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed">Simpan</button>
+        <button disabled={!formData.name || !formData.email || (!isEditing && formData.password.length < 8) || (Boolean(formData.password) && formData.password.length < 8)} onClick={() => onSave(formData)} className="flex-1 h-14 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed">Simpan</button>
       </div>
     </div>
   );

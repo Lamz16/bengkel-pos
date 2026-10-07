@@ -57,6 +57,23 @@ export class StaffRepository implements IStaffRepository {
     return memUser || null;
   }
 
+  async getById(id: string): Promise<any | null> {
+    if (isDbConnected()) {
+      const user = await prisma.user.findUnique({ where: { id } });
+      if (!user) return null;
+      const { password: _password, ...safeUser } = user;
+      return safeUser;
+    }
+    return memoryStore.staff.find(user => user.id === id) || null;
+  }
+
+  async countOwners(excludeId?: string): Promise<number> {
+    if (isDbConnected()) {
+      return prisma.user.count({ where: { role: 'Owner', ...(excludeId ? { id: { not: excludeId } } : {}) } });
+    }
+    return memoryStore.staff.filter(user => user.role === 'Owner' && user.id !== excludeId).length;
+  }
+
   async createUser(data: { name: string; email: string; role: string; password?: string; workshopName?: string }): Promise<any> {
     const id = `USR-${Date.now().toString().slice(-4)}`;
     const userPassword = data.password || await hashPassword('akundemo');
@@ -126,5 +143,38 @@ export class StaffRepository implements IStaffRepository {
     const userObj = { id, ...data };
     memoryStore.staff.push(userObj);
     return userObj;
+  }
+
+  async update(id: string, data: any): Promise<any | null> {
+    const payload = {
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      status: data.status,
+      shifts: data.shifts,
+      ...(data.password ? { password: await hashPassword(data.password) } : {}),
+    };
+    if (isDbConnected()) {
+      const updated = await prisma.user.update({ where: { id }, data: payload });
+      const { password: _password, ...safeUser } = updated;
+      return safeUser;
+    }
+    const current = memoryStore.staff.find(user => user.id === id);
+    if (!current) return null;
+    const updated = { ...current, ...payload };
+    memoryStore.staff = memoryStore.staff.map(user => user.id === id ? updated : user);
+    memoryStore.users = memoryStore.users.map(user => user.id === id ? { ...user, ...payload } : user);
+    return updated;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    if (isDbConnected()) {
+      await prisma.user.delete({ where: { id } });
+      return true;
+    }
+    const exists = memoryStore.staff.some(user => user.id === id);
+    memoryStore.staff = memoryStore.staff.filter(user => user.id !== id);
+    memoryStore.users = memoryStore.users.filter(user => user.id !== id);
+    return exists;
   }
 }

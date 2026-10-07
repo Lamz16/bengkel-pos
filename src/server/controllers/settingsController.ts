@@ -103,6 +103,46 @@ export class SettingsController {
       res.status(500).json({ error: err.message || 'Gagal menambahkan staf' });
     }
   }
+
+  async updateStaff(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const before = await settingsService.getStaffById(id);
+      if (!before) return res.status(404).json({ error: 'Akun pengguna tidak ditemukan.' });
+
+      const { name, email, password, role, status, shifts } = req.body;
+      if (!name || !email) return res.status(400).json({ error: 'Nama dan email wajib diisi.' });
+      if (password && password.length < 8) return res.status(400).json({ error: 'Password minimal 8 karakter.' });
+      if (!['Owner', 'Admin'].includes(role)) return res.status(400).json({ error: 'Peran staf tidak valid.' });
+      if (!['Active', 'Inactive'].includes(status)) return res.status(400).json({ error: 'Status staf tidak valid.' });
+      if (before.role === 'Owner' && (role !== 'Owner' || status !== 'Active') && !(await settingsService.hasAnotherOwner(id))) {
+        return res.status(400).json({ error: 'Tidak dapat menonaktifkan atau mengubah peran Owner terakhir.' });
+      }
+
+      const updated = await settingsService.updateStaff(id, { name: name.trim(), email: email.trim(), password, role, status, shifts });
+      await recordAudit(req, { action: 'Mengubah akun pengguna', entity: 'User', entityId: id, before, after: updated, description: `Akun ${before.name} diperbarui.` });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ error: err.code === 'P2002' ? 'Email sudah digunakan oleh akun lain.' : (err.message || 'Gagal memperbarui akun pengguna') });
+    }
+  }
+
+  async deleteStaff(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      if (id === req.authUser?.id) return res.status(400).json({ error: 'Akun yang sedang digunakan tidak dapat dihapus.' });
+      const before = await settingsService.getStaffById(id);
+      if (!before) return res.status(404).json({ error: 'Akun pengguna tidak ditemukan.' });
+      if (before.role === 'Owner' && !(await settingsService.hasAnotherOwner(id))) {
+        return res.status(400).json({ error: 'Owner terakhir tidak dapat dihapus.' });
+      }
+      await settingsService.deleteStaff(id);
+      await recordAudit(req, { action: 'Menghapus akun pengguna', entity: 'User', entityId: id, before, description: `Akun ${before.name} dihapus.` });
+      res.status(204).end();
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Gagal menghapus akun pengguna' });
+    }
+  }
 }
 
 export const settingsController = new SettingsController();

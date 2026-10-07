@@ -890,13 +890,30 @@ export default function AppLayout() {
 
   const handleSaveStaff = async (stf: any) => {
     try {
-      const created = await api.createStaff(stf);
-      setStaff(prev => [created, ...prev]);
+      if (stf.id && staff.some(item => item.id === stf.id)) {
+        const updated = await api.updateStaff(stf.id, stf);
+        setStaff(prev => prev.map(item => item.id === stf.id ? updated : item));
+      } else {
+        const created = await api.createStaff(stf);
+        setStaff(prev => [created, ...prev]);
+      }
     } catch (err) {
-      console.error('Failed to create staff:', err);
-      setStaff(prev => [stf, ...prev]);
+      console.error('Failed to save staff:', err);
+      alert(err instanceof Error ? err.message : 'Akun pengguna gagal disimpan.');
+      return;
     }
     setEditingStaff(null);
+  };
+
+  const handleDeleteStaff = async (id: string) => {
+    if (!window.confirm('Hapus akun pengguna ini? Tindakan ini tidak dapat dibatalkan.')) return;
+    try {
+      await api.deleteStaff(id);
+      setStaff(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.error('Failed to delete staff:', err);
+      alert(err instanceof Error ? err.message : 'Akun pengguna gagal dihapus.');
+    }
   };
 
   const handleUpdateSettings = async (newSettings: CompanySettings) => {
@@ -1160,7 +1177,7 @@ export default function AppLayout() {
                   staff={staff}
                   onAdd={() => setEditingStaff({})}
                   onEdit={(s) => setEditingStaff(s)}
-                  onDelete={(id) => setStaff(prev => prev.filter(x => x.id !== id))}
+                  onDelete={handleDeleteStaff}
                   onGoToMechanics={() => setActiveTab('mechanics')}
                 />
               </motion.div>

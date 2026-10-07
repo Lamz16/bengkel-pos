@@ -6,6 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="add initate completed">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/interfaces.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/interfaces.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/staffRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/staffRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/services/settingsService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/settingsService.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -193,7 +200,7 @@
       <workItem from="1790683990557" duration="1699000" />
       <workItem from="1791167429542" duration="16000" />
       <workItem from="1791280561325" duration="381000" />
-      <workItem from="1791340723248" duration="333000" />
+      <workItem from="1791340723248" duration="5607000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -227,7 +234,15 @@
       <option name="project" value="LOCAL" />
       <updated>1790685531401</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="add initate completed">
+      <option name="closed" value="true" />
+      <created>1791341285844</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1791341285844</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

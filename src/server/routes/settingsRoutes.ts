@@ -14,3 +14,5 @@ export const staffRouter = Router();
 staffRouter.use(authorize('Owner'));
 staffRouter.get('/', (req, res) => settingsController.getStaff(req, res));
 staffRouter.post('/', (req, res) => settingsController.createStaff(req, res));
+staffRouter.put('/:id', (req, res) => settingsController.updateStaff(req, res));
+staffRouter.delete('/:id', (req, res) => settingsController.deleteStaff(req, res));

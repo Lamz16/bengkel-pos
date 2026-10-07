@@ -113,5 +113,9 @@ export interface ISettingsRepository {
 
 export interface IStaffRepository {
   getAll(): Promise<any[]>;
+  getById(id: string): Promise<any | null>;
   create(data: any): Promise<any>;
+  update(id: string, data: any): Promise<any | null>;
+  delete(id: string): Promise<boolean>;
+  countOwners(excludeId?: string): Promise<number>;
 }

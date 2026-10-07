@@ -22,4 +22,20 @@ export class SettingsService {
   async createStaff(data: any): Promise<any> {
     return this.staffRepo.create(data);
   }
+
+  async getStaffById(id: string): Promise<any | null> {
+    return this.staffRepo.getById(id);
+  }
+
+  async updateStaff(id: string, data: any): Promise<any | null> {
+    return this.staffRepo.update(id, data);
+  }
+
+  async deleteStaff(id: string): Promise<boolean> {
+    return this.staffRepo.delete(id);
+  }
+
+  async hasAnotherOwner(id: string): Promise<boolean> {
+    return (await this.staffRepo.countOwners(id)) > 0;
+  }
 }
