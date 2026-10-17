@@ -20,7 +20,7 @@ import {
   FileText,
   Tag
 } from 'lucide-react';
-import { DistributorInvoice, Supplier, SparePart, DistributorInvoiceStatus } from '../types';
+import { CompanySettings, DistributorInvoice, Supplier, SparePart, DistributorInvoiceStatus } from '../types';
 import { cn } from '../lib/utils';
 import { CurrencyInput } from './CurrencyInput';
 
@@ -28,6 +28,7 @@ interface DistributorTempoViewProps {
   invoices: DistributorInvoice[];
   suppliers: Supplier[];
   parts: SparePart[];
+  settings: CompanySettings;
   onAddInvoice: (newInv: Partial<DistributorInvoice>) => Promise<void>;
   onAddPayment: (invoiceId: string, paymentData: { amount: number; paymentMethod: string; referenceNo?: string; notes?: string; paymentDate?: string }) => Promise<void>;
   onDeleteInvoice: (id: string) => Promise<void>;
@@ -38,6 +39,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
   invoices,
   suppliers,
   parts,
+  settings,
   onAddInvoice,
   onAddPayment,
   onDeleteInvoice,
@@ -1169,6 +1171,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
                     {getStatusBadge(showDetailModal)}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">{showDetailModal.supplierName} • {showDetailModal.branchName}</p>
+                  {settings.receiptHeader && <p className="text-[10px] font-bold uppercase mt-1">{settings.receiptHeader}</p>}
                 </div>
                 <button
                   onClick={() => setShowDetailModal(null)}
@@ -1267,6 +1270,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
                     <span className="text-amber-400">Rp {showDetailModal.remainingAmount.toLocaleString('id-ID')}</span>
                   </div>
                 </div>
+                {settings.footerNote?.trim() && <p className="text-center text-[10px] italic text-slate-500">{settings.footerNote}</p>}
               </div>
 
               <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">

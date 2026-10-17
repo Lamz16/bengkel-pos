@@ -20,7 +20,8 @@ export class MasterDataRepository {
 
   async createCategory(data: Omit<PartCategory, 'id'>): Promise<PartCategory> {
     const name = clean(data.name)!;
-    const skuPrefix = (clean(data.skuPrefix) || name.slice(0, 3) || 'PRT').toUpperCase();
+    const skuPrefix = clean(data.skuPrefix)?.toUpperCase();
+    if (!skuPrefix) throw new Error('Prefix SKU wajib diisi.');
     if (isDbConnected()) {
       try {
         const row = await prisma.partCategory.create({
@@ -41,13 +42,16 @@ export class MasterDataRepository {
   }
 
   async updateCategory(id: string, data: Partial<PartCategory>): Promise<PartCategory> {
+    if (data.skuPrefix !== undefined && !clean(data.skuPrefix)) {
+      throw new Error('Prefix SKU wajib diisi.');
+    }
     if (isDbConnected()) {
       try {
         const row = await prisma.partCategory.update({
           where: { id },
           data: {
             name: clean(data.name),
-            skuPrefix: data.skuPrefix ? data.skuPrefix.trim().toUpperCase() : undefined,
+            skuPrefix: data.skuPrefix === undefined ? undefined : clean(data.skuPrefix)?.toUpperCase(),
             description: data.description === undefined ? undefined : clean(data.description) || null,
           },
         });

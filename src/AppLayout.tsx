@@ -13,10 +13,11 @@ import {
   Award,
   Calendar as CalendarIcon,
   ScrollText,
+  FileSpreadsheet,
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, ExpenseCategory, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
+import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, ExpenseCategory, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone, ServiceQueue } from './types';
 
 // UI and Feature Components
 import { Modal } from './components/Modal';
@@ -45,6 +46,8 @@ import { ManualDeductionForm } from './components/ManualDeductionForm';
 import { DistributorTempoView } from './components/DistributorTempoView';
 import { ActivityLogView } from './components/ActivityLogView';
 import { ReceivablesView } from './components/ReceivablesView';
+import { ServiceQueueView } from './components/ServiceQueueView';
+import { CompletedTransactionsReportView } from './components/CompletedTransactionsReportView';
 
 // Modular Form Components
 import { StaffForm } from './components/forms/StaffForm';
@@ -82,6 +85,7 @@ export default function AppLayout() {
   const [activeTab, setActiveTab] = useState<string>(() => window.location.pathname === '/log' ? 'logs' : 'dashboard');
   const [showPOSForm, setShowPOSForm] = useState(false);
   const [editingService, setEditingService] = useState<WorkshopService | null>(null);
+  const [originQueueId, setOriginQueueId] = useState<string | undefined>();
   const [saleCart, setSaleCart] = useState<Array<{ partId: string; quantity: number }>>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -144,34 +148,7 @@ export default function AppLayout() {
   }, []);
 
   // Company Settings
-  const [companySettings, setCompanySettings] = useState<CompanySettings>({
-    name: "BengkelPro Mandiri",
-    slogan: "Solusi Perawatan & Servis Terpercaya",
-    address: "Jl. Otomotif Raya No. 123, Blok B4, Jakarta Selatan",
-    phone: "0812-3456-7890",
-    email: "kontak@bengkelpro.com",
-    operationalHours: "Senin - Sabtu: 08:00 - 17:00 WIB",
-    ownerName: "Pemilik Bengkel",
-    picName: "Rian Herlambang",
-    defaultMechanicBonusPercent: 15,
-    defaultAbsencePenalty: 50000,
-    defaultWarrantyPenalty: 75000,
-    allowCustomBonusPerTransaction: true,
-    receiptHeader: "NOTA RESMI & RINCIAN SERVIS",
-    serviceReceiptHeader: "NOTA TRANSAKSI SERVIS",
-    saleReceiptHeader: "NOTA PEMBELIAN BARANG",
-    serviceReceiptFooter: "Terima kasih telah mempercayakan kendaraan Anda kepada kami.",
-    saleReceiptFooter: "Barang yang sudah dibeli tidak dapat ditukar kecuali perjanjian.",
-    defaultServiceWarrantyDays: 7,
-    serviceWarrantyTerms: "Garansi hanya berlaku untuk pengerjaan servis yang sama dengan menunjukkan nota ini.",
-    footerNote: "Barang yang sudah dibeli tidak dapat ditukar kecuali perjanjian. Terima kasih atas kepercayaan Anda merawat kendaraan bersama kami.",
-    warrantyTerms: "Garansi servis 7 hari atau 500 KM untuk pengerjaan perbaikan yang sama dengan menunjukkan nota ini.",
-    showMechanicOnReceipt: true,
-    showWarrantyOnReceipt: true,
-    showOdometerOnReceipt: true,
-    showCustomerPhoneOnReceipt: true,
-    receiptContactHelp: "WhatsApp CS: 0812-3456-7890"
-  });
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({} as CompanySettings);
 
   useEffect(() => {
     const title = companySettings.appTitle?.trim() || companySettings.name?.trim() || 'BengkelPro POS';
@@ -299,7 +276,7 @@ export default function AppLayout() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Owner', 'Admin'] },
     { id: 'pos', label: 'Transaksi', icon: PaymentIcon, roles: ['Owner', 'Admin'] },
     { id: 'receivables', label: 'Piutang', icon: Wallet, roles: ['Owner', 'Admin'] },
-    { id: 'pos_history', label: 'Antrean', icon: Wrench, roles: ['Owner', 'Admin'] },
+    { id: 'queue', label: 'Antrean Servis', icon: Wrench, roles: ['Owner', 'Admin'] },
     { id: 'distributor_tempo', label: 'Nota Tempo', icon: CalendarIcon, roles: ['Owner', 'Admin'] },
     { id: 'mechanics', label: 'Mekanik & Gaji', icon: Award, roles: ['Owner', 'Admin'] },
     { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['Owner', 'Admin'] },
@@ -307,6 +284,7 @@ export default function AppLayout() {
     { id: 'suppliers', label: 'Pemasok', icon: Store, roles: ['Owner'] },
     { id: 'expenses', label: 'Pengeluaran', icon: Wallet, roles: ['Owner'] },
     { id: 'reports', label: 'Laporan', icon: TrendingUp, roles: ['Owner'] },
+    { id: 'completed_transactions_report', label: 'Laporan Transaksi Selesai', icon: FileSpreadsheet, roles: ['Owner'] },
     { id: 'logs', label: 'Log Sistem', icon: ScrollText, roles: ['Owner'] },
     { id: 'staff', label: 'Pengguna', icon: UserCircle, roles: ['Owner'] },
     { id: 'settings', label: 'Pengaturan', icon: Settings, roles: ['Owner', 'Admin'] },
@@ -419,6 +397,7 @@ export default function AppLayout() {
     reason: string;
     isAbsent: boolean;
     deductionAmount: number;
+    applyMechanicDeduction: boolean;
   }) => {
     try {
       const updatedSrv = await api.applyWarrantyClaim(data);
@@ -430,39 +409,8 @@ export default function AppLayout() {
       setDeductions(updatedDeductions);
     } catch (err) {
       console.error('Error applying warranty claim:', err);
-      // Fallback local update
-      const srv = services.find(s => s.id === data.serviceId);
-      const mec = mechanics.find(m => m.id === srv?.mechanicId);
-      setServices(prev => prev.map(s => {
-        if (s.id === data.serviceId) {
-          return {
-            ...s,
-            hasWarrantyClaim: true,
-            warrantyClaimDate: new Date().toISOString(),
-            warrantyClaimReason: data.reason,
-            isMechanicAbsentOnClaim: data.isAbsent,
-            warrantyDeductionAmount: data.deductionAmount,
-            status: 'In Progress' as ServiceStatus
-          };
-        }
-        return s;
-      }));
-
-      if (mec) {
-        const newDeduction: MechanicDeduction = {
-          id: `DED-${Date.now()}`,
-          mechanicId: mec.id,
-          mechanicName: mec.name,
-          serviceId: data.serviceId,
-          vehiclePlate: srv?.vehiclePlate,
-          date: new Date().toISOString(),
-          reason: `Klaim Garansi Servis (${data.reason})${data.isAbsent ? ' + Denda Mangkir H+1' : ''}`,
-          type: 'Warranty_Complaint',
-          amount: data.deductionAmount,
-          isAbsentNextDay: data.isAbsent
-        };
-        setDeductions(prev => [newDeduction, ...prev]);
-      }
+      alert(err instanceof Error ? err.message : 'Klaim garansi gagal diproses. Data transaksi tidak diubah.');
+      return;
     }
 
     setWarrantyModalService(null);
@@ -479,6 +427,7 @@ export default function AppLayout() {
       setParts(updatedParts);
       setCustomers(updatedCustomers);
       setShowPOSForm(false);
+      setOriginQueueId(undefined);
       // Transaksi servis/repair belum menampilkan nota saat order baru dibuat.
       // Nota penjualan langsung tetap ditampilkan segera setelah transaksi berhasil.
       if (savedService.receiptType === 'SALE') {
@@ -487,23 +436,7 @@ export default function AppLayout() {
       setActiveTab('pos');
     } catch (err) {
       console.error('Error saving service to backend:', err);
-      // Local fallback
-      setParts(prev => {
-        const newParts = [...prev];
-        service.partsUsed.forEach(used => {
-          const idx = newParts.findIndex(p => p.id === used.partId);
-          if (idx !== -1) {
-            newParts[idx] = { ...newParts[idx], stock: Math.max(0, newParts[idx].stock - used.quantity) };
-          }
-        });
-        return newParts;
-      });
-      setServices(prev => [service, ...prev]);
-      setShowPOSForm(false);
-      if (service.receiptType === 'SALE') {
-        setSelectedInvoiceId(service.id);
-      }
-      setActiveTab('pos');
+      alert(err instanceof Error ? err.message : 'Transaksi gagal disimpan. Tidak ada data lokal yang dibuat.');
     }
   };
 
@@ -860,7 +793,7 @@ export default function AppLayout() {
           theme={theme}
           onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
           onClosePOSForm={() => setShowPOSForm(false)}
-          onOpenPOSForm={() => { setEditingService(null); setShowPOSForm(true); }}
+          onOpenPOSForm={() => { setEditingService(null); setOriginQueueId(undefined); setShowPOSForm(true); }}
         />
 
         {/* Scrollable Viewport */}
@@ -902,7 +835,7 @@ export default function AppLayout() {
                   </div>
                   {(currentUser.role === 'Owner' || currentUser.role === 'Admin') && (
                     <button 
-                      onClick={() => { setEditingService(null); setShowPOSForm(true); }}
+                      onClick={() => { setEditingService(null); setOriginQueueId(undefined); setShowPOSForm(true); }}
                       className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100"
                     >
                       New Transaction
@@ -924,21 +857,13 @@ export default function AppLayout() {
               <motion.div key="receivables" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}><ReceivablesView onSelect={setSelectedServiceId} /></motion.div>
             )}
 
-            {!showPOSForm && activeTab === 'pos_history' && (
-              <motion.div key="pos-history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
-                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-2">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daftar Kerja Mekanik</h3>
-                  <p className="text-sm font-bold text-slate-900">{services.filter(s => s.status !== 'Done').length} Kendaraan Menunggu</p>
-                </div>
-                <HistoryView 
-                  services={services} 
-                  onSelect={setSelectedServiceId} 
-                  onPrint={setSelectedInvoiceId}
-                  initialFilter="In Progress" 
-                  pagination={servicesPagination}
-                  isLoading={isServicesLoading}
-                  onQueryChange={loadServices}
-                />
+            {!showPOSForm && activeTab === 'queue' && (
+              <motion.div key="queue" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <ServiceQueueView onConvert={(queue: ServiceQueue) => {
+                  setOriginQueueId(queue.id);
+                  setEditingService({ id: '', customerId: queue.customerId || '', customerName: queue.customerName, customerPhone: queue.customerPhone, vehicleId: queue.vehicleId || '', vehiclePlate: queue.vehiclePlate, vehicleModel: queue.vehicleModel, kilometers: queue.kilometers || 0, complaint: queue.complaint, diagnosis: queue.diagnosis || queue.internalNotes, status: 'In Progress', createdAt: new Date().toISOString(), partsUsed: [], serviceItems: [], laborFee: 0, totalAmount: 0, paymentStatus: 'Unpaid', mechanicId: queue.mechanicId, mechanicName: queue.mechanicName, receiptType: 'SERVICE', originQueueId: queue.id });
+                  setShowPOSForm(true);
+                }} />
               </motion.div>
             )}
 
@@ -949,6 +874,7 @@ export default function AppLayout() {
                     onClick={() => {
                       setShowPOSForm(false);
                       setEditingService(null);
+                      setOriginQueueId(undefined);
                       setPosInitialCustomer(null);
                       setPosInitialPromoPercent(null);
                     }} 
@@ -961,7 +887,7 @@ export default function AppLayout() {
                 </div>
                 <POSForm 
                   onSave={(service) => {
-                    if (editingService) handleEditService(service); else handleNewService(service);
+                    if (editingService?.id) handleEditService(service); else handleNewService(service);
                     setPosInitialCustomer(null);
                     setPosInitialPromoPercent(null);
                   }} 
@@ -977,6 +903,7 @@ export default function AppLayout() {
                   onAddVehicle={handleAddVehicle}
                   initialCart={saleCart}
                   initialService={editingService}
+                  originQueueId={originQueueId}
                 />
               </motion.div>
             )}
@@ -987,6 +914,7 @@ export default function AppLayout() {
                   invoices={distributorInvoices}
                   suppliers={suppliers}
                   parts={parts}
+                  settings={companySettings}
                   onAddInvoice={handleAddDistributorInvoice}
                   onAddPayment={handleAddDistributorPayment}
                   onDeleteInvoice={handleDeleteDistributorInvoice}
@@ -1091,6 +1019,12 @@ export default function AppLayout() {
             {activeTab === 'reports' && !showPOSForm && (
               <motion.div key="reports" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <ReportsView services={services} expenses={expenses} parts={parts} />
+              </motion.div>
+            )}
+
+            {activeTab === 'completed_transactions_report' && currentUser.role === 'Owner' && !showPOSForm && (
+              <motion.div key="completed-transactions-report" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <CompletedTransactionsReportView mechanics={mechanics} />
               </motion.div>
             )}
 

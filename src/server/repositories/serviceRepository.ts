@@ -13,6 +13,7 @@ export class ServiceRepository implements IServiceRepository {
         });
         return list.map(s => ({
           id: s.id,
+          invoiceNumber: s.invoiceNumber,
           customerId: s.customerId || '',
           customerName: s.customerName,
           customerPhone: s.customerPhone || undefined,
@@ -38,6 +39,7 @@ export class ServiceRepository implements IServiceRepository {
             hasProductWarranty: p.hasProductWarranty,
             warrantyDurationDays: p.warrantyDurationDays,
             warrantyTerms: p.warrantyTerms || undefined,
+            warrantyStartedAt: p.warrantyStartedAt?.toISOString(),
             warrantyExpiresAt: p.warrantyExpiresAt?.toISOString(),
           })),
           serviceItems: s.serviceItems.map(item => ({ name: item.name, price: Number(item.price) })),
@@ -60,10 +62,18 @@ export class ServiceRepository implements IServiceRepository {
           receiptType: s.receiptType as 'SERVICE' | 'SALE',
           receiptHeaderSnapshot: s.receiptHeaderSnapshot || undefined,
           receiptFooterSnapshot: s.receiptFooterSnapshot || undefined,
+          saleWarrantyEnabled: s.saleWarrantyEnabled,
+          saleWarrantyDurationDays: s.saleWarrantyDurationDays,
+          saleWarrantyTermsSnapshot: s.saleWarrantyTermsSnapshot || undefined,
+          saleWarrantyStartedAt: s.saleWarrantyStartedAt?.toISOString(),
+          saleWarrantyExpiresAt: s.saleWarrantyExpiresAt?.toISOString(),
+          serviceWarrantyEnabled: s.serviceWarrantyEnabled,
           serviceWarrantyDurationDays: s.serviceWarrantyDurationDays || 0,
           serviceWarrantyTermsSnapshot: s.serviceWarrantyTermsSnapshot || undefined,
+          serviceWarrantyStartedAt: s.serviceWarrantyStartedAt?.toISOString(),
           serviceWarrantyExpiresAt: s.serviceWarrantyExpiresAt?.toISOString(),
           version: s.version || 1,
+          originQueueId: s.originQueueId || undefined,
         }));
       } catch (err) {
         console.error('[ServiceRepo] Prisma getAll error:', err);
@@ -113,6 +123,7 @@ export class ServiceRepository implements IServiceRepository {
         return {
           data: list.map(s => ({
             id: s.id,
+            invoiceNumber: s.invoiceNumber,
             customerId: s.customerId || '',
             customerName: s.customerName,
             customerPhone: s.customerPhone || undefined,
@@ -137,6 +148,7 @@ export class ServiceRepository implements IServiceRepository {
               hasProductWarranty: p.hasProductWarranty,
               warrantyDurationDays: p.warrantyDurationDays,
               warrantyTerms: p.warrantyTerms || undefined,
+              warrantyStartedAt: p.warrantyStartedAt?.toISOString(),
               warrantyExpiresAt: p.warrantyExpiresAt?.toISOString(),
             })),
             serviceItems: s.serviceItems.map(item => ({ name: item.name, price: Number(item.price) })),
@@ -151,18 +163,26 @@ export class ServiceRepository implements IServiceRepository {
             mechanicName: s.mechanicName || undefined,
             mechanicBonusPercent: s.mechanicBonusPercent || undefined,
             mechanicBonusAmount: s.mechanicBonusAmount == null ? undefined : Number(s.mechanicBonusAmount),
-            receiptType: s.receiptType as 'SERVICE' | 'SALE',
-            receiptHeaderSnapshot: s.receiptHeaderSnapshot || undefined,
-            receiptFooterSnapshot: s.receiptFooterSnapshot || undefined,
-            serviceWarrantyDurationDays: s.serviceWarrantyDurationDays || 0,
-            serviceWarrantyTermsSnapshot: s.serviceWarrantyTermsSnapshot || undefined,
-            serviceWarrantyExpiresAt: s.serviceWarrantyExpiresAt?.toISOString(),
             hasWarrantyClaim: s.hasWarrantyClaim,
             warrantyClaimDate: s.warrantyClaimDate ? s.warrantyClaimDate.toISOString() : undefined,
             warrantyClaimReason: s.warrantyClaimReason || undefined,
             isMechanicAbsentOnClaim: s.isMechanicAbsentOnClaim || undefined,
             warrantyDeductionAmount: s.warrantyDeductionAmount == null ? undefined : Number(s.warrantyDeductionAmount),
+            receiptType: s.receiptType as 'SERVICE' | 'SALE',
+            receiptHeaderSnapshot: s.receiptHeaderSnapshot || undefined,
+            receiptFooterSnapshot: s.receiptFooterSnapshot || undefined,
+            saleWarrantyEnabled: s.saleWarrantyEnabled,
+            saleWarrantyDurationDays: s.saleWarrantyDurationDays,
+            saleWarrantyTermsSnapshot: s.saleWarrantyTermsSnapshot || undefined,
+            saleWarrantyStartedAt: s.saleWarrantyStartedAt?.toISOString(),
+            saleWarrantyExpiresAt: s.saleWarrantyExpiresAt?.toISOString(),
+            serviceWarrantyEnabled: s.serviceWarrantyEnabled,
+            serviceWarrantyDurationDays: s.serviceWarrantyDurationDays || 0,
+            serviceWarrantyTermsSnapshot: s.serviceWarrantyTermsSnapshot || undefined,
+            serviceWarrantyStartedAt: s.serviceWarrantyStartedAt?.toISOString(),
+            serviceWarrantyExpiresAt: s.serviceWarrantyExpiresAt?.toISOString(),
             version: s.version || 1,
+            originQueueId: s.originQueueId || undefined,
           })),
           pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
         };
@@ -204,6 +224,7 @@ export class ServiceRepository implements IServiceRepository {
         if (s) {
           return {
             id: s.id,
+            invoiceNumber: s.invoiceNumber,
             customerId: s.customerId || '',
             customerName: s.customerName,
             customerPhone: s.customerPhone || undefined,
@@ -228,6 +249,7 @@ export class ServiceRepository implements IServiceRepository {
               hasProductWarranty: p.hasProductWarranty,
               warrantyDurationDays: p.warrantyDurationDays,
               warrantyTerms: p.warrantyTerms || undefined,
+              warrantyStartedAt: p.warrantyStartedAt?.toISOString(),
               warrantyExpiresAt: p.warrantyExpiresAt?.toISOString(),
             })),
             serviceItems: s.serviceItems.map(item => ({ name: item.name, price: Number(item.price) })),
@@ -247,6 +269,20 @@ export class ServiceRepository implements IServiceRepository {
             warrantyClaimReason: s.warrantyClaimReason || undefined,
             isMechanicAbsentOnClaim: s.isMechanicAbsentOnClaim || undefined,
             warrantyDeductionAmount: s.warrantyDeductionAmount == null ? undefined : Number(s.warrantyDeductionAmount),
+            receiptType: s.receiptType as 'SERVICE' | 'SALE',
+            receiptHeaderSnapshot: s.receiptHeaderSnapshot || undefined,
+            receiptFooterSnapshot: s.receiptFooterSnapshot || undefined,
+            saleWarrantyEnabled: s.saleWarrantyEnabled,
+            saleWarrantyDurationDays: s.saleWarrantyDurationDays,
+            saleWarrantyTermsSnapshot: s.saleWarrantyTermsSnapshot || undefined,
+            saleWarrantyStartedAt: s.saleWarrantyStartedAt?.toISOString(),
+            saleWarrantyExpiresAt: s.saleWarrantyExpiresAt?.toISOString(),
+            serviceWarrantyEnabled: s.serviceWarrantyEnabled,
+            serviceWarrantyDurationDays: s.serviceWarrantyDurationDays || 0,
+            serviceWarrantyTermsSnapshot: s.serviceWarrantyTermsSnapshot || undefined,
+            serviceWarrantyStartedAt: s.serviceWarrantyStartedAt?.toISOString(),
+            serviceWarrantyExpiresAt: s.serviceWarrantyExpiresAt?.toISOString(),
+            originQueueId: s.originQueueId || undefined,
           };
         }
       } catch (err) {
@@ -287,8 +323,15 @@ export class ServiceRepository implements IServiceRepository {
             receiptType: data.receiptType || 'SERVICE',
             receiptHeaderSnapshot: data.receiptHeaderSnapshot,
             receiptFooterSnapshot: data.receiptFooterSnapshot,
+            saleWarrantyEnabled: !!data.saleWarrantyEnabled,
+            saleWarrantyDurationDays: data.saleWarrantyDurationDays || 0,
+            saleWarrantyTermsSnapshot: data.saleWarrantyTermsSnapshot,
+            saleWarrantyStartedAt: data.saleWarrantyStartedAt ? new Date(data.saleWarrantyStartedAt) : null,
+            saleWarrantyExpiresAt: data.saleWarrantyExpiresAt ? new Date(data.saleWarrantyExpiresAt) : null,
+            serviceWarrantyEnabled: !!data.serviceWarrantyEnabled,
             serviceWarrantyDurationDays: data.serviceWarrantyDurationDays || 0,
             serviceWarrantyTermsSnapshot: data.serviceWarrantyTermsSnapshot,
+            serviceWarrantyStartedAt: data.serviceWarrantyStartedAt ? new Date(data.serviceWarrantyStartedAt) : null,
             serviceWarrantyExpiresAt: data.serviceWarrantyExpiresAt ? new Date(data.serviceWarrantyExpiresAt) : null,
             serviceItems: { create: (data.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
             partsUsed: {
@@ -306,6 +349,7 @@ export class ServiceRepository implements IServiceRepository {
                 hasProductWarranty: !!p.hasProductWarranty,
                 warrantyDurationDays: p.hasProductWarranty ? p.warrantyDurationDays || 0 : 0,
                 warrantyTerms: p.hasProductWarranty ? p.warrantyTerms || null : null,
+                warrantyStartedAt: p.warrantyStartedAt ? new Date(p.warrantyStartedAt) : null,
                 warrantyExpiresAt: p.warrantyExpiresAt ? new Date(p.warrantyExpiresAt) : null,
               }))
             }
@@ -332,7 +376,13 @@ export class ServiceRepository implements IServiceRepository {
 
         await prisma.workshopService.update({
           where: { id },
-          data: { status, version: { increment: 1 } }
+          data: {
+            status,
+            // Never replace the first completion time when an old transaction
+            // is moved through another workflow state.
+            ...(status === 'Done' && !current.completedAt ? { completedAt: new Date() } : {}),
+            version: { increment: 1 }
+          }
         });
         return (await this.getAll()).find(service => service.id === id) || null;
       } catch (err: any) {

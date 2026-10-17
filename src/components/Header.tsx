@@ -42,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'suppliers': return 'Pemasok';
       case 'expenses': return 'Pengeluaran';
       case 'reports': return 'Laporan';
+      case 'completed_transactions_report': return 'Laporan Transaksi Selesai';
       case 'staff': return 'Pengguna';
       case 'settings': return 'Pengaturan';
       default: return activeTab.charAt(0).toUpperCase() + activeTab.slice(1);

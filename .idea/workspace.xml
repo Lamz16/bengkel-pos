@@ -4,20 +4,51 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="refactor: clear initial state for various data sets and improve error handling">
+      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/seed.ts" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/seed.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/AuthView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/AuthView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/DistributorTempoView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/DistributorTempoView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Header.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/InventoryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InventoryView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/MasterDataModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/MasterDataModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/POSForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/POSForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ReportsView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ReportsView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ServiceDetail.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ServiceDetail.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/SettingsView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SettingsView.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/StorageLocationsPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/StorageLocationsPanel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/WarrantyClaimModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/WarrantyClaimModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/forms/PartForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/PartForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/authController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/authController.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/constants.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/container.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/container.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/db.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/db.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/db/memoryStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/db/memoryStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/masterDataRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/masterDataRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/partRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/partRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/staffRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/staffRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/services/inventoryService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/inventoryService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/services/workshopService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/workshopService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/utils/inventory.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/inventory.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_C:/Users/andik/WebstormProjects/bengkel-pos" value="3KpgZ6hV6atAfQxoFqoIRWIi8qW" />
+    </persistenceIdMap>
   </component>
   <component name="FormatOnSaveOptions">
     <option name="myRunOnSave" value="false" />
@@ -53,45 +84,64 @@
   &quot;associatedIndex&quot;: 4
 }</component>
   <component name="ProjectId" id="3J7KkXcETt1EMV4VgK9nDq9Xvqy" />
+  <component name="ProjectSessionTemplates">
+    <option name="panelTemplate">
+      <template>
+        <option name="modeId" value="Agent" />
+        <option name="model">
+          <model>
+            <option name="modelType" value="builtin_id" />
+            <option name="modelValue" value="auto" />
+          </model>
+        </option>
+        <option name="targetType" value="BACKGROUND" />
+        <option name="worktreeMode" value="WORKSPACE" />
+      </template>
+    </option>
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;javascript.preferred.runtime.type.id&quot;: &quot;node&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;npm.ci.executor&quot;: &quot;Run&quot;,
-    &quot;npm.db:migrate:dynamic-loyalty-tiers.executor&quot;: &quot;Run&quot;,
-    &quot;npm.db:migrate:loyalty-tier-names.executor&quot;: &quot;Run&quot;,
-    &quot;npm.db:migrate:payment-due-date.executor&quot;: &quot;Run&quot;,
-    &quot;npm.db:migrate:service-payments.executor&quot;: &quot;Run&quot;,
-    &quot;npm.db:push.executor&quot;: &quot;Run&quot;,
-    &quot;npm.dev.executor&quot;: &quot;Run&quot;,
-    &quot;npm.install.executor&quot;: &quot;Run&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\andik\\WebstormProjects\\bengkel-pos\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "git-widget-placeholder": "main",
+    "javascript.preferred.runtime.type.id": "node",
+    "junie.onboarding.icon.badge.shown": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "npm.ci.executor": "Run",
+    "npm.db:generate.executor": "Run",
+    "npm.db:migrate.executor": "Run",
+    "npm.db:migrate:dynamic-loyalty-tiers.executor": "Run",
+    "npm.db:migrate:loyalty-tier-names.executor": "Run",
+    "npm.db:migrate:payment-due-date.executor": "Run",
+    "npm.db:migrate:service-payments.executor": "Run",
+    "npm.db:push.executor": "Run",
+    "npm.db:seed.executor": "Run",
+    "npm.dev.executor": "Run",
+    "npm.install.executor": "Run",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true",
+    "ts.external.directory.path": "C:\\Users\\andik\\WebstormProjects\\bengkel-pos\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;postgresql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
     ]
   }
-}</component>
+}]]></component>
   <component name="RunAnythingCache">
     <option name="myCommands">
       <command value="npm ci" />
@@ -103,44 +153,49 @@
       <command value="npm run db:migrate:payment-due-date" />
       <command value="npm run db:migrate:loyalty-tier-names" />
       <command value="npm run db:migrate:dynamic-loyalty-tiers" />
+      <command value="npm run db:seed" />
+      <command value="npm run db:generate" />
+      <command value="npx prisma migrate resolve --applied 20261018090000_separate_transaction_warranties" />
+      <command value="npm run db:migrate" />
+      <command value="npm run db:push" />
     </option>
   </component>
   <component name="RunManager" selected="npm.dev">
-    <configuration name="db:migrate:dynamic-loyalty-tiers" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+    <configuration name="db:generate" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
       <scripts>
-        <script value="db:migrate:dynamic-loyalty-tiers" />
+        <script value="db:generate" />
       </scripts>
       <node-interpreter value="project" />
       <envs />
       <method v="2" />
     </configuration>
-    <configuration name="db:migrate:loyalty-tier-names" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+    <configuration name="db:migrate" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
       <scripts>
-        <script value="db:migrate:loyalty-tier-names" />
+        <script value="db:migrate" />
       </scripts>
       <node-interpreter value="project" />
       <envs />
       <method v="2" />
     </configuration>
-    <configuration name="db:migrate:payment-due-date" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+    <configuration name="db:push" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
       <scripts>
-        <script value="db:migrate:payment-due-date" />
+        <script value="db:push" />
       </scripts>
       <node-interpreter value="project" />
       <envs />
       <method v="2" />
     </configuration>
-    <configuration name="db:migrate:service-payments" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+    <configuration name="db:seed" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
       <scripts>
-        <script value="db:migrate:service-payments" />
+        <script value="db:seed" />
       </scripts>
       <node-interpreter value="project" />
       <envs />
@@ -159,10 +214,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="npm.dev" />
-        <item itemvalue="npm.db:migrate:dynamic-loyalty-tiers" />
-        <item itemvalue="npm.db:migrate:loyalty-tier-names" />
-        <item itemvalue="npm.db:migrate:payment-due-date" />
-        <item itemvalue="npm.db:migrate:service-payments" />
+        <item itemvalue="npm.db:generate" />
+        <item itemvalue="npm.db:push" />
+        <item itemvalue="npm.db:migrate" />
+        <item itemvalue="npm.db:seed" />
       </list>
     </recent_temporary>
   </component>
@@ -202,6 +257,7 @@
       <workItem from="1791280561325" duration="381000" />
       <workItem from="1791340723248" duration="5681000" />
       <workItem from="1792258298516" duration="1580000" />
+      <workItem from="1792259971207" duration="8655000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -251,7 +307,15 @@
       <option name="project" value="LOCAL" />
       <updated>1791347804562</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="refactor: clear initial state for various data sets and improve error handling">
+      <option name="closed" value="true" />
+      <created>1792260036143</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1792260036143</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -273,6 +337,7 @@
     <MESSAGE value="update atur stock and plus minus margin left" />
     <MESSAGE value="add initate completed" />
     <MESSAGE value="fix cant update and delete users" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix cant update and delete users" />
+    <MESSAGE value="refactor: clear initial state for various data sets and improve error handling" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: clear initial state for various data sets and improve error handling" />
   </component>
 </project>

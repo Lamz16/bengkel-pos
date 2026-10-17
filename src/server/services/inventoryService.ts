@@ -16,6 +16,12 @@ export class InventoryService {
     return this.partRepo.getById(id);
   }
 
+  // Kept as a concise alias for controllers/audit callers. Both methods use
+  // the same repository read path; no inventory state is changed here.
+  async getPart(id: string): Promise<SparePart | null> {
+    return this.partRepo.getById(id);
+  }
+
   async createPart(data: Omit<SparePart, 'id' | 'lastUpdated'>): Promise<SparePart> {
     return this.partRepo.create(data);
   }

@@ -21,6 +21,8 @@ import { systemMonitor } from '../middleware/monitoring';
 import { requireDatabase } from '../middleware/databaseRequired';
 import { activityLogger } from '../middleware/activityLogger';
 import { activityLogRouter } from './activityLogRoutes';
+import { serviceQueueRouter } from './serviceQueueRoutes';
+import { transactionReportRouter } from './transactionReportRoutes';
 
 export const apiRouter = Router();
 
@@ -57,6 +59,8 @@ apiRouter.use('/customers', customerRouter);
 apiRouter.use('/vehicles', vehicleRouter);
 apiRouter.use('/parts', partRouter);
 apiRouter.use('/services', serviceRouter);
+apiRouter.use('/transaction-reports', transactionReportRouter);
+apiRouter.use('/service-queues', serviceQueueRouter);
 apiRouter.use('/mechanics', mechanicRouter);
 apiRouter.use('/deductions', deductionRouter);
 apiRouter.use('/attendances', attendanceRouter);

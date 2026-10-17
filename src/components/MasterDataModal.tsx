@@ -93,8 +93,11 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
       return;
     }
 
-    const autoPrefix = catPrefix.trim().toUpperCase() || 
-      (catName.trim().length >= 3 ? catName.trim().slice(0, 3).toUpperCase() : 'PRT');
+    const autoPrefix = catPrefix.trim().toUpperCase();
+    if (!autoPrefix) {
+      alert('Prefix SKU wajib diisi.');
+      return;
+    }
 
     if (editingCategory && editingCategory.id) {
       // Update
@@ -358,22 +361,18 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
                       value={catName}
                       onChange={e => {
                         setCatName(e.target.value);
-                        if (!editingCategory.id && !catPrefix) {
-                          setCatPrefix(e.target.value.slice(0, 3).toUpperCase());
-                        }
                       }}
                       className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase">Prefix SKU Otomatis (3-4 Huruf)</label>
+                    <label className="text-[10px] font-bold text-slate-600 uppercase">Prefix SKU Otomatis *</label>
                     <input 
                       type="text"
                       placeholder="e.g. OLI, REM, BRG"
                       value={catPrefix}
                       onChange={e => setCatPrefix(e.target.value.toUpperCase())}
-                      maxLength={5}
                       className="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-black text-blue-700 uppercase outline-none focus:border-blue-500"
                     />
                   </div>

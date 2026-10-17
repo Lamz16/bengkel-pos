@@ -76,7 +76,8 @@ export class StaffRepository implements IStaffRepository {
 
   async createUser(data: { name: string; email: string; role: string; password?: string; workshopName?: string }): Promise<any> {
     const id = `USR-${Date.now().toString().slice(-4)}`;
-    const userPassword = data.password || await hashPassword('akundemo');
+    if (!data.password) throw new Error('Password wajib diisi saat membuat akun pengguna.');
+    const userPassword = data.password;
     if (isDbConnected()) {
       try {
         const created = await prisma.user.create({
@@ -113,6 +114,7 @@ export class StaffRepository implements IStaffRepository {
 
   async create(data: any): Promise<any> {
     const id = `STF-${Date.now().toString().slice(-4)}`;
+    if (!data.password) throw new Error('Password wajib diisi saat membuat akun pengguna.');
     if (isDbConnected()) {
       try {
         const created = await prisma.user.create({
@@ -123,7 +125,7 @@ export class StaffRepository implements IStaffRepository {
             email: data.email || `${id.toLowerCase()}@bengkelpro.com`,
             status: data.status || 'Active',
             shifts: data.shifts || 'Pagi',
-            password: await hashPassword(data.password || 'akundemo'),
+            password: await hashPassword(data.password),
           }
         });
         const userObj = {

@@ -52,8 +52,8 @@ export const dbService = {
   getServices: (): Promise<WorkshopService[]> => workshopService.getServices(),
   createService: (data: WorkshopService): Promise<WorkshopService> => workshopService.createService(data),
   updateServiceStatus: (id: string, status: string): Promise<WorkshopService | null> => workshopService.updateStatus(id, status),
-  claimWarranty: (serviceId: string, reason: string, isAbsentNextDay: boolean) =>
-    workshopService.applyWarrantyClaim({ serviceId, reason, isAbsentNextDay }),
+  claimWarranty: (serviceId: string, reason: string, isAbsentNextDay: boolean, applyMechanicDeduction = false) =>
+    workshopService.applyWarrantyClaim({ serviceId, reason, isAbsentNextDay, applyMechanicDeduction }),
 
   // Mechanics & Deductions
   getMechanics: (): Promise<Mechanic[]> => mechanicService.getMechanics(),

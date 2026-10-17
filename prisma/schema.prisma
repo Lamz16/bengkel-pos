@@ -110,6 +110,7 @@ model Customer {
   updatedAt         DateTime          @updatedAt
   vehicles          Vehicle[]
   services          WorkshopService[]
+  serviceQueues     ServiceQueue[]
 }
 
 model Vehicle {
@@ -121,6 +122,7 @@ model Vehicle {
   createdAt   DateTime          @default(now())
   customer    Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
   services    WorkshopService[]
+  serviceQueues ServiceQueue[]
 }
 
 model SparePart {
@@ -221,6 +223,8 @@ model WarehouseRack {
 
 model WorkshopService {
   id                      String            @id @default(uuid())
+  // Public-facing, immutable receipt number. Internal IDs remain opaque UUIDs.
+  invoiceNumber           String            @unique @default(dbgenerated("'TRX-' || lpad(nextval('\\\"WorkshopService_invoiceNumber_seq\\\"'::regclass)::text, 9, '0')"))
   customerId              String?
   customerName            String
   customerPhone           String?
@@ -249,10 +253,25 @@ model WorkshopService {
   receiptType             String            @default("SERVICE")
   receiptHeaderSnapshot   String?
   receiptFooterSnapshot   String?
+  // Sale warranty is deliberately separate from the service-labour warranty.
+  // The defaults preserve legacy rows (which never had a sale-wide warranty).
+  saleWarrantyEnabled     Boolean           @default(false)
+  saleWarrantyDurationDays Int              @default(0)
+  saleWarrantyTermsSnapshot String?
+  saleWarrantyStartedAt   DateTime?
+  saleWarrantyExpiresAt   DateTime?
+  serviceWarrantyEnabled  Boolean           @default(false)
   serviceWarrantyDurationDays Int            @default(0)
   serviceWarrantyTermsSnapshot String?
+  serviceWarrantyStartedAt DateTime?
   serviceWarrantyExpiresAt DateTime?
   version                 Int               @default(1)
+  // A commercial document may originate from one operational queue. Existing
+  // historical transactions deliberately keep this nullable.
+  originQueueId           String?           @unique
+  // Filled once when a transaction becomes Done. Kept separate from updatedAt
+  // so later payments/returns do not move the historical completion date.
+  completedAt             DateTime?
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
   customer                Customer?         @relation(fields: [customerId], references: [id])
@@ -262,6 +281,49 @@ model WorkshopService {
   returns                 SalesReturn[]
   serviceItems            ServiceLaborItem[]
   payments                ServicePayment[]
+  originQueue             ServiceQueue?     @relation("QueueTransaction", fields: [originQueueId], references: [id], onDelete: Restrict)
+}
+
+// ServiceQueue is an operational record only. It intentionally has no prices,
+// payments, inventory items, receipt, warranty, or financial relations.
+model ServiceQueue {
+  id             String   @id @default(uuid())
+  queueDate      DateTime @default(now())
+  queueDay       String
+  queueNumber    Int
+  queueCode      String
+  customerId     String?
+  customerName   String
+  customerPhone  String?
+  vehicleId      String?
+  vehiclePlate   String
+  vehicleModel   String
+  kilometers     Int?
+  complaint      String
+  estimateNote   String?
+  diagnosis      String?
+  internalNotes  String?
+  mechanicId     String?
+  mechanicName   String?
+  status         String   @default("Waiting") // Waiting | In Progress | Ready | Cancelled | Converted
+  calledAt       DateTime?
+  startedAt      DateTime?
+  readyAt        DateTime?
+  cancelledAt    DateTime?
+  convertedAt    DateTime?
+  version        Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  vehicle        Vehicle? @relation(fields: [vehicleId], references: [id])
+  mechanic       Mechanic? @relation(fields: [mechanicId], references: [id])
+  transaction    WorkshopService? @relation("QueueTransaction")
+
+  @@unique([queueDay, queueNumber])
+  @@unique([queueDay, queueCode])
+  @@index([status, queueDay])
+  @@index([vehiclePlate])
+  @@index([customerName])
 }
 
 model ServicePayment {
@@ -333,6 +395,7 @@ model ServicePartItem {
   hasProductWarranty Boolean  @default(false)
   warrantyDurationDays Int    @default(0)
   warrantyTerms String?
+  warrantyStartedAt DateTime?
   warrantyExpiresAt DateTime?
   service     WorkshopService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   part        SparePart       @relation(fields: [partId], references: [id])
@@ -357,6 +420,7 @@ model Mechanic {
   deductions            MechanicDeduction[]
   attendances           MechanicAttendance[]
   services              WorkshopService[]
+  serviceQueues         ServiceQueue[]
 }
 
 model MechanicDeduction {

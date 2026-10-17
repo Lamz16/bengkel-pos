@@ -192,7 +192,7 @@ export const StorageLocationsPanel: React.FC<{ zones: WarehouseZone[] }> = ({ zo
 
     <div className="space-y-3">
       {locations.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center"><PackageOpen className="mx-auto mb-2 h-7 w-7 text-slate-400" /><p className="text-sm font-black text-slate-700">Belum ada lokasi penyimpanan</p><p className="mt-1 text-xs text-slate-500">Buat rak, slot, kardus, atau lokasi lain untuk memulai.</p></div>}
-      {Object.entries(byRack).map(([rackId, slots]) => {
+      {(Object.entries(byRack) as Array<[string, StorageLocation[]]>).map(([rackId, slots]) => {
         const first = slots[0];
         if (!first) return null;
         const label = first.rackName || first.code.split('-').slice(0, 2).join('-') || 'Rak';

@@ -103,7 +103,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           {step === 'login' && (
             <div className="space-y-3">
               <div className="p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl text-[10px] text-blue-800 text-center font-medium leading-relaxed">
-                💡 <strong>Kredensial Demo:</strong> Email: <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">owner@bengkelpro.com</code> atau <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">admin@bengkelpro.com</code> | Password: <code className="bg-blue-100 px-1 py-0.5 rounded font-mono font-bold">akundemo</code>
+                💡 <strong>Akun awal:</strong> gunakan kredensial Owner yang ditentukan administrator melalui environment saat proses instalasi. Aplikasi tidak menyediakan kredensial demo.
               </div>
             </div>
           )}

@@ -197,10 +197,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   const openQuickRackEditor = (part: SparePart) => {
     setQuickRackPart(part);
-    setEditRackCode(part.rackCode || 'Rak A');
-    setEditShelfLevel(part.shelfLevel || 'Tingkat 1');
-    setEditBinNumber(part.binNumber || 'Kotak 01');
-    setEditRackZone(part.rackZone || 'Gudang Utama');
+    setEditRackCode(part.rackCode || '');
+    setEditShelfLevel(part.shelfLevel || '');
+    setEditBinNumber(part.binNumber || '');
+    setEditRackZone(part.rackZone || '');
     setEditLocationNotes(part.locationNotes || '');
   };
 
@@ -211,7 +211,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       rackCode: editRackCode.trim() || undefined,
       shelfLevel: editShelfLevel.trim() || undefined,
       binNumber: editBinNumber.trim() || undefined,
-      rackZone: editRackZone.trim() || 'Gudang Utama',
+      rackZone: editRackZone.trim() || undefined,
       locationNotes: editLocationNotes.trim() || undefined,
       lastUpdated: new Date().toISOString()
     };
@@ -1071,7 +1071,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Kode Rak *</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Kode Rak (opsional)</label>
                 <input 
                   list="quick-rack-list"
                   placeholder="e.g. Rak A, Rak B"
@@ -1124,10 +1124,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   onChange={e => setEditRackZone(e.target.value)}
                   className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold text-slate-900"
                 >
-                  <option value="Gudang Utama">Gudang Utama</option>
-                  <option value="Toko Kasir">Toko Kasir / Etalase Depan</option>
-                  <option value="Gudang Belakang">Gudang Belakang</option>
-                  <option value="Area Servis Luar">Area Servis Luar</option>
+                  <option value="">Lokasi belum diatur</option>
+                  {(masterZones || []).map(zone => <option key={zone.id} value={zone.name}>{zone.name}</option>)}
                 </select>
               </div>
 
@@ -1146,7 +1144,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <span className="text-[10px] font-bold text-slate-500 uppercase">Hasil Label Lokasi:</span>
               <span className="text-xs font-black text-amber-700 flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" />
-                {[editRackCode || 'Tanpa Rak', editShelfLevel, editBinNumber ? `(${editBinNumber})` : null].filter(Boolean).join(' • ')}
+                {[editRackCode, editShelfLevel, editBinNumber ? `(${editBinNumber})` : null].filter(Boolean).join(' • ') || 'Lokasi belum diatur'}
               </span>
             </div>
 

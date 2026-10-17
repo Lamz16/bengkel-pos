@@ -15,6 +15,7 @@ import {
   User,
   UserRole,
   ServiceStatus,
+  ServiceQueue, ServiceQueueStatus,
   DistributorInvoice,
   PartCategory,
   WarehouseRack,
@@ -125,6 +126,16 @@ export interface ActivityLogPage {
   data: Array<{ id: string; createdAt: string; userName?: string | null; role?: string | null; action: string; statusCode: number; success: boolean; category: string; entity?: string | null; entityId?: string | null; changedFields?: string | null; beforeData?: string | null; afterData?: string | null; description: string; technicalDetail?: string | null }>;
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
+export interface CompletedTransactionReportRow {
+  id: string; completedAt: string; invoiceNumber: string; receiptType: 'SERVICE' | 'SALE'; customerName: string; vehiclePlate: string; vehicleModel: string; mechanicId?: string | null; mechanicName?: string | null;
+  serviceItems: Array<{ name: string; price: number }>; parts: Array<{ name: string; quantity: number; unitPrice: number; subtotal: number; unitCost: number; cost: number }>;
+  totalLabor: number; totalParts: number; discount: number; revenue: number; cost: number; mechanicBonus: number; grossProfit: number; paymentStatus: string; paymentMethods: string[];
+}
+export interface CompletedTransactionReport {
+  data: CompletedTransactionReportRow[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+  totals: { transactions: number; revenue: number; labor: number; parts: number; cost: number; bonus: number; profit: number };
+}
 
 export const ENDPOINTS = {
   SERVICES: {
@@ -149,6 +160,7 @@ export const ENDPOINTS = {
   },
   REPORTS: {
     SUMMARY: '/reports/summary',
+    COMPLETED_TRANSACTIONS: '/transaction-reports/completed',
   },
   HEALTH: '/health',
 };
@@ -417,6 +429,15 @@ export const api = {
   },
 
   // Services
+  async getServiceQueues(params: { page?: number; limit?: number; search?: string; status?: string } = {}): Promise<PaginatedResult<ServiceQueue>> {
+    const query = new URLSearchParams({ page: String(params.page || 1), limit: String(params.limit || 25) });
+    if (params.search?.trim()) query.set('search', params.search.trim());
+    if (params.status && params.status !== 'All') query.set('status', params.status);
+    return request<PaginatedResult<ServiceQueue>>(`/api/service-queues?${query}`);
+  },
+  async createServiceQueue(data: Omit<ServiceQueue, 'id' | 'queueDate' | 'queueNumber' | 'queueCode' | 'status' | 'createdAt'>): Promise<ServiceQueue> { return request<ServiceQueue>('/api/service-queues', { method: 'POST', body: JSON.stringify(data) }); },
+  async updateServiceQueueStatus(id: string, status: ServiceQueueStatus): Promise<ServiceQueue> { return request<ServiceQueue>(`/api/service-queues/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }); },
+  async callServiceQueue(id: string): Promise<ServiceQueue> { return request<ServiceQueue>(`/api/service-queues/${id}/call`, { method: 'POST' }); },
   async getServices(params: { page?: number; limit?: number; search?: string; status?: string } = {}): Promise<PaginatedResult<WorkshopService>> {
     const query = new URLSearchParams();
     query.set('page', String(params.page || 1));
@@ -429,6 +450,11 @@ export const api = {
     const query = new URLSearchParams({ page: String(params.page || 1), limit: String(params.limit || 25) });
     if (params.search?.trim()) query.set('search', params.search.trim());
     return request<PaginatedResult<WorkshopService>>(`/api/services/receivables?${query}`);
+  },
+  async getCompletedTransactionReport(params: { page?: number; limit?: number; search?: string; from?: string; to?: string; receiptType?: 'SERVICE' | 'SALE'; paymentStatus?: string; mechanicId?: string; paymentMethod?: string; sort?: 'completedAt' | 'revenue' | 'cost' | 'profit'; direction?: 'asc' | 'desc' } = {}): Promise<CompletedTransactionReport> {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== '') query.set(key, String(value)); });
+    return request<CompletedTransactionReport>(`/api/transaction-reports/completed?${query.toString()}`);
   },
 
   async createService(serviceData: WorkshopService): Promise<WorkshopService> {
@@ -466,6 +492,7 @@ export const api = {
     reason: string;
     isAbsent: boolean;
     deductionAmount: number;
+    applyMechanicDeduction: boolean;
   }): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${data.serviceId}/warranty`, {
       method: 'POST',
@@ -595,6 +622,10 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+  async updateStaff(id: string, data: any): Promise<any> {
+    return request<any>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async deleteStaff(id: string): Promise<void> { await request(`/api/staff/${id}`, { method: 'DELETE' }); },
 
   // AI Diagnosis
   async getAIDiagnosis(vehicleModel: string, complaint: string): Promise<string> {

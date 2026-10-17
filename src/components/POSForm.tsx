@@ -39,6 +39,7 @@ interface POSFormProps {
     onAddVehicle: (v: Vehicle) => void;
     initialCart?: Array<{ partId: string; quantity: number }>;
     initialService?: WorkshopService | null;
+    originQueueId?: string;
 }
 
 export const POSForm: React.FC<POSFormProps> = ({
@@ -54,7 +55,8 @@ export const POSForm: React.FC<POSFormProps> = ({
                                                     onAddCustomer,
                                                     onAddVehicle,
                                                     initialCart,
-                                                    initialService
+                                                    initialService,
+                                                    originQueueId
                                                 }) => {
     const activeMechanics = useMemo(() => mechanics.filter(m => m.status === 'Active'), [mechanics]);
     const defaultMec = activeMechanics[0] || mechanics[0];
@@ -67,10 +69,13 @@ export const POSForm: React.FC<POSFormProps> = ({
         km: initialService ? String(initialService.kilometers || '') : '', complaint: initialService?.complaint || '', laborFee: '0',
         type: initialService?.receiptType === 'SALE' ? 'Retail' as const : 'Service' as const,
         mechanicId: initialService?.mechanicId || (defaultMec ? defaultMec.id : ''), mechanicName: initialService?.mechanicName || (defaultMec ? defaultMec.name : ''), mechanicBonusPercent: initialService?.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
-        serviceWarrantyDurationDays: String(initialService?.serviceWarrantyDurationDays ?? settings?.defaultServiceWarrantyDays ?? 7), serviceWarrantyTerms: initialService?.serviceWarrantyTermsSnapshot || settings?.serviceWarrantyTerms || settings?.warrantyTerms || '', paymentStatus: initialService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Partial' | 'Paid', paymentDueDate: initialService?.paymentDueDate ? initialService.paymentDueDate.slice(0, 10) : ''
+        serviceWarrantyDurationDays: String(initialService?.serviceWarrantyDurationDays ?? ''), serviceWarrantyTerms: initialService?.serviceWarrantyTermsSnapshot || '', saleWarrantyDurationDays: String(initialService?.saleWarrantyDurationDays ?? ''), saleWarrantyTerms: initialService?.saleWarrantyTermsSnapshot || '', paymentStatus: initialService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Partial' | 'Paid', paymentDueDate: initialService?.paymentDueDate ? initialService.paymentDueDate.slice(0, 10) : ''
     });
     const [initialPaymentMethod, setInitialPaymentMethod] = useState<'Cash' | 'Transfer' | 'QRIS'>('Cash');
     const [initialPaymentAmount, setInitialPaymentAmount] = useState('');
+    const [transactionWarrantyEnabled, setTransactionWarrantyEnabled] = useState(
+        () => initialService?.receiptType === 'SALE' ? !!initialService.saleWarrantyEnabled : !!initialService?.serviceWarrantyEnabled
+    );
 
     const [usedParts, setUsedParts] = useState<Array<{
         partId: string;
@@ -83,6 +88,7 @@ export const POSForm: React.FC<POSFormProps> = ({
         wholesaleUnitPrice?: number;
         purchasePriceAtTime?: number;
         hasProductWarranty?: boolean;
+        productWarrantyOverride?: boolean;
         warrantyDurationDays?: number;
         warrantyTerms?: string
     }>>(initialService?.partsUsed || []);
@@ -160,6 +166,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                 normalPriceAtTime: part.price,
                 purchasePriceAtTime: part.purchasePrice,
                 hasProductWarranty: part.hasProductWarranty,
+                productWarrantyOverride: false,
                 warrantyDurationDays: part.warrantyDurationDays,
                 warrantyTerms: part.warrantyTerms
             };
@@ -237,6 +244,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                 priceAtTime: part.price,
                 purchasePriceAtTime: part.purchasePrice,
                 hasProductWarranty: part.hasProductWarranty,
+                productWarrantyOverride: false,
                 warrantyDurationDays: part.warrantyDurationDays,
                 warrantyTerms: part.warrantyTerms
             }];
@@ -766,22 +774,30 @@ export const POSForm: React.FC<POSFormProps> = ({
                           </span>
                                                 )}
                                             </div>
+                                            {p.hasProductWarranty && <p className="mt-1 text-[10px] font-bold text-emerald-700">Garansi Produk: {p.warrantyDurationDays || 0} hari{p.warrantyTerms ? ` · ${p.warrantyTerms}` : ''}</p>}
                                         </div>
                                         <div className="mt-4 flex items-center gap-4 border-t border-slate-100 pt-3">
 
                                             {/* Tombol Harga Grosir */}
-                                            {formData.type === 'Retail' && !p.wholesaleType && (
+                                            {formData.type === 'Retail' && (
                                                 <button
                                                     type="button"
                                                     onClick={() => {
                                                         setWholesalePartId(p.partId);
-                                                        setItemWholesaleValue('');
+                                                        setItemWholesaleType(p.wholesaleType || 'percent');
+                                                        setItemWholesaleValue(p.wholesaleValue === undefined ? '' : String(p.wholesaleValue));
                                                     }}
                                                     className="shrink-0 rounded-lg border border-amber-200 bg-white px-2 py-1.5 text-[10px] font-black text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-900 active:scale-[0.98]"
                                                 >
-                                                    + Atur harga grosir produk ini
+                                                    {p.wholesaleType ? 'Ubah harga grosir' : '+ Atur harga grosir produk ini'}
                                                 </button>
                                             )}
+
+                                            {p.wholesaleType && <span className="text-[10px] font-bold text-amber-700">Grosir aktif: Rp {(p.wholesaleUnitPrice || p.priceAtTime).toLocaleString()}/unit</span>}
+
+                                            <button type="button" onClick={() => setUsedParts(prev => prev.map(item => item.partId === p.partId ? { ...item, productWarrantyOverride: true, hasProductWarranty: !item.hasProductWarranty, warrantyDurationDays: !item.hasProductWarranty ? (partObj?.warrantyDurationDays || item.warrantyDurationDays || 0) : item.warrantyDurationDays, warrantyTerms: !item.hasProductWarranty ? (partObj?.warrantyTerms || item.warrantyTerms) : item.warrantyTerms } : item))} className="shrink-0 rounded-lg border border-emerald-200 bg-white px-2 py-1.5 text-[10px] font-black text-emerald-700">
+                                                {p.hasProductWarranty ? 'Nonaktifkan Garansi Item' : 'Aktifkan Garansi Item'}
+                                            </button>
 
                                             {/* Card pengaturan harga grosir */}
                                             {formData.type === 'Retail' && wholesalePartId === p.partId && (
@@ -900,25 +916,6 @@ export const POSForm: React.FC<POSFormProps> = ({
                     </div>
                 </div>
 
-                {formData.type === 'Service' && (
-                    <div className="mt-4 p-4 rounded-2xl border border-blue-100 bg-blue-50/50 space-y-3">
-                        <p className="text-[10px] font-black text-blue-800 uppercase">Garansi Jasa untuk Transaksi
-                            Ini</p>
-                        <label className="block text-[10px] font-bold text-slate-600">Durasi (hari)<input type="number"
-                                                                                                          min="0"
-                                                                                                          value={formData.serviceWarrantyDurationDays}
-                                                                                                          onChange={e => setFormData({
-                                                                                                              ...formData,
-                                                                                                              serviceWarrantyDurationDays: e.target.value
-                                                                                                          })}
-                                                                                                          className="mt-1 h-10 w-full rounded-xl border bg-white px-3 text-xs font-bold"/></label>
-                        <label className="block text-[10px] font-bold text-slate-600">Ketentuan garansi<textarea
-                            value={formData.serviceWarrantyTerms}
-                            onChange={e => setFormData({...formData, serviceWarrantyTerms: e.target.value})}
-                            className="mt-1 min-h-16 w-full rounded-xl border bg-white px-3 py-2 text-xs"/></label>
-                    </div>
-                )}
-
                 <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3"><p
                     className="mb-2 text-[10px] font-black uppercase text-slate-500">Status Pembayaran</p>
                     <div className="grid grid-cols-3 gap-2">
@@ -966,6 +963,14 @@ export const POSForm: React.FC<POSFormProps> = ({
                         )}
                     </div>
 
+                    <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
+                        <label className="flex items-center justify-between gap-3 text-xs font-black text-emerald-900">
+                            <span>{formData.type === 'Retail' ? 'Aktifkan Garansi Transaksi' : 'Aktifkan Garansi Jasa Servis'}</span>
+                            <input type="checkbox" checked={transactionWarrantyEnabled} onChange={event => setTransactionWarrantyEnabled(event.target.checked)} className="h-4 w-4 accent-emerald-600" />
+                        </label>
+                        {transactionWarrantyEnabled ? <div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><label className="text-[10px] font-bold text-emerald-800">Durasi (hari)<input type="number" min="1" value={formData.type === 'Retail' ? formData.saleWarrantyDurationDays : formData.serviceWarrantyDurationDays} onChange={event => setFormData(prev => formData.type === 'Retail' ? ({ ...prev, saleWarrantyDurationDays: event.target.value }) : ({ ...prev, serviceWarrantyDurationDays: event.target.value }))} className="mt-1 h-10 w-full rounded-xl border border-emerald-200 bg-white px-3 text-xs" /></label><label className="text-[10px] font-bold text-emerald-800">Ketentuan<input value={formData.type === 'Retail' ? formData.saleWarrantyTerms : formData.serviceWarrantyTerms} onChange={event => setFormData(prev => formData.type === 'Retail' ? ({ ...prev, saleWarrantyTerms: event.target.value }) : ({ ...prev, serviceWarrantyTerms: event.target.value }))} placeholder="Ketentuan garansi khusus transaksi" className="mt-1 h-10 w-full rounded-xl border border-emerald-200 bg-white px-3 text-xs" /></label></div> : <p className="text-[10px] text-emerald-800">Tidak ada garansi untuk transaksi ini.</p>}
+                    </section>
+
                     <div className="flex justify-between items-center">
                         <div>
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Tagihan</span>
@@ -980,8 +985,9 @@ export const POSForm: React.FC<POSFormProps> = ({
 
                     <button
                         disabled={!canSubmit}
-                        onClick={() => { const initialPaid = formData.paymentStatus === 'Paid' ? grandTotal : Number(initialPaymentAmount || 0); if (formData.paymentStatus === 'Partial' && (!initialPaid || initialPaid >= grandTotal)) return alert('Nominal uang muka harus lebih besar dari nol dan kurang dari total tagihan.'); onSave({
-                            id: initialService?.id || `SRV-${Math.floor(Math.random() * 1000)}`,
+                        onClick={() => { const initialPaid = formData.paymentStatus === 'Paid' ? grandTotal : Number(initialPaymentAmount || 0); const warrantyDays = Number(formData.type === 'Retail' ? formData.saleWarrantyDurationDays : formData.serviceWarrantyDurationDays); if (formData.paymentStatus === 'Partial' && (!initialPaid || initialPaid >= grandTotal)) return alert('Nominal uang muka harus lebih besar dari nol dan kurang dari total tagihan.'); if (transactionWarrantyEnabled && warrantyDays < 1) return alert('Isi durasi garansi minimal satu hari atau nonaktifkan garansi.'); onSave({
+                            // New IDs are generated atomically by the backend; only an edit retains its existing ID.
+                            id: initialService?.id || '',
                             customerId: formData.customerId,
                             customerName: formData.customerName,
                             customerPhone: formData.customerPhone || undefined,
@@ -1009,13 +1015,18 @@ export const POSForm: React.FC<POSFormProps> = ({
                             mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
                             mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100),
                             receiptType: formData.type === 'Retail' ? 'SALE' : 'SERVICE',
-                            serviceWarrantyDurationDays: formData.type === 'Retail' ? 0 : Number(formData.serviceWarrantyDurationDays || 0),
-                            serviceWarrantyTermsSnapshot: formData.type === 'Retail' ? undefined : formData.serviceWarrantyTerms
-                            ,version: initialService?.version
+                            saleWarrantyEnabled: formData.type === 'Retail' && transactionWarrantyEnabled,
+                            saleWarrantyDurationDays: formData.type === 'Retail' && transactionWarrantyEnabled ? Number(formData.saleWarrantyDurationDays || 0) : 0,
+                            saleWarrantyTermsSnapshot: formData.type === 'Retail' && transactionWarrantyEnabled ? formData.saleWarrantyTerms.trim() || undefined : undefined,
+                            serviceWarrantyEnabled: formData.type !== 'Retail' && transactionWarrantyEnabled,
+                            serviceWarrantyDurationDays: formData.type !== 'Retail' && transactionWarrantyEnabled ? Number(formData.serviceWarrantyDurationDays || 0) : 0,
+                            serviceWarrantyTermsSnapshot: formData.type !== 'Retail' && transactionWarrantyEnabled ? formData.serviceWarrantyTerms.trim() || undefined : undefined
+                            ,version: initialService?.version,
+                            originQueueId
                         }); }}
                         className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-blue-200 active:scale-95 transition-all disabled:grayscale disabled:opacity-50"
                     >
-                        {initialService ? 'Simpan Perubahan Transaksi' : (formData.type === 'Retail' ? 'Complete Sale' : 'Submit Order')}
+                        {initialService?.id ? 'Simpan Perubahan Transaksi' : (formData.type === 'Retail' ? 'Complete Sale' : 'Submit Order')}
                     </button>
                 </div>
             </div>

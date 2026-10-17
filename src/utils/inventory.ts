@@ -87,22 +87,9 @@ export function saveStoredZones(zones: WarehouseZone[]) {
  * Example: "OLI-001", "REM-003", "PRT-015"
  */
 export function generatePartSKU(category: string, existingParts: SparePart[], categoriesList?: PartCategory[]): string {
-  let prefix = 'PRT';
-  if (categoriesList) {
-    const matched = categoriesList.find(c => c.name.toLowerCase() === category.toLowerCase());
-    if (matched && matched.skuPrefix) {
-      prefix = matched.skuPrefix.toUpperCase();
-    }
-  }
-  
-  if (prefix === 'PRT') {
-    const matchedDefault = DEFAULT_PART_CATEGORIES.find(c => c.name.toLowerCase() === category.toLowerCase());
-    if (matchedDefault && matchedDefault.skuPrefix) {
-      prefix = matchedDefault.skuPrefix.toUpperCase();
-    } else if (category.trim().length >= 3) {
-      prefix = category.trim().slice(0, 3).toUpperCase();
-    }
-  }
+  const matched = categoriesList?.find(c => c.name.toLowerCase() === category.toLowerCase());
+  const prefix = matched?.skuPrefix?.trim().toUpperCase();
+  if (!prefix) throw new Error('Kategori dengan prefix SKU yang valid wajib dipilih.');
 
   // Find all existing SKUs with this prefix
   const regex = new RegExp(`^${prefix}-(\\d+)$`, 'i');
@@ -139,7 +126,7 @@ export function formatPartLocation(part: SparePart): string {
     return part.rackLocation.trim();
   }
 
-  return 'Belum Ditentukan';
+  return 'Lokasi belum diatur';
 }
 
 /**

@@ -8,6 +8,7 @@ import {
 import { PaginatedResult, WorkshopService } from '../../types';
 import { PaginationParams } from '../repositories/interfaces';
 import { isDbConnected, prisma } from '../db/connection';
+import { randomUUID } from 'node:crypto';
 
 export class WorkshopServiceLayer {
   constructor(
@@ -69,20 +70,35 @@ export class WorkshopServiceLayer {
       effectiveData.paymentDueDate = today.toISOString();
     }
     if (isDbConnected()) {
-      const id = effectiveData.id || `SRV-${Date.now().toString().slice(-8)}`;
+      // The form may carry a client-side temporary ID for React. Never persist it:
+      // short SRV-xxx IDs collide under normal cashier use. The server is the
+      // authority for new transaction identifiers.
+      const id = randomUUID();
       const transactionDate = new Date();
       await prisma.$transaction(async tx => {
+        // Conversion is atomic with the commercial transaction. A failure in
+        // stock/payment creation rolls this check back and leaves the queue open.
+        const originQueueId = effectiveData.originQueueId || undefined;
+        if (originQueueId) {
+          const queue = await tx.serviceQueue.findUnique({ where: { id: originQueueId } });
+          if (!queue) throw new Error('Antrean asal tidak ditemukan.');
+          if (queue.status === 'Converted') throw new Error('Antrean ini sudah dikonversi menjadi transaksi.');
+          if (queue.status === 'Cancelled') throw new Error('Antrean yang dibatalkan tidak dapat dikonversi.');
+        }
         const receiptSettings = await tx.companySettings.findFirst();
         const isSale = effectiveData.receiptType === 'SALE';
-        const serviceWarrantyDurationDays = isSale
-          ? 0
-          : Math.max(0, Number(effectiveData.serviceWarrantyDurationDays ?? receiptSettings?.defaultServiceWarrantyDays ?? 0));
-        const serviceWarrantyTermsSnapshot = isSale
-          ? null
-          : (effectiveData.serviceWarrantyTermsSnapshot || receiptSettings?.serviceWarrantyTerms || receiptSettings?.warrantyTerms || null);
+        // `serviceWarranty*` is labour-only.  Do not let a direct sale populate
+        // this legacy field; sale-wide terms have their own immutable snapshot.
+        const serviceWarrantyDurationDays = isSale ? 0 : Math.max(0, Number(effectiveData.serviceWarrantyDurationDays ?? 0));
+        const serviceWarrantyEnabled = !isSale && !!effectiveData.serviceWarrantyEnabled && serviceWarrantyDurationDays > 0;
+        const saleWarrantyDurationDays = isSale ? Math.max(0, Number(effectiveData.saleWarrantyDurationDays ?? 0)) : 0;
+        const saleWarrantyEnabled = isSale && !!effectiveData.saleWarrantyEnabled && saleWarrantyDurationDays > 0;
+        const serviceWarrantyTermsSnapshot = serviceWarrantyDurationDays > 0
+          ? (effectiveData.serviceWarrantyTermsSnapshot || receiptSettings?.serviceWarrantyTerms || receiptSettings?.warrantyTerms || null)
+          : null;
         const receiptHeaderSnapshot = effectiveData.receiptHeaderSnapshot || (isSale
-          ? (receiptSettings?.saleReceiptHeader || receiptSettings?.receiptHeader || 'NOTA PEMBELIAN BARANG')
-          : (receiptSettings?.serviceReceiptHeader || receiptSettings?.receiptHeader || 'NOTA TRANSAKSI SERVIS'));
+          ? (receiptSettings?.saleReceiptHeader || receiptSettings?.receiptHeader || null)
+          : (receiptSettings?.serviceReceiptHeader || receiptSettings?.receiptHeader || null));
         const receiptFooterSnapshot = effectiveData.receiptFooterSnapshot || (isSale
           ? (receiptSettings?.saleReceiptFooter || receiptSettings?.footerNote || null)
           : (receiptSettings?.serviceReceiptFooter || receiptSettings?.footerNote || null));
@@ -119,15 +135,30 @@ export class WorkshopServiceLayer {
           receiptType: isSale ? 'SALE' : 'SERVICE',
           receiptHeaderSnapshot,
           receiptFooterSnapshot,
+          saleWarrantyEnabled,
+          saleWarrantyDurationDays,
+          saleWarrantyTermsSnapshot: saleWarrantyEnabled ? (effectiveData.saleWarrantyTermsSnapshot?.trim() || null) : null,
+          saleWarrantyStartedAt: saleWarrantyEnabled ? transactionDate : null,
+          saleWarrantyExpiresAt: saleWarrantyEnabled ? new Date(transactionDate.getTime() + saleWarrantyDurationDays * 86_400_000) : null,
+          serviceWarrantyEnabled,
           serviceWarrantyDurationDays,
           serviceWarrantyTermsSnapshot,
+          serviceWarrantyStartedAt: serviceWarrantyEnabled ? transactionDate : null,
           serviceWarrantyExpiresAt: serviceWarrantyDurationDays > 0 ? new Date(transactionDate.getTime() + serviceWarrantyDurationDays * 86_400_000) : null,
+          originQueueId: originQueueId || null,
           payments: requestedPayments.length ? { create: requestedPayments.map(payment => ({ amount: payment.amount, paymentMethod: payment.paymentMethod!, referenceNo: payment.referenceNo || null, notes: payment.notes || null, paymentDate: payment.paymentDate ? new Date(payment.paymentDate) : transactionDate })) } : undefined,
           serviceItems: { create: (effectiveData.serviceItems || []).map(item => ({ name: item.name, price: item.price })) },
           partsUsed: { create: (effectiveData.partsUsed || []).map(item => {
             const warranty = partWarranty.get(item.partId);
-            const duration = item.hasProductWarranty ? Number(item.warrantyDurationDays || 0) : 0;
-            const terms = item.hasProductWarranty ? (item.warrantyTerms || warranty?.warrantyTerms || null) : null;
+            // An explicit per-item value is an override; otherwise the master is
+            // copied once.  Neither path mutates the master product.
+            // A missing client field must never accidentally turn off a warranty
+            // configured on the master item. Only an explicit cashier override may
+            // replace the copied master snapshot.
+            const overridden = item.productWarrantyOverride === true;
+            const enabled = overridden ? !!item.hasProductWarranty : !!warranty?.hasProductWarranty;
+            const duration = enabled ? Number(overridden ? (item.warrantyDurationDays ?? 0) : (warranty?.warrantyDurationDays ?? 0)) : 0;
+            const terms = enabled ? (overridden ? (item.warrantyTerms ?? null) : (warranty?.warrantyTerms ?? null)) : null;
             return {
               partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime,
               normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime,
@@ -135,9 +166,10 @@ export class WorkshopServiceLayer {
               wholesaleValue: item.wholesaleValue || null,
               wholesaleUnitPrice: item.wholesaleUnitPrice || null,
               purchasePriceAtTime: item.purchasePriceAtTime ?? undefined,
-              hasProductWarranty: !!warranty?.hasProductWarranty,
+              hasProductWarranty: enabled,
               warrantyDurationDays: duration,
               warrantyTerms: terms,
+              warrantyStartedAt: enabled ? transactionDate : null,
               warrantyExpiresAt: duration > 0 ? new Date(transactionDate.getTime() + duration * 86_400_000) : null,
             };
           }) },
@@ -147,6 +179,13 @@ export class WorkshopServiceLayer {
           where: { id: effectiveData.customerId },
           data: { totalServiceCount: { increment: 1 }, totalSpent: { increment: effectiveData.totalAmount }, lastVisitDate: transactionDate },
         });
+        if (originQueueId) {
+          const converted = await tx.serviceQueue.updateMany({
+            where: { id: originQueueId, status: { in: ['Waiting', 'In Progress', 'Ready'] } },
+            data: { status: 'Converted', convertedAt: transactionDate, version: { increment: 1 } },
+          });
+          if (converted.count !== 1) throw new Error('Antrean tidak dapat dikonversi karena statusnya telah berubah.');
+        }
       });
       const persisted = await this.serviceRepo.getById(id);
       if (!persisted) throw new Error('Transaksi servis tersimpan tetapi gagal dimuat kembali.');
@@ -193,6 +232,11 @@ export class WorkshopServiceLayer {
       if (!previous) throw new Error('Order servis tidak ditemukan.');
       if (previous.status === 'Done' || previous.returns.length > 0) throw new Error('Transaksi selesai atau yang sudah memiliki retur tidak dapat diedit.');
       if (expectedVersion !== undefined && previous.version !== expectedVersion) throw new Error(`Order servis '${id}' telah diubah oleh kasir lain. Silakan muat ulang data.`);
+      const previousWarranty = new Map(previous.partsUsed.map(item => [item.partId, item]));
+      const currentPartWarranty = new Map((await tx.sparePart.findMany({
+        where: { id: { in: effectiveData.partsUsed.map(item => item.partId).filter(Boolean) } },
+        select: { id: true, hasProductWarranty: true, warrantyDurationDays: true, warrantyTerms: true },
+      })).map(item => [item.id, item]));
       const previousQuantities = new Map<string, number>();
       previous.partsUsed.forEach(item => previousQuantities.set(item.partId, (previousQuantities.get(item.partId) || 0) + item.quantity));
       const nextQuantities = new Map<string, number>();
@@ -217,7 +261,17 @@ export class WorkshopServiceLayer {
         vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel, kilometers: effectiveData.kilometers, complaint: effectiveData.complaint, diagnosis: effectiveData.diagnosis,
         laborFee: effectiveData.laborFee, totalAmount: effectiveData.totalAmount, paymentStatus: effectiveData.paymentStatus, paymentDueDate: effectiveData.paymentStatus === 'Paid' ? null : (effectiveData.paymentDueDate ? new Date(effectiveData.paymentDueDate) : (() => { const today = new Date(); today.setHours(23, 59, 59, 999); return today; })()), discountAmount: effectiveData.discountAmount, discountReason: effectiveData.discountReason,
         mechanicId: effectiveData.mechanicId || null, mechanicName: effectiveData.mechanicName, mechanicBonusPercent: effectiveData.mechanicBonusPercent, mechanicBonusAmount: effectiveData.mechanicBonusAmount,
-        version: { increment: 1 }, serviceItems: { deleteMany: {}, create: serviceItems }, partsUsed: { deleteMany: {}, create: effectiveData.partsUsed.map(item => ({ partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime, normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime, wholesaleType: item.wholesaleType || null, wholesaleValue: item.wholesaleValue || null, wholesaleUnitPrice: item.wholesaleUnitPrice || null, hasProductWarranty: !!item.hasProductWarranty, warrantyDurationDays: item.hasProductWarranty ? item.warrantyDurationDays || 0 : 0, warrantyTerms: item.hasProductWarranty ? item.warrantyTerms || null : null })) },
+        version: { increment: 1 }, serviceItems: { deleteMany: {}, create: serviceItems }, partsUsed: { deleteMany: {}, create: effectiveData.partsUsed.map(item => {
+          const historic = previousWarranty.get(item.partId);
+          const master = currentPartWarranty.get(item.partId);
+          const overridden = item.productWarrantyOverride === true;
+          // Retained lines preserve their old snapshot. A newly added line copies
+          // the current master unless cashier explicitly overrides it.
+          const enabled = overridden ? !!item.hasProductWarranty : (historic?.hasProductWarranty ?? !!master?.hasProductWarranty);
+          const duration = enabled ? (overridden ? Number(item.warrantyDurationDays || 0) : Number(historic?.warrantyDurationDays ?? master?.warrantyDurationDays ?? 0)) : 0;
+          const terms = enabled ? (overridden ? item.warrantyTerms || null : historic?.warrantyTerms || master?.warrantyTerms || null) : null;
+          return { partId: item.partId, name: item.name, quantity: item.quantity, priceAtTime: item.priceAtTime, normalPriceAtTime: item.normalPriceAtTime || item.priceAtTime, wholesaleType: item.wholesaleType || null, wholesaleValue: item.wholesaleValue || null, wholesaleUnitPrice: item.wholesaleUnitPrice || null, hasProductWarranty: enabled, warrantyDurationDays: duration, warrantyTerms: terms, warrantyStartedAt: historic?.warrantyStartedAt || (enabled ? new Date() : null), warrantyExpiresAt: historic?.warrantyExpiresAt || (duration > 0 ? new Date(Date.now() + duration * 86_400_000) : null) };
+        }) },
       }});
     });
     return this.serviceRepo.getById(id);
@@ -294,14 +348,25 @@ export class WorkshopServiceLayer {
     serviceId: string;
     reason: string;
     isAbsentNextDay: boolean;
+    applyMechanicDeduction: boolean;
   }): Promise<{ service: WorkshopService | null; deductionCreated: boolean }> {
     const srv = await this.serviceRepo.getById(data.serviceId);
     if (!srv) {
       throw new Error('Service order not found');
     }
+    const hasActiveProductWarranty = srv.partsUsed.some(item => item.hasProductWarranty && (item.warrantyDurationDays || 0) > 0 && (!item.warrantyExpiresAt || new Date(item.warrantyExpiresAt) >= new Date()));
+    const hasLegacySaleWarranty = srv.receiptType === 'SALE' && !srv.saleWarrantyEnabled && !srv.saleWarrantyStartedAt && (srv.serviceWarrantyDurationDays || 0) > 0;
+    const saleWarrantyDays = srv.saleWarrantyDurationDays || (hasLegacySaleWarranty ? srv.serviceWarrantyDurationDays || 0 : 0);
+    const saleWarrantyExpiresAt = srv.saleWarrantyExpiresAt || (hasLegacySaleWarranty ? srv.serviceWarrantyExpiresAt : undefined);
+    const hasActiveSaleWarranty = (!!srv.saleWarrantyEnabled || hasLegacySaleWarranty) && saleWarrantyDays > 0 && (!saleWarrantyExpiresAt || new Date(saleWarrantyExpiresAt) >= new Date());
+    if (srv.receiptType === 'SALE' && !hasActiveSaleWarranty && !hasActiveProductWarranty) throw new Error('Transaksi ini tidak memiliki garansi transaksi atau produk yang masih aktif.');
+    const hasServiceWarranty = !!srv.serviceWarrantyEnabled || (!srv.serviceWarrantyStartedAt && (srv.serviceWarrantyDurationDays || 0) > 0);
+    if (srv.receiptType !== 'SALE' && (!hasServiceWarranty || !srv.serviceWarrantyDurationDays || srv.serviceWarrantyDurationDays < 1)) throw new Error('Transaksi ini tidak memiliki garansi jasa aktif.');
+    if (srv.receiptType !== 'SALE' && srv.serviceWarrantyExpiresAt && new Date(srv.serviceWarrantyExpiresAt) < new Date()) throw new Error('Masa garansi transaksi telah berakhir.');
+    if (srv.hasWarrantyClaim) throw new Error('Klaim garansi untuk transaksi ini sudah pernah diproses.');
 
-    let penalty = 75000;
-    if (srv.mechanicId) {
+    let penalty = 0;
+    if (srv.receiptType !== 'SALE' && data.applyMechanicDeduction && srv.mechanicId) {
       const mec = await this.mechanicRepo.getById(srv.mechanicId);
       if (mec) {
         penalty = mec.warrantyPenaltyAmount || 75000;
@@ -312,29 +377,34 @@ export class WorkshopServiceLayer {
     }
 
     const claimDate = new Date();
-    const updatedSrv = await this.serviceRepo.updateWarrantyClaim({
-      serviceId: data.serviceId,
-      reason: data.reason,
-      isAbsent: data.isAbsentNextDay,
-      deductionAmount: penalty,
-      claimDate,
-    });
-
     let deductionCreated = false;
-    if (srv.mechanicId) {
-      await this.deductionRepo.create({
-        mechanicId: srv.mechanicId,
-        mechanicName: srv.mechanicName || 'Mekanik',
-        serviceId: data.serviceId,
-        vehiclePlate: srv.vehiclePlate,
-        date: claimDate.toISOString(),
-        reason: data.isAbsentNextDay
-          ? `Klaim Garansi: ${data.reason} + Denda Absen Keesokan Hari`
-          : `Klaim Garansi Servis Ulang: ${data.reason}`,
-        type: 'Penalty',
-        amount: penalty,
-        isAbsentNextDay: data.isAbsentNextDay,
+    if (isDbConnected()) {
+      await prisma.$transaction(async tx => {
+        await tx.workshopService.update({ where: { id: data.serviceId }, data: {
+          hasWarrantyClaim: true, warrantyClaimDate: claimDate, warrantyClaimReason: data.reason,
+          isMechanicAbsentOnClaim: data.applyMechanicDeduction && data.isAbsentNextDay,
+          warrantyDeductionAmount: penalty, status: srv.receiptType === 'SALE' ? srv.status : 'In Progress', version: { increment: 1 },
+        }});
+        if (srv.receiptType !== 'SALE' && data.applyMechanicDeduction && srv.mechanicId) {
+          await tx.mechanicDeduction.create({ data: {
+            mechanicId: srv.mechanicId, mechanicName: srv.mechanicName || 'Mekanik', serviceId: data.serviceId,
+            vehiclePlate: srv.vehiclePlate, date: claimDate,
+            reason: data.isAbsentNextDay ? `Klaim Garansi: ${data.reason} + Denda Absen Keesokan Hari` : `Klaim Garansi Servis Ulang: ${data.reason}`,
+            type: 'Penalty', amount: penalty, isAbsentNextDay: data.isAbsentNextDay,
+          }});
+          deductionCreated = true;
+        }
       });
+      return { service: await this.serviceRepo.getById(data.serviceId), deductionCreated };
+    }
+
+    const updatedSrv = await this.serviceRepo.updateWarrantyClaim({
+      serviceId: data.serviceId, reason: data.reason,
+      isAbsent: data.applyMechanicDeduction && data.isAbsentNextDay,
+      deductionAmount: penalty, claimDate,
+    });
+    if (srv.receiptType !== 'SALE' && data.applyMechanicDeduction && srv.mechanicId) {
+      await this.deductionRepo.create({ mechanicId: srv.mechanicId, mechanicName: srv.mechanicName || 'Mekanik', serviceId: data.serviceId, vehiclePlate: srv.vehiclePlate, date: claimDate.toISOString(), reason: `Klaim Garansi Servis Ulang: ${data.reason}`, type: 'Penalty', amount: penalty, isAbsentNextDay: data.isAbsentNextDay });
       deductionCreated = true;
     }
 

@@ -195,6 +195,7 @@ export class PartRepository implements IPartRepository {
         throw new Error(`Data barang '${current.name}' telah diubah oleh kasir/pengguna lain (Versi saat ini: ${current.version}, versi Anda: ${expectedVersion}). Silakan muat ulang data.`);
       }
 
+      const locationWasProvided = ['rackId', 'rackCode', 'shelfLevel', 'binNumber', 'locationNotes'].some(key => Object.prototype.hasOwnProperty.call(data, key));
       const masterIds = data.categoryId || data.category || data.rackId || data.rackCode
         ? await this.resolveMasterIds(data) : undefined;
 
@@ -207,8 +208,11 @@ export class PartRepository implements IPartRepository {
           hasProductWarranty: data.hasProductWarranty,
           warrantyDurationDays: data.hasProductWarranty === false ? 0 : data.warrantyDurationDays,
           warrantyTerms: data.hasProductWarranty === false ? null : data.warrantyTerms,
-          supplierId: data.supplierId, imageUrl: data.imageUrl, rackId: masterIds?.rackId,
-          shelfLevel: data.shelfLevel, binNumber: data.binNumber, locationNotes: data.locationNotes,
+          supplierId: data.supplierId, imageUrl: data.imageUrl,
+          rackId: locationWasProvided ? (masterIds?.rackId || null) : undefined,
+          shelfLevel: locationWasProvided ? (data.shelfLevel || null) : undefined,
+          binNumber: locationWasProvided ? (data.binNumber || null) : undefined,
+          locationNotes: locationWasProvided ? (data.locationNotes || null) : undefined,
           version: { increment: 1 },
         }, include: includeMasterData,
       });

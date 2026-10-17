@@ -27,20 +27,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
   if (!service) return null;
 
   const isSale = service.receiptType === 'SALE';
-  const receiptHeader = service.receiptHeaderSnapshot || (isSale ? settings.saleReceiptHeader : settings.serviceReceiptHeader) || settings.receiptHeader || (isSale ? 'NOTA PEMBELIAN BARANG' : 'NOTA TRANSAKSI SERVIS');
-  const receiptFooter = service.receiptFooterSnapshot || (isSale ? settings.saleReceiptFooter : settings.serviceReceiptFooter) || settings.footerNote;
+  const receiptHeader = service.receiptHeaderSnapshot || (isSale ? settings.saleReceiptHeader : settings.serviceReceiptHeader) || settings.receiptHeader;
+  const receiptFooter = service.receiptFooterSnapshot || (isSale ? settings.saleReceiptFooter : settings.serviceReceiptFooter) || settings.footerNote || '';
   const serviceWarrantyDays = service.serviceWarrantyDurationDays || 0;
-  const serviceWarrantyTerms = service.serviceWarrantyTermsSnapshot || settings.serviceWarrantyTerms || settings.warrantyTerms;
+  const serviceWarrantyTerms = service.serviceWarrantyTermsSnapshot || '';
+  // Before the split, a few sale rows stored their transaction warranty in the
+  // service fields. Read it as a sale warranty only when no new sale snapshot exists.
+  const legacySaleWarranty = isSale && !service.saleWarrantyEnabled && !service.saleWarrantyStartedAt && (service.saleWarrantyDurationDays || 0) > 0;
+  const saleWarrantyDays = service.saleWarrantyDurationDays || (legacySaleWarranty ? service.serviceWarrantyDurationDays || 0 : 0);
+  const saleWarrantyTerms = service.saleWarrantyTermsSnapshot || (legacySaleWarranty ? service.serviceWarrantyTermsSnapshot || '' : '');
+  const saleWarrantyExpiresAt = service.saleWarrantyExpiresAt || (legacySaleWarranty ? service.serviceWarrantyExpiresAt : undefined);
+  const hasServiceWarranty = !!service.serviceWarrantyEnabled || (!isSale && !service.serviceWarrantyStartedAt && serviceWarrantyDays > 0);
 
-  const serviceItems = service.serviceItems?.length
+  const serviceItems = !isSale && service.serviceItems?.length
     ? service.serviceItems
-    : !isSale
-      ? [{ name: 'Jasa Mekanik', price: service.laborFee || 0 }]
-      : [];
+    : !isSale && service.laborFee > 0 ? [{ name: 'Jasa Servis', price: service.laborFee }] : [];
   const productWarrantyItems = service.partsUsed.filter(
     item => item.hasProductWarranty && (item.warrantyDurationDays || 0) > 0
   );
-  const invoiceNumber = `INV-${service.id.slice(0, 8).toUpperCase()}`;
+  const invoiceNumber = service.invoiceNumber || `INV-${service.id.slice(0, 8).toUpperCase()}`;
   const invoiceDate = format(new Date(service.createdAt), 'dd MMM yyyy • HH:mm');
 
   const handlePrint = async () => {
@@ -181,8 +186,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
           <div className="h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-4" />
 
           <div className="text-center space-y-1 pb-3 border-b border-dashed border-slate-200 receipt-divider">
-            <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{settings.name || 'NAMA BENGKEL'}</h4>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{settings.slogan || 'Slogan Bengkel Anda'}</p>
+            {settings.name && <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{settings.name}</h4>}
+            {settings.slogan && <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{settings.slogan}</p>}
             {settings.address && <p className="text-[9px] text-slate-400 font-medium leading-tight max-w-[240px] mx-auto">{settings.address}</p>}
             {settings.phone && <p className="text-[9px] font-bold text-blue-600">Telp/WA: {settings.phone}</p>}
             {receiptHeader && <div className="pt-2"><span className="text-[9px] font-black uppercase text-slate-700">{receiptHeader}</span></div>}
@@ -193,17 +198,19 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             <div className="text-right"><span className="text-slate-400 block font-bold">Tanggal:</span><span className="font-bold text-slate-800">{invoiceDate}</span></div>
             <div>
               <span className="text-slate-400 block font-bold">Pelanggan:</span>
-              <span className="font-bold text-slate-900 uppercase">{service.customerName}</span>
+              {service.customerName && <span className="font-bold text-slate-900 uppercase">{service.customerName}</span>}
               {settings.showCustomerPhoneOnReceipt && service.customerPhone && <span className="text-[9px] text-slate-500 block">{service.customerPhone}</span>}
             </div>
-            <div className="text-right">
+            {!isSale && <div className="text-right">
               <span className="text-slate-400 block font-bold">Kendaraan:</span>
               <span className="font-mono font-black text-slate-900 uppercase">{service.vehiclePlate}</span>
               <span className="text-[9px] text-slate-500 block">{service.vehicleModel}</span>
-            </div>
-            {settings.showOdometerOnReceipt && service.kilometers > 0 && <div><span className="text-slate-400 block font-bold">Kilometer (KM):</span><span className="font-bold text-slate-800 font-mono">{service.kilometers.toLocaleString('id-ID')} KM</span></div>}
-            {settings.showMechanicOnReceipt && service.mechanicName && <div className={settings.showOdometerOnReceipt && service.kilometers > 0 ? 'text-right' : 'col-span-2'}><span className="text-slate-400 block font-bold">Mekanik Penanggung Jawab:</span><span className="font-black text-blue-700">{service.mechanicName}</span></div>}
+            </div>}
+            {!isSale && settings.showOdometerOnReceipt && service.kilometers > 0 && <div><span className="text-slate-400 block font-bold">Kilometer (KM):</span><span className="font-bold text-slate-800 font-mono">{service.kilometers.toLocaleString('id-ID')} KM</span></div>}
+            {!isSale && settings.showMechanicOnReceipt && service.mechanicName && <div className={settings.showOdometerOnReceipt && service.kilometers > 0 ? 'text-right' : 'col-span-2'}><span className="text-slate-400 block font-bold">Mekanik Penanggung Jawab:</span><span className="font-black text-blue-700">{service.mechanicName}</span></div>}
           </div>
+
+          {!isSale && (service.complaint || service.diagnosis) && <div className="space-y-1 pb-3 border-b border-dashed border-slate-200 receipt-divider text-[10px]">{service.complaint && <p><b>Keluhan:</b> {service.complaint}</p>}{service.diagnosis && <p><b>Diagnosis:</b> {service.diagnosis}</p>}</div>}
 
           <div className="space-y-2 text-xs pb-3 border-b border-dashed border-slate-200 receipt-divider">
             {serviceItems.map((item, index) => <div key={`service-${index}`} className="flex justify-between items-start"><div><p className="font-bold text-slate-900">{item.name}</p><p className="text-[9px] text-slate-400">Jasa Servis</p></div><span className="font-bold text-slate-800">{rupiah(item.price || 0)}</span></div>)}
@@ -216,12 +223,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             <span className="text-lg font-black text-blue-600 tracking-tight">{rupiah(service.totalAmount)}</span>
           </div>
 
-          {settings.showWarrantyOnReceipt && !isSale && serviceWarrantyDays > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Ketentuan Garansi Servis:</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{settings.warrantyTerms}</p></div>}
+          {settings.showWarrantyOnReceipt && !isSale && hasServiceWarranty && serviceWarrantyDays > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Garansi Jasa Servis</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{serviceWarrantyDays} hari{service.serviceWarrantyExpiresAt ? ` · hingga ${format(new Date(service.serviceWarrantyExpiresAt), 'dd MMM yyyy')}` : ''}{serviceWarrantyTerms ? ` · ${serviceWarrantyTerms}` : ''}</p></div>}
+
+          {isSale && (service.saleWarrantyEnabled || legacySaleWarranty) && saleWarrantyDays > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Garansi Transaksi</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{saleWarrantyDays} hari{saleWarrantyExpiresAt ? ` · hingga ${format(new Date(saleWarrantyExpiresAt), 'dd MMM yyyy')}` : ''}{saleWarrantyTerms ? ` · ${saleWarrantyTerms}` : ''}</p></div>}
 
           {productWarrantyItems.length > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-emerald-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-emerald-700" /><span>Garansi Produk / Sparepart</span></div>{productWarrantyItems.map((item, index) => <p key={`${item.partId}-${index}`} className="text-[10px] text-emerald-800"><b>{item.name}</b> — {item.warrantyDurationDays} hari{item.warrantyExpiresAt ? `, sampai ${format(new Date(item.warrantyExpiresAt), 'dd MMM yyyy')}` : ''}</p>)}</div>}
 
           {settings.receiptContactHelp && <div className="text-center text-[10px] text-slate-600 font-bold py-1">📞 {settings.receiptContactHelp}</div>}
-          <div className="text-center space-y-1 pt-2"><p className="text-[10px] font-black uppercase tracking-wider text-slate-700">{settings.name || 'BENGKEL KITA'} • TERIMA KASIH</p><p className="text-[9px] text-slate-400 font-medium leading-normal max-w-[280px] mx-auto italic">"{receiptFooter}"</p></div>
+          <div className="text-center space-y-1 pt-2">{settings.name && <p className="text-[10px] font-black uppercase tracking-wider text-slate-700">{settings.name} • TERIMA KASIH</p>}{receiptFooter.trim() && <p className="text-[9px] text-slate-400 font-medium leading-normal max-w-[280px] mx-auto italic">"{receiptFooter}"</p>}</div>
           <div className="pt-2 text-center text-[10px] font-mono text-slate-300">- - - - - - - - - - - - - - - - - - - - - - -</div>
         </div>
 

@@ -1,8 +1,39 @@
 export type ServiceStatus = 'Pending' | 'In Progress' | 'Ready' | 'Done';
+export type ServiceQueueStatus = 'Waiting' | 'In Progress' | 'Ready' | 'Cancelled' | 'Converted';
+
+export interface ServiceQueue {
+  id: string;
+  queueDate: string;
+  queueNumber: number;
+  queueCode: string;
+  customerId?: string;
+  customerName: string;
+  customerPhone?: string;
+  vehicleId?: string;
+  vehiclePlate: string;
+  vehicleModel: string;
+  kilometers?: number;
+  complaint: string;
+  estimateNote?: string;
+  diagnosis?: string;
+  internalNotes?: string;
+  mechanicId?: string;
+  mechanicName?: string;
+  status: ServiceQueueStatus;
+  calledAt?: string;
+  startedAt?: string;
+  readyAt?: string;
+  convertedAt?: string;
+  transactionId?: string;
+  createdAt: string;
+  updatedAt?: string;
+  version?: number;
+}
 // Hak Akses Sistem: Superadmin/Owner dan Admin/PIC
 export type UserRole = 'Owner' | 'Admin';
 
 export interface CompanySettings {
+  id?: string;
   // Fitur Profil Bengkel & Branding Platform
   name: string;
   logoUrl?: string;
@@ -207,8 +238,11 @@ export interface WorkshopService {
     // Snapshot modal saat transaksi dibuat; menjaga laporan tetap akurat saat modal master berubah.
     purchasePriceAtTime?: number;
     hasProductWarranty?: boolean;
+    // False means the master-product snapshot is used; true means cashier explicitly changed this item.
+    productWarrantyOverride?: boolean;
     warrantyDurationDays?: number;
     warrantyTerms?: string;
+    warrantyStartedAt?: string;
     warrantyExpiresAt?: string;
   }>;
   serviceItems?: Array<{ name: string; price: number }>;
@@ -234,10 +268,19 @@ export interface WorkshopService {
   receiptType?: 'SERVICE' | 'SALE';
   receiptHeaderSnapshot?: string;
   receiptFooterSnapshot?: string;
+  saleWarrantyEnabled?: boolean;
+  saleWarrantyDurationDays?: number;
+  saleWarrantyTermsSnapshot?: string;
+  saleWarrantyStartedAt?: string;
+  saleWarrantyExpiresAt?: string;
+  serviceWarrantyEnabled?: boolean;
   serviceWarrantyDurationDays?: number;
   serviceWarrantyTermsSnapshot?: string;
+  serviceWarrantyStartedAt?: string;
   serviceWarrantyExpiresAt?: string;
   version?: number;
+  originQueueId?: string;
+  invoiceNumber?: string;
 }
 
 export type ServicePaymentMethod = 'Cash' | 'Transfer' | 'QRIS';

@@ -38,13 +38,16 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
   const legacyPaidAmount = service.paymentStatus === 'Paid' && paidAmount === 0 ? service.totalAmount : paidAmount;
   const remainingAmount = Math.max(0, service.totalAmount - legacyPaidAmount);
   const dueDays = service.paymentDueDate ? Math.floor((new Date(service.paymentDueDate).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86_400_000) : null;
+  const isSale = service.receiptType === 'SALE';
+  const hasActiveProductWarranty = isSale && service.partsUsed.some(item => item.hasProductWarranty && (item.warrantyDurationDays || 0) > 0 && (!item.warrantyExpiresAt || new Date(item.warrantyExpiresAt) >= new Date()));
+  const hasActiveSaleWarranty = isSale && !!service.saleWarrantyEnabled && (service.saleWarrantyDurationDays || 0) > 0 && (!service.saleWarrantyExpiresAt || new Date(service.saleWarrantyExpiresAt) >= new Date());
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-xl font-black text-slate-900">{service.vehicleModel}</h2>
-          <p className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest">{service.vehiclePlate}</p>
+          <h2 className="text-xl font-black text-slate-900">{isSale ? 'Penjualan Langsung' : service.vehicleModel}</h2>
+          <p className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest">{isSale ? 'DIRECT SALE' : service.vehiclePlate}</p>
         </div>
         <span className={cn(
           "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
@@ -86,19 +89,19 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className={cn('grid gap-3', isSale ? 'grid-cols-1' : 'grid-cols-2')}>
         <div className="p-4 bg-slate-50 rounded-2xl">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pelanggan</p>
-          <p className="text-xs font-black text-slate-700">{service.customerName}</p>
+          <p className="text-xs font-black text-slate-700">{service.customerName || 'Pembeli umum'}</p>
         </div>
-        <div className="p-4 bg-slate-50 rounded-2xl">
+        {!isSale && <div className="p-4 bg-slate-50 rounded-2xl">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Odometer</p>
           <p className="text-xs font-black text-slate-700">{service.kilometers.toLocaleString()} KM</p>
-        </div>
+        </div>}
       </div>
 
       {/* Mechanic Assigned & Commission Info */}
-      <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl flex items-center justify-between">
+      {!isSale && <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs">
             <Wrench className="w-5 h-5" />
@@ -112,10 +115,14 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
           <span className="text-[10px] font-bold text-slate-400 uppercase block">Bonus Jasa ({service.mechanicBonusPercent || 0}%)</span>
           <span className="text-xs font-black text-emerald-600">+Rp {calculatedBonus.toLocaleString()}</span>
         </div>
+      </div>}
+
+      <div className={cn('rounded-2xl border p-4 text-xs', (isSale ? hasActiveSaleWarranty : (service.serviceWarrantyEnabled || (!service.serviceWarrantyStartedAt && (service.serviceWarrantyDurationDays || 0) > 0))) ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-slate-50 text-slate-500')}>
+        <b>{isSale ? 'Garansi Transaksi' : 'Garansi Jasa Servis'}:</b> {isSale ? (hasActiveSaleWarranty ? `${service.saleWarrantyDurationDays} hari${service.saleWarrantyExpiresAt ? ` · berlaku hingga ${new Date(service.saleWarrantyExpiresAt).toLocaleDateString('id-ID')}` : ''}${service.saleWarrantyTermsSnapshot ? ` · ${service.saleWarrantyTermsSnapshot}` : ''}` : 'Tidak ada garansi transaksi') : ((service.serviceWarrantyDurationDays || 0) > 0 ? `${service.serviceWarrantyDurationDays} hari${service.serviceWarrantyExpiresAt ? ` · berlaku hingga ${new Date(service.serviceWarrantyExpiresAt).toLocaleDateString('id-ID')}` : ''}${service.serviceWarrantyTermsSnapshot ? ` · ${service.serviceWarrantyTermsSnapshot}` : ''}` : 'Tidak ada garansi jasa')}
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Repair Summary</h4>
+        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isSale ? 'Rincian Penjualan' : 'Rincian Servis'}</h4>
         <div className="p-4 bg-slate-50 rounded-2xl space-y-3">
           {service.partsUsed.map(p => {
             const matchedPart = parts.find(x => x.id === p.partId);
@@ -142,13 +149,13 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
               </div>
             );
           })}
-          <div className="flex justify-between text-xs pt-2 border-t border-slate-200">
+          {!isSale && <div className="flex justify-between text-xs pt-2 border-t border-slate-200">
             <span className="font-bold text-slate-600">Labor Fee</span>
             <span className="font-black text-slate-900 space-x-1">
               <span>Rp</span>
               <span>{(service.laborFee || 0).toLocaleString()}</span>
             </span>
-          </div>
+          </div>}
           <div className="flex justify-between text-sm pt-2 border-t-2 border-slate-200">
             <span className="font-black text-blue-600 uppercase tracking-widest">Total</span>
             <span className="font-black text-blue-600 space-x-1">
@@ -177,7 +184,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
             <p className="text-[10px] text-amber-900">Pilih beberapa barang dan jumlahnya. Stok serta laba transaksi akan diperbarui otomatis.</p>
             {service.partsUsed.map(item => { const available = Math.max(0, item.quantity - (item.returnedQuantity || 0)); return available > 0 && <div key={item.partId} className="flex items-center justify-between gap-3 rounded-xl bg-white p-2.5 border border-amber-100"><span className="text-xs font-bold text-slate-800">{item.name}<small className="block text-slate-400">Maks. {available} pcs</small></span><input type="number" min="0" max={available} value={returnQty[item.partId] || ''} onChange={event => setReturnQty(prev => ({ ...prev, [item.partId]: Math.min(available, Math.max(0, Number(event.target.value || 0))) }))} className="h-9 w-20 rounded-lg border border-amber-200 px-2 text-xs font-bold" /></div> })}
             <input value={returnReason} onChange={event => setReturnReason(event.target.value)} placeholder="Alasan retur (opsional)" className="h-10 w-full rounded-xl border border-amber-200 bg-white px-3 text-xs" />
-            <button type="button" disabled={isReturning} onClick={async () => { const items = Object.entries(returnQty).filter(([, quantity]) => quantity > 0).map(([partId, quantity]) => ({ partId, quantity })); if (!items.length) return alert('Masukkan jumlah barang yang diretur.'); setIsReturning(true); try { await onProcessReturn({ serviceId: service.id, reason: returnReason, items }); setReturnQty({}); setReturnReason(''); setReturnMode(false); } catch (error: any) { alert(error.message || 'Retur gagal diproses.'); } finally { setIsReturning(false); } }} className="w-full rounded-xl bg-amber-600 py-3 text-xs font-black text-white disabled:opacity-60">{isReturning ? 'Memproses...' : 'Simpan Retur & Kembalikan Stok'}</button>
+            <button type="button" disabled={isReturning} onClick={async () => { const items = (Object.entries(returnQty) as Array<[string, number]>).filter(([, quantity]) => quantity > 0).map(([partId, quantity]) => ({ partId, quantity })); if (!items.length) return alert('Masukkan jumlah barang yang diretur.'); setIsReturning(true); try { await onProcessReturn({ serviceId: service.id, reason: returnReason, items }); setReturnQty({}); setReturnReason(''); setReturnMode(false); } catch (error: any) { alert(error.message || 'Retur gagal diproses.'); } finally { setIsReturning(false); } }} className="w-full rounded-xl bg-amber-600 py-3 text-xs font-black text-white disabled:opacity-60">{isReturning ? 'Memproses...' : 'Simpan Retur & Kembalikan Stok'}</button>
           </>}
         </div>
       )}
@@ -202,7 +209,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
       </div>
 
       {/* Button to file warranty claim / complaint if completed and not yet filed */}
-      {service.status === 'Done' && !service.hasWarrantyClaim && onOpenWarrantyClaim && (
+      {service.status === 'Done' && !service.hasWarrantyClaim && (isSale ? (hasActiveSaleWarranty || hasActiveProductWarranty) : (service.serviceWarrantyDurationDays || 0) > 0 && (!service.serviceWarrantyExpiresAt || new Date(service.serviceWarrantyExpiresAt) >= new Date())) && onOpenWarrantyClaim && (
         <div className="pt-2 border-t border-slate-100">
           <button
             type="button"
@@ -210,10 +217,10 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
             className="w-full py-3.5 px-4 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
           >
             <AlertTriangle className="w-4 h-4 text-rose-600" />
-            Ajukan Klaim Garansi / Servis Ulang & Potong Gaji
+            {isSale ? 'Ajukan Klaim Garansi Penjualan' : 'Ajukan Klaim Garansi / Servis Ulang'}
           </button>
           <p className="text-[10px] text-slate-400 text-center mt-1.5 font-medium">
-            Gunakan jika pelanggan komplain hasil servis kurang memuaskan & mekanik dievaluasi sanksi denda.
+            {isSale ? 'Klaim ini dicatat pada transaksi asal tanpa aturan potong gaji mekanik.' : 'Potong gaji mekanik bersifat opsional dan hanya dibuat setelah dikonfirmasi pada langkah berikutnya.'}
           </p>
         </div>
       )}

@@ -134,7 +134,7 @@ Setelah PostgreSQL berjalan dan file `.env` siap, jalankan urutan perintah Prism
    npm run db:migrate
    ```
 
-3. **Seeding Data Awal (Memasukkan data sampel awal):**
+3. **Seeding akun Owner awal:**
    ```bash
    npm run db:seed
    ```
@@ -144,7 +144,7 @@ Setelah PostgreSQL berjalan dan file `.env` siap, jalankan urutan perintah Prism
    npm run db:setup
    ```
 
-> 🎉 Data awal seperti informasi bengkel, akun pengguna default, sampel mekanik, daftar suku cadang, dan riwayat pelanggan sekarang telah siap di database PostgreSQL lokal Anda!
+> Sebelum menjalankan seed, isi `INITIAL_OWNER_NAME`, `INITIAL_OWNER_EMAIL`, dan `INITIAL_OWNER_PASSWORD` di `.env`. Seeder hanya membuat satu akun Owner bila tabel pengguna masih kosong. Seeder tidak membuat data bisnis, master data, pengaturan, ataupun akun tambahan.
 
 ---
 
@@ -161,16 +161,9 @@ Aplikasi akan berjalan di port `3000`. Buka browser Anda dan akses:
 
 ---
 
-## 🔑 Akun Login Default (Dari Seed Database)
+## 🔑 Akun Owner awal
 
-Anda dapat masuk ke aplikasi menggunakan akun bawaan berikut:
-
-| Peran (Role) | Email | Akses Hak |
-| :--- | :--- | :--- |
-| **👑 Superadmin / Owner** | `owner@bengkelpro.com` | Akses penuh (POS, Antrean, Stok, Mekanik, Pemasok, Laporan Keuangan, Pengaturan Bengkel) |
-| **🛠️ Admin / PIC** | `admin@bengkelpro.com` | Operasional harian (POS Kasir, Antrean Servis, Stok Suku Cadang, Pelanggan, Mekanik) |
-
-*Password dapat diisi bebas saat mode demo/development.*
+Tidak ada kredensial default. Tentukan `INITIAL_OWNER_NAME`, `INITIAL_OWNER_EMAIL`, dan `INITIAL_OWNER_PASSWORD` di `.env` sebelum menjalankan `npm run db:seed`. Kredensial tersebut hanya digunakan jika belum ada akun pengguna sama sekali dan password tidak pernah dicetak ke log.
 
 ---
 
@@ -187,7 +180,7 @@ Berikut daftar perintah npm yang dapat digunakan dalam proyek ini:
 | `npm run db:push` | Menyinkronkan schema tanpa riwayat migration; hanya untuk eksperimen lokal, bukan deployment |
 | `npm run db:migrate` | Menerapkan seluruh migration secara aman untuk database baru/produksi |
 | `npm run db:setup` | Generate Prisma Client, migration, lalu seed—untuk clone atau server baru |
-| `npm run db:seed` | Menjalankan file `prisma/seed.ts` untuk mengisi data sampel awal |
+| `npm run db:seed` | Membuat satu akun Owner awal dari environment bila belum ada pengguna |
 | `npm run lint` | Memeriksa validasi tipe data TypeScript (`tsc --noEmit`) |
 
 ---
@@ -198,7 +191,7 @@ Berikut daftar perintah npm yang dapat digunakan dalam proyek ini:
 .
 ├── prisma/
 │   ├── schema.prisma          # Definisi skema database PostgreSQL (Prisma)
-│   └── seed.ts                # Data awal (seeding) pengguna, mekanik, & suku cadang
+│   └── seed.ts                # Seeder akun Owner awal dari environment
 ├── src/
 │   ├── components/            # Komponen tampilan UI React
 │   │   ├── forms/             # Modal & form terisolasi (Staff, Part, Supplier, Dll)

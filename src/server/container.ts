@@ -11,11 +11,14 @@ import { StaffRepository } from './repositories/staffRepository';
 import { CustomerService } from './services/customerService';
 import { InventoryService } from './services/inventoryService';
 import { WorkshopServiceLayer } from './services/workshopService';
+import { TransactionReportRepository } from './repositories/transactionReportRepository';
+import { TransactionReportService } from './services/transactionReportService';
 import { MechanicService } from './services/mechanicService';
 import { SupplierService } from './services/supplierService';
 import { FinanceService } from './services/financeService';
 import { SettingsService } from './services/settingsService';
 import { AiDiagnosisService } from './services/aiDiagnosisService';
+import { ServiceQueueService } from './services/serviceQueueService';
 
 // Repositories (Data Access Layer)
 export const customerRepository = new CustomerRepository();
@@ -40,8 +43,10 @@ export const workshopService = new WorkshopServiceLayer(
   deductionRepository,
   mechanicRepository
 );
+export const transactionReportService = new TransactionReportService(new TransactionReportRepository());
 export const mechanicService = new MechanicService(mechanicRepository, deductionRepository, attendanceRepository);
 export const supplierService = new SupplierService(supplierRepository);
 export const financeService = new FinanceService(financeRepository);
 export const settingsService = new SettingsService(settingsRepository, staffRepository);
 export const aiDiagnosisService = new AiDiagnosisService();
+export const serviceQueueService = new ServiceQueueService();

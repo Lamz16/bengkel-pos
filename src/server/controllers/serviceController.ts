@@ -115,18 +115,21 @@ export class ServiceController {
 
   async claimWarranty(req: Request, res: Response) {
     try {
-      const { reason, isAbsentNextDay } = req.body;
+      const { reason, isAbsent, applyMechanicDeduction } = req.body;
       if (!reason) {
         return res.status(400).json({ error: 'Alasan klaim garansi wajib diisi.' });
       }
       const result = await workshopService.applyWarrantyClaim({
         serviceId: req.params.id,
         reason,
-        isAbsentNextDay: !!isAbsentNextDay,
+        isAbsentNextDay: !!isAbsent,
+        applyMechanicDeduction: !!applyMechanicDeduction,
       });
-      res.json({ success: true, ...result });
+      if (!result.service) return res.status(404).json({ error: 'Transaksi servis tidak ditemukan.' });
+      res.json(result.service);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal memproses klaim garansi' });
+      const message = err.message || 'Gagal memproses klaim garansi';
+      res.status(/tidak ditemukan|tidak memiliki|telah berakhir|sudah pernah|hanya tersedia|garansi produk/.test(message) ? 400 : 500).json({ error: message });
     }
   }  async processReturn(req: Request, res: Response) {
     try {

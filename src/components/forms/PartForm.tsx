@@ -38,8 +38,7 @@ export const PartForm: React.FC<PartFormProps> = ({
   const [formData, setFormData] = useState<SparePart>(() => {
     if (part && part.id) return part;
     const initialCategory = categories[0];
-    const initialRack = racks?.[0];
-    const autoSku = generatePartSKU(initialCategory?.name || 'PRT', existingParts, categories);
+    const autoSku = initialCategory ? generatePartSKU(initialCategory.name, existingParts, categories) : '';
     return {
       id: 'P' + Math.floor(Math.random() * 1000),
       sku: autoSku,
@@ -56,11 +55,11 @@ export const PartForm: React.FC<PartFormProps> = ({
       warrantyTerms: '',
       category: initialCategory?.name || '',
       categoryId: initialCategory?.id,
-      rackCode: initialRack?.code,
-      rackId: initialRack?.id,
-      shelfLevel: 'Tingkat 1',
-      binNumber: 'Kotak 01',
-      rackZone: initialRack?.zone,
+      rackCode: undefined,
+      rackId: undefined,
+      shelfLevel: undefined,
+      binNumber: undefined,
+      rackZone: undefined,
       locationNotes: '',
       lastUpdated: new Date().toISOString(),
       supplierId: '',
@@ -80,7 +79,8 @@ export const PartForm: React.FC<PartFormProps> = ({
   };
 
   const handleGenerateSku = () => {
-    const newSku = generatePartSKU(formData.category || 'Oli', existingParts, categories);
+    if (!formData.category) return;
+    const newSku = generatePartSKU(formData.category, existingParts, categories);
     setFormData({ ...formData, sku: newSku });
   };
 
@@ -135,7 +135,7 @@ export const PartForm: React.FC<PartFormProps> = ({
   };
 
   const previewLocation = [
-    formData.rackCode || 'Tanpa Rak',
+    formData.rackCode || 'Lokasi belum diatur',
     formData.shelfLevel,
     formData.binNumber ? `(${formData.binNumber})` : null
   ].filter(Boolean).join(' • ');
@@ -344,7 +344,7 @@ export const PartForm: React.FC<PartFormProps> = ({
       {/* Lokasi diseleksi dari slot/lokasi yang sudah dibuat pada Peta Lokasi. */}
       <div className="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200/60 space-y-3">
         <div className="flex items-center gap-1.5 text-amber-800"><MapPin className="w-3.5 h-3.5 text-amber-600" /><span className="text-[10px] font-black uppercase tracking-wider">Lokasi Stok (Pilih dari Peta Rak)</span></div>
-        <div className="space-y-1"><label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Slot / Kardus / Lokasi Penyimpanan</label><select value={formData.rackLocation || ''} onChange={event => { const location = storageLocations.find(item => item.id === event.target.value); setFormData({ ...formData, rackLocation: location?.id, rackId: location?.rackId, rackCode: undefined, shelfLevel: location?.levelCode || location?.type, binNumber: location?.slotCode || location?.code, rackZone: location?.zoneName, locationNotes: [location?.code, location?.positionNote].filter(Boolean).join(' · ') }); }} className="w-full h-11 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-bold text-slate-900"><option value="">-- Pilih lokasi yang sudah dibuat --</option>{storageLocations.map(location => <option key={location.id} value={location.id}>{location.code} — {location.zoneName || 'Gudang'}{location.positionNote ? ` · ${location.positionNote}` : ''}</option>)}</select></div>
+        <div className="space-y-1"><label className="text-[10px] font-bold text-slate-600 uppercase ml-1">Slot / Kardus / Lokasi Penyimpanan (opsional)</label><select value={formData.rackLocation || ''} onChange={event => { const location = storageLocations.find(item => item.id === event.target.value); setFormData(location ? { ...formData, rackLocation: location.id, rackId: location.rackId, rackCode: undefined, shelfLevel: location.levelCode || location.type, binNumber: location.slotCode || location.code, rackZone: location.zoneName, locationNotes: [location.code, location.positionNote].filter(Boolean).join(' · ') } : { ...formData, rackLocation: '', rackId: '', rackCode: '', shelfLevel: '', binNumber: '', rackZone: '', locationNotes: '' }); }} className="w-full h-11 px-3 bg-white border border-amber-200 rounded-xl outline-none text-xs font-bold text-slate-900"><option value="">-- Lokasi belum diatur --</option>{storageLocations.map(location => <option key={location.id} value={location.id}>{location.code} — {location.zoneName || 'Gudang'}{location.positionNote ? ` · ${location.positionNote}` : ''}</option>)}</select></div>
         {storageLocations.length === 0 && <p className="text-[10px] text-amber-800">Belum ada slot/lokasi. Buat dulu melalui Pengaturan → Manajemen Kategori & Rak → Peta Lokasi.</p>}
         {(formData.rackLocation || formData.binNumber) && <div className="text-[10px] font-black text-amber-700 bg-amber-100/80 px-2 py-2 rounded-md">📍 Lokasi dipilih: {storageLocations.find(item => item.id === formData.rackLocation)?.code || formData.binNumber}</div>}
       </div>
@@ -358,7 +358,7 @@ export const PartForm: React.FC<PartFormProps> = ({
           </div>
           <label className="flex items-center gap-2 text-xs font-black text-emerald-800 cursor-pointer">
             <input type="checkbox" checked={!!formData.hasProductWarranty}
-              onChange={e => setFormData({ ...formData, hasProductWarranty: e.target.checked, warrantyDurationDays: e.target.checked ? Math.max(1, formData.warrantyDurationDays || 30) : 0 })}
+              onChange={e => setFormData({ ...formData, hasProductWarranty: e.target.checked, warrantyDurationDays: e.target.checked ? formData.warrantyDurationDays || 0 : 0 })}
               className="w-4 h-4 accent-emerald-600" /> Ada garansi
           </label>
         </div>
@@ -390,6 +390,7 @@ export const PartForm: React.FC<PartFormProps> = ({
             onValueChange={price => setFormData({ ...formData, price })}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
           />
+              {formData.hasProductWarranty && !formData.warrantyDurationDays && <p className="text-[10px] font-medium text-amber-700">Isi durasi garansi agar garansi dapat diaktifkan.</p>}
         </div>
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Harga Modal / Beli (Rp)</label>

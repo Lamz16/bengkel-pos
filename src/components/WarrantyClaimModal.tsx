@@ -12,6 +12,7 @@ interface WarrantyClaimModalProps {
     reason: string;
     isAbsent: boolean;
     deductionAmount: number;
+    applyMechanicDeduction: boolean;
   }) => void;
   onCancel: () => void;
 }
@@ -23,12 +24,14 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
   onCancel
 }) => {
   const mechanic = mechanics.find(m => m.id === service.mechanicId);
+  const isSale = service.receiptType === 'SALE';
   const basePenalty = mechanic ? mechanic.warrantyPenaltyAmount : 50000;
   const absencePenalty = mechanic ? mechanic.absencePenaltyAmount : 50000;
 
   const [reason, setReason] = useState('');
-  const [isAbsent, setIsAbsent] = useState(true); // default true sesuai skenario user
-  const [deductionAmount, setDeductionAmount] = useState<number>(basePenalty + absencePenalty);
+  const [applyMechanicDeduction, setApplyMechanicDeduction] = useState(false);
+  const [isAbsent, setIsAbsent] = useState(false);
+  const [deductionAmount, setDeductionAmount] = useState<number>(basePenalty);
 
   // Recalculate recommendation when isAbsent changes
   useEffect(() => {
@@ -43,7 +46,8 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
       serviceId: service.id,
       reason: reason.trim(),
       isAbsent,
-      deductionAmount: Number(deductionAmount || 0)
+      deductionAmount: applyMechanicDeduction ? Number(deductionAmount || 0) : 0,
+      applyMechanicDeduction: !isSale && applyMechanicDeduction,
     });
   };
 
@@ -53,19 +57,19 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
         <div className="flex justify-between items-center text-xs">
           <span className="font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-            {service.vehiclePlate}
+            {isSale ? 'DIRECT SALE' : service.vehiclePlate}
           </span>
           <span className="font-bold text-slate-500">{service.vehicleModel}</span>
         </div>
         <div className="flex justify-between text-xs text-slate-600 pt-1 border-t border-slate-200">
           <span>Pelanggan: <strong>{service.customerName}</strong></span>
-          <span>Jasa: <strong>Rp {(service.laborFee || 0).toLocaleString()}</strong></span>
+          <span>{isSale ? 'Total' : 'Jasa'}: <strong>Rp {(isSale ? service.totalAmount : service.laborFee || 0).toLocaleString()}</strong></span>
         </div>
-        <div className="flex items-center gap-2 pt-1 text-xs">
+        {!isSale && <div className="flex items-center gap-2 pt-1 text-xs">
           <Wrench className="w-3.5 h-3.5 text-blue-600" />
           <span className="text-slate-500">Mekanik Penanggung Jawab:</span>
           <span className="font-black text-slate-900">{service.mechanicName || mechanic?.name || 'Mekanik'}</span>
-        </div>
+        </div>}
       </div>
 
       {/* Complaint Reason */}
@@ -83,8 +87,21 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
         />
       </div>
 
-      {/* Sanksi Ketidakhadiran H+1 (Highlight User Requirement) */}
-      <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-2.5">
+      {!isSale && <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-2.5">
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="applyMechanicDeduction"
+            checked={applyMechanicDeduction}
+            onChange={e => setApplyMechanicDeduction(e.target.checked)}
+            className="w-5 h-5 mt-0.5 rounded-lg text-rose-600 border-amber-300 focus:ring-rose-500 cursor-pointer accent-rose-600"
+          />
+          <label htmlFor="applyMechanicDeduction" className="cursor-pointer select-none text-xs font-black text-rose-900">
+            Terapkan potong gaji mekanik setelah klaim dikonfirmasi
+            <span className="text-[10px] text-amber-800 font-medium block mt-0.5">Tidak ada potongan yang dibuat kecuali opsi ini dicentang.</span>
+          </label>
+        </div>
+        {applyMechanicDeduction && <div className="space-y-2.5">
         <div className="flex items-start gap-3">
           <input
             type="checkbox"
@@ -109,10 +126,10 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
             <span>Sanksi ganda diaktifkan: Denda Komplain + Denda Mangkir/Absen</span>
           </div>
         )}
-      </div>
+        </div>}
+      </div>}
 
-      {/* Deduction Amount Config */}
-      <div className="p-4 bg-rose-50/60 rounded-2xl border border-rose-100 space-y-2">
+      {!isSale && applyMechanicDeduction && <div className="p-4 bg-rose-50/60 rounded-2xl border border-rose-100 space-y-2">
         <div className="flex justify-between items-center">
           <label className="text-[10px] font-black text-rose-900/70 uppercase tracking-widest">
             Nominal Potong Gaji Mekanik (Rp)
@@ -132,7 +149,7 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
         <p className="text-[10px] text-slate-500 italic">
           *Kasir/Admin dapat menyesuaikan besaran potongan secara manual jika terdapat kebijakan khusus.
         </p>
-      </div>
+      </div>}
 
       {/* Action Buttons */}
       <div className="pt-2 flex gap-3">
@@ -147,7 +164,7 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
           type="submit"
           className="flex-1 h-12 bg-rose-600 text-white rounded-xl font-black uppercase tracking-wider text-xs shadow-lg shadow-rose-200 hover:bg-rose-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
-          <ShieldAlert className="w-4 h-4" /> Proses Potong Gaji
+          <ShieldAlert className="w-4 h-4" /> {applyMechanicDeduction ? 'Proses Klaim & Potong Gaji' : 'Proses Klaim Garansi'}
         </button>
       </div>
     </form>
