@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import { staffRepository, settingsRepository } from '../container';
 import { hashPassword, issueAccessToken, verifyPassword } from '../auth';
+import { isDbConnected } from '../db/connection';
 
 export class AuthController {
   async login(req: Request, res: Response) {
     try {
+      if (!isDbConnected()) return res.status(503).json({ error: 'Database tidak tersedia. Login tidak menggunakan data lokal atau contoh.' });
       const { email, password } = req.body;
       const user = email?.trim() ? await staffRepository.findByEmail(email.trim()) : null;
 
@@ -33,6 +35,7 @@ export class AuthController {
 
   async register(req: Request, res: Response) {
     try {
+      if (!isDbConnected()) return res.status(503).json({ error: 'Database tidak tersedia. Pendaftaran tidak dapat menggunakan penyimpanan sementara.' });
       if (await staffRepository.hasAnyUser()) {
         return res.status(403).json({ error: 'Pendaftaran Owner hanya tersedia saat instalasi awal. Tambahkan akun dari menu Pengguna.' });
       }

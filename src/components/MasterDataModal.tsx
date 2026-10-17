@@ -408,6 +408,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
 
             {/* Category Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
+              {categories.length === 0 && <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center"><FolderPlus className="mx-auto mb-2 h-7 w-7 text-slate-400" /><p className="text-sm font-black text-slate-700">Belum ada kategori</p><p className="mt-1 text-xs text-slate-500">Tambahkan kategori baru untuk memulai pengelolaan sparepart.</p></div>}
               {categories.map(cat => {
                 const count = parts.filter(p => p.category.toLowerCase() === cat.name.toLowerCase()).length;
                 return (
@@ -528,6 +529,7 @@ export const MasterDataModal: React.FC<MasterDataModalProps> = ({
 
             {/* Zones Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
+              {zones.length === 0 && <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center"><Warehouse className="mx-auto mb-2 h-7 w-7 text-slate-400" /><p className="text-sm font-black text-slate-700">Belum ada gudang atau zona</p><p className="mt-1 text-xs text-slate-500">Tambahkan gudang atau zona baru untuk memulai pengaturan lokasi stok.</p></div>}
               {zones.map(z => {
                 const rackCount = racks.filter(r => r.zone === z.name).length;
                 return (

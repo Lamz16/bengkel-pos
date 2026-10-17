@@ -172,7 +172,8 @@ export const StorageLocationsPanel: React.FC<{ zones: WarehouseZone[] }> = ({ zo
         </div>
         <textarea placeholder="Catatan/deskripsi rak, contoh: Rak oli matic; sisi kanan dekat pintu gudang" value={rack.description} onChange={e => setRack({ ...rack, description: e.target.value })} className="w-full min-h-20 px-3 py-2 rounded-xl border text-xs" />
         <p className="text-[10px] text-amber-800">Sistem akan membuat: {rack.code || 'RAK-01'}-A-01 sampai {rack.code || 'RAK-01'}-{String.fromCharCode(64 + Math.min(rack.levelCount || 1, 26))}-{String(rack.slotsPerLevel || 1).padStart(2, '0')}.</p>
-        <button disabled={loading} className="w-full h-10 bg-amber-500 text-white rounded-xl text-xs font-black"><Plus className="w-4 h-4 inline mr-1" /> Buat Rak & Slot</button>
+        {zones.length === 0 && <p className="text-xs font-bold text-amber-800">Belum ada gudang atau zona. Buat zona terlebih dahulu sebelum membuat peta rak.</p>}
+        <button disabled={loading || zones.length === 0} className="w-full h-10 bg-amber-500 text-white rounded-xl text-xs font-black disabled:opacity-50"><Plus className="w-4 h-4 inline mr-1" /> Buat Rak & Slot</button>
       </form>
     ) : (
       <form onSubmit={createNonRack} className="p-4 bg-blue-50 border border-blue-200 rounded-2xl space-y-3">
@@ -184,11 +185,13 @@ export const StorageLocationsPanel: React.FC<{ zones: WarehouseZone[] }> = ({ zo
           <input placeholder="Posisi fisik, contoh: Samping RAK-01" value={nonRack.positionNote} onChange={e => setNonRack({ ...nonRack, positionNote: e.target.value })} className="h-10 px-3 rounded-xl border text-xs col-span-2" />
           <textarea placeholder="Catatan/deskripsi, contoh: Kardus cadangan oli, tumpukan bawah" value={nonRack.description} onChange={e => setNonRack({ ...nonRack, description: e.target.value })} className="min-h-16 px-3 py-2 rounded-xl border text-xs col-span-2" />
         </div>
-        <button disabled={loading} className="w-full h-10 bg-blue-600 text-white rounded-xl text-xs font-black">Simpan Lokasi</button>
+        {zones.length === 0 && <p className="text-xs font-bold text-blue-800">Belum ada gudang atau zona. Buat zona terlebih dahulu sebelum menambahkan lokasi.</p>}
+        <button disabled={loading || zones.length === 0} className="w-full h-10 bg-blue-600 text-white rounded-xl text-xs font-black disabled:opacity-50">Simpan Lokasi</button>
       </form>
     )}
 
     <div className="space-y-3">
+      {locations.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center"><PackageOpen className="mx-auto mb-2 h-7 w-7 text-slate-400" /><p className="text-sm font-black text-slate-700">Belum ada lokasi penyimpanan</p><p className="mt-1 text-xs text-slate-500">Buat rak, slot, kardus, atau lokasi lain untuk memulai.</p></div>}
       {Object.entries(byRack).map(([rackId, slots]) => {
         const first = slots[0];
         if (!first) return null;
@@ -217,7 +220,7 @@ export const StorageLocationsPanel: React.FC<{ zones: WarehouseZone[] }> = ({ zo
           ) : (
             <>
               {first.positionNote && <p className="text-[10px] text-slate-400 mb-3 flex gap-1"><MapPin className="w-3 h-3" />{first.positionNote}</p>}
-              {Object.entries(slots.reduce<Record<string, StorageLocation[]>>((groups, slot) => { (groups[slot.levelCode || 'A'] ||= []).push(slot); return groups; }, {})).map(([level, slotsInLevel]) => (
+              {(Object.entries(slots.reduce<Record<string, StorageLocation[]>>((groups, slot) => { (groups[slot.levelCode || 'A'] ||= []).push(slot); return groups; }, {})) as Array<[string, StorageLocation[]]>).map(([level, slotsInLevel]) => (
                 <div key={level} className="flex items-center gap-2 mb-2"><b className="w-5 text-xs text-slate-500">{level}</b><div className="grid grid-cols-5 gap-1 flex-1">{slotsInLevel.map(slot => <div key={slot.id} title={slot.code} className={`rounded-lg border p-2 text-center text-[9px] font-black ${slot.stockCount ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>{slot.slotCode}</div>)}</div></div>
               ))}
             </>

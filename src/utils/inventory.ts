@@ -3,36 +3,14 @@ import { SparePart, PartCategory, WarehouseRack, WarehouseZone } from '../types'
 /**
  * Standard category code prefixes for automatic SKU generation.
  */
-export const DEFAULT_PART_CATEGORIES: PartCategory[] = [
-  { id: 'cat-1', name: 'Oli', skuPrefix: 'OLI', description: 'Pelumas mesin, oli samping, transmisi & shock' },
-  { id: 'cat-2', name: 'Rem', skuPrefix: 'REM', description: 'Kampas rem, piringan disc, minyak rem & kaliper' },
-  { id: 'cat-3', name: 'Busi', skuPrefix: 'BSI', description: 'Busi standar, iridium, cangkul & tempat busi' },
-  { id: 'cat-4', name: 'Filter', skuPrefix: 'FLT', description: 'Filter udara, filter oli, filter bensin' },
-  { id: 'cat-5', name: 'Kelistrikan', skuPrefix: 'ELK', description: 'Aki, kiproks, spul, bohlam lamp, kabel & skering' },
-  { id: 'cat-6', name: 'Ban', skuPrefix: 'BAN', description: 'Ban luar, ban dalam, pentil & cairan anti bocor' },
-  { id: 'cat-7', name: 'Mesin', skuPrefix: 'MSN', description: 'Piston, ring, klep, noken as & gasket kalter' },
-  { id: 'cat-8', name: 'CVT', skuPrefix: 'CVT', description: 'V-belt, roller, mangkok ganda, per cvt' },
-  { id: 'cat-9', name: 'Suspensi', skuPrefix: 'SUS', description: 'Shockbreaker, as shock, oli shock & bushing' },
-  { id: 'cat-10', name: 'Aksesoris', skuPrefix: 'AKS', description: 'Spion, handgrip, cover, stiker & variasi' },
-  { id: 'cat-11', name: 'Baut & Nut', skuPrefix: 'BAU', description: 'Baut body, baut mesin, mur & ring gasket' }
-];
+// Master data is supplied exclusively by the active API/database.  Keeping
+// these empty preserves the distinction between an empty database and a
+// populated one; they must never become sample-data fallbacks.
+export const DEFAULT_PART_CATEGORIES: PartCategory[] = [];
 
-export const DEFAULT_WAREHOUSE_RACKS: WarehouseRack[] = [
-  { id: 'rack-1', code: 'Rak A', name: 'Rak A - Oli & Pelumas', zone: 'Gudang Utama', description: 'Rak bagian depan khusus stok oli botolan & kaleng' },
-  { id: 'rack-2', code: 'Rak B', name: 'Rak B - Sistem Pengereman', zone: 'Gudang Utama', description: 'Susunan kampas & disc brake matic/bebek' },
-  { id: 'rack-3', code: 'Rak C', name: 'Rak C - Filter & Busi', zone: 'Gudang Utama', description: 'Filter udara & kotak busi berbagai tipe' },
-  { id: 'rack-4', code: 'Rak D', name: 'Rak D - Kelistrikan & Aki', zone: 'Gudang Utama', description: 'Aki kering/basah, bohlam LED, kiproks' },
-  { id: 'rack-5', code: 'Rak E', name: 'Rak E - Ban & Roda', zone: 'Gudang Belakang', description: 'Susunan ban luar tubeless & tube type' },
-  { id: 'rack-6', code: 'Etalase Depan', name: 'Etalase Depan - Fast Moving', zone: 'Toko Kasir', description: 'Display barang laku cepat di area kasir' },
-  { id: 'rack-7', code: 'Gudang Belakang', name: 'Gudang Belakang - Stok Dus Besar', zone: 'Gudang Belakang', description: 'Stok grosir & sparepart bodi/kardus besar' }
-];
+export const DEFAULT_WAREHOUSE_RACKS: WarehouseRack[] = [];
 
-export const DEFAULT_WAREHOUSE_ZONES: WarehouseZone[] = [
-  { id: 'zone-1', name: 'Gudang Utama', description: 'Area utama penyimpanan suku cadang cepat laku' },
-  { id: 'zone-2', name: 'Gudang Belakang', description: 'Area penyimpanan stok dus besar, ban, & bodi' },
-  { id: 'zone-3', name: 'Toko Kasir', description: 'Display etalase kaca & meja kasir depan' },
-  { id: 'zone-4', name: 'Area Servis Luar', description: 'Rak perlengkapan bengkel pit luar' }
-];
+export const DEFAULT_WAREHOUSE_ZONES: WarehouseZone[] = [];
 
 /**
  * LocalStorage Key Constants
@@ -46,7 +24,7 @@ export function getStoredCategories(): PartCategory[] {
     const raw = localStorage.getItem(STORAGE_CATEGORIES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch (err) {
     console.warn('Error reading stored categories:', err);
@@ -67,7 +45,7 @@ export function getStoredRacks(): WarehouseRack[] {
     const raw = localStorage.getItem(STORAGE_RACKS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch (err) {
     console.warn('Error reading stored racks:', err);
@@ -88,7 +66,7 @@ export function getStoredZones(): WarehouseZone[] {
     const raw = localStorage.getItem(STORAGE_ZONES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch (err) {
     console.warn('Error reading stored zones:', err);
@@ -167,15 +145,7 @@ export function formatPartLocation(part: SparePart): string {
 /**
  * Standard preset warehouse racks available in the workshop.
  */
-export const DEFAULT_RACK_LIST = [
-  { code: 'Rak A', name: 'Rak A - Oli & Pelumas', zone: 'Gudang Utama' },
-  { code: 'Rak B', name: 'Rak B - Sistem Pengereman', zone: 'Gudang Utama' },
-  { code: 'Rak C', name: 'Rak C - Filter & Busi', zone: 'Gudang Utama' },
-  { code: 'Rak D', name: 'Rak D - Kelistrikan & Aki', zone: 'Gudang Utama' },
-  { code: 'Rak E', name: 'Rak E - Ban & Roda', zone: 'Gudang Belakang' },
-  { code: 'Etalase Depan', name: 'Etalase Depan - Fast Moving', zone: 'Toko Kasir' },
-  { code: 'Gudang Belakang', name: 'Gudang Belakang - Stok Dus Besar', zone: 'Gudang Belakang' }
-];
+export const DEFAULT_RACK_LIST: Array<{ code: string; name: string; zone: string }> = [];
 
 export interface RackGroupSummary {
   rackCode: string;

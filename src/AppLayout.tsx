@@ -17,8 +17,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, ExpenseCategory, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone } from './types';
-import { INITIAL_PARTS } from './constants';
-import { DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_RACKS, DEFAULT_WAREHOUSE_ZONES } from './utils/inventory';
 
 // UI and Feature Components
 import { Modal } from './components/Modal';
@@ -116,148 +114,21 @@ export default function AppLayout() {
   }, [currentUser]);
 
   // Business Data States
-  const [suppliers, setSuppliers] = useState<Supplier[]>([
-    { id: 'SUP-1', name: 'Distributor Suku Cadang A', contact: '0812345678', address: 'Jl. Industri No. 10' }
-  ]);
-  const [parts, setParts] = useState<SparePart[]>(() => 
-    INITIAL_PARTS.map((p, index) => index % 2 === 0 ? { ...p, supplierId: 'SUP-1' } : p)
-  );
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [parts, setParts] = useState<SparePart[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
-  const [purchases, setPurchases] = useState<PurchaseRecord[]>([
-    {
-      id: 'PR-1',
-      partId: 'P001',
-      supplierId: 'SUP-1',
-      quantity: 12,
-      costPrice: 75000,
-      date: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
-    },
-    {
-      id: 'PR-2',
-      partId: 'P003',
-      supplierId: 'SUP-1',
-      quantity: 10,
-      costPrice: 45000,
-      date: new Date(Date.now() - 3600000 * 12).toISOString()
-    }
-  ]);
-  const [customers, setCustomers] = useState<Customer[]>([
-    { id: 'CUST-3', name: 'Hendra Wijaya', phone: '081398765432', totalServiceCount: 8, totalSpent: 1650000, loyaltyTier: 'VIP' },
-    { id: 'CUST-1', name: 'Budi Santoso', phone: '08123456789', totalServiceCount: 5, totalSpent: 850000, loyaltyTier: 'Gold' },
-    { id: 'CUST-4', name: 'Dewi Lestari', phone: '085712345678', totalServiceCount: 4, totalSpent: 620000, loyaltyTier: 'Silver' },
-    { id: 'CUST-01', name: 'Andi Kusuma', phone: '082155667788', totalServiceCount: 3, totalSpent: 435000, loyaltyTier: 'Silver' },
-    { id: 'CUST-2', name: 'Siti Aminah', phone: '08789012345', totalServiceCount: 1, totalSpent: 145000, loyaltyTier: 'Bronze' }
-  ]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    { id: 'VH-1', customerId: 'CUST-1', plateNumber: 'B 1234 ABC', model: 'Honda Vario 160', brand: 'Honda' },
-    { id: 'VH-2', customerId: 'CUST-2', plateNumber: 'D 5678 XYZ', model: 'Yamaha Fazzio', brand: 'Yamaha' },
-    { id: 'VH-3', customerId: 'CUST-3', plateNumber: 'B 9999 VIP', model: 'Honda PCX 160', brand: 'Honda' },
-    { id: 'VH-4', customerId: 'CUST-4', plateNumber: 'B 4321 DEF', model: 'Yamaha NMAX 155', brand: 'Yamaha' }
-  ]);
-  const [staff, setStaff] = useState<any[]>([
-    { id: 'STF-1', name: 'Rian Herlambang', role: 'Admin', status: 'Active', shifts: 'Pagi' },
-    { id: 'STF-2', name: 'Budi Hartono', role: 'Admin', status: 'Active', shifts: 'Sore' },
-  ]);
+  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
 
   // Mechanics, Deductions, and Commissions
-  const [mechanics, setMechanics] = useState<Mechanic[]>([
-    {
-      id: 'MEC-1',
-      name: 'Rudi Hermawan',
-      phone: '081234567801',
-      specialty: 'Mesin & CVT Matic',
-      defaultBonusPercent: 15,
-      dailySalary: 100000,
-      warrantyPenaltyAmount: 75000,
-      absencePenaltyAmount: 50000,
-      joinedAt: '2024-01-10',
-      status: 'Active'
-    },
-    {
-      id: 'MEC-2',
-      name: 'Agus Santoso',
-      phone: '081234567802',
-      specialty: 'Kelistrikan & Injeksi',
-      defaultBonusPercent: 20,
-      dailySalary: 120000,
-      warrantyPenaltyAmount: 80000,
-      absencePenaltyAmount: 50000,
-      joinedAt: '2024-02-15',
-      status: 'Active'
-    },
-    {
-      id: 'MEC-3',
-      name: 'Dedi Pratama',
-      phone: '081234567803',
-      specialty: 'Kaki-kaki & Pengereman',
-      defaultBonusPercent: 15,
-      dailySalary: 95000,
-      warrantyPenaltyAmount: 60000,
-      absencePenaltyAmount: 40000,
-      joinedAt: '2024-03-01',
-      status: 'Active'
-    }
-  ]);
-
-  const [deductions, setDeductions] = useState<MechanicDeduction[]>([
-    {
-      id: 'DED-1',
-      mechanicId: 'MEC-1',
-      mechanicName: 'Rudi Hermawan',
-      amount: 125000,
-      reason: 'Komplain CVT Bergetar ulang + Tidak masuk hari H+1',
-      date: new Date(Date.now() - 3600000 * 48).toISOString(),
-      type: 'Warranty_Complaint',
-      serviceId: 'SRV-001',
-      vehiclePlate: 'B 1234 ABC',
-      isAbsentNextDay: true
-    }
-  ]);
+  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
+  const [deductions, setDeductions] = useState<MechanicDeduction[]>([]);
   const [attendances, setAttendances] = useState<MechanicAttendance[]>([]);
 
-  const [services, setServices] = useState<WorkshopService[]>([
-    {
-      id: 'SRV-001',
-      customerId: 'CUST-01',
-      customerName: 'Andi Kusuma',
-      vehicleId: 'VH-1',
-      vehiclePlate: 'B 1234 ABC',
-      vehicleModel: 'Honda Vario 150',
-      kilometers: 12500,
-      complaint: 'Suara kasar di bagian CVT',
-      status: 'In Progress',
-      createdAt: new Date().toISOString(),
-      partsUsed: [{ partId: 'P001', name: 'Oli Mesin 1L', quantity: 1, priceAtTime: 95000 }],
-      laborFee: 50000,
-      totalAmount: 145000,
-      paymentStatus: 'Paid',
-      mechanicId: 'MEC-1',
-      mechanicName: 'Rudi Hermawan',
-      mechanicBonusPercent: 15,
-      mechanicBonusAmount: 7500
-    },
-    {
-      id: 'SRV-002',
-      customerId: 'CUST-02',
-      customerName: 'Budi Santoso',
-      vehicleId: 'VH-2',
-      vehiclePlate: 'D 9999 XYZ',
-      vehicleModel: 'Yamaha NMAX',
-      kilometers: 8400,
-      complaint: 'Ganti kampas depan',
-      status: 'Ready',
-      createdAt: new Date().toISOString(),
-      partsUsed: [{ partId: 'P002', name: 'Kampas Rem Depan', quantity: 1, priceAtTime: 150000 }],
-      laborFee: 35000,
-      totalAmount: 185000,
-      paymentStatus: 'Unpaid',
-      mechanicId: 'MEC-2',
-      mechanicName: 'Agus Santoso',
-      mechanicBonusPercent: 20,
-      mechanicBonusAmount: 7000
-    }
-  ]);
+  const [services, setServices] = useState<WorkshopService[]>([]);
   const [servicesPagination, setServicesPagination] = useState({ page: 1, limit: 25, total: 0, totalPages: 1 });
   const [isServicesLoading, setIsServicesLoading] = useState(false);
 
@@ -332,9 +203,9 @@ export default function AppLayout() {
   const [posInitialPromoPercent, setPosInitialPromoPercent] = useState<number | null>(null);
 
   // Master Data States (Categories, Racks & Warehouse Zones)
-  const [masterCategories, setMasterCategories] = useState<PartCategory[]>(DEFAULT_PART_CATEGORIES);
-  const [masterRacks, setMasterRacks] = useState<WarehouseRack[]>(DEFAULT_WAREHOUSE_RACKS);
-  const [masterZones, setMasterZones] = useState<WarehouseZone[]>(DEFAULT_WAREHOUSE_ZONES);
+  const [masterCategories, setMasterCategories] = useState<PartCategory[]>([]);
+  const [masterRacks, setMasterRacks] = useState<WarehouseRack[]>([]);
+  const [masterZones, setMasterZones] = useState<WarehouseZone[]>([]);
   const [showMasterDataModal, setShowMasterDataModal] = useState(false);
   const [showExpenseCategoryManager, setShowExpenseCategoryManager] = useState(false);
 
@@ -447,6 +318,7 @@ export default function AppLayout() {
   }, [currentUser, navItems]);
 
   const [postgresConnected, setPostgresConnected] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   // Sync data with PostgreSQL / Prisma backend on mount
   useEffect(() => {
@@ -455,30 +327,34 @@ export default function AppLayout() {
     let isMounted = true;
     async function loadBootstrap() {
       try {
+        setBootstrapError(null);
         const data = await api.getBootstrap();
         const loadedExpenseCategories = await api.getExpenseCategories();
         if (!isMounted) return;
         if (data.settings) setCompanySettings(data.settings);
-        if (data.customers && data.customers.length > 0) setCustomers(data.customers);
-        if (data.vehicles && data.vehicles.length > 0) setVehicles(data.vehicles);
-        if (data.parts && data.parts.length > 0) setParts(data.parts);
-        if (data.services) setServices(data.services);
+        setCustomers(data.customers ?? []);
+        setVehicles(data.vehicles ?? []);
+        setParts(data.parts ?? []);
+        setServices(data.services ?? []);
         if (data.servicesPagination) setServicesPagination(data.servicesPagination);
-        if (data.mechanics && data.mechanics.length > 0) setMechanics(data.mechanics);
-        if (data.deductions) setDeductions(data.deductions);
-        if (data.attendances) setAttendances(data.attendances);
-        if (data.suppliers && data.suppliers.length > 0) setSuppliers(data.suppliers);
-        if (data.purchases && data.purchases.length > 0) setPurchases(data.purchases);
-        if (data.expenses && data.expenses.length > 0) setExpenses(data.expenses);
-        if (data.staff && data.staff.length > 0) setStaff(data.staff);
-        if (data.distributorInvoices) setDistributorInvoices(data.distributorInvoices);
-        if (data.categories?.length) setMasterCategories(data.categories);
-        if (data.racks?.length) setMasterRacks(data.racks);
-        if (data.zones?.length) setMasterZones(data.zones);
-        setExpenseCategories(loadedExpenseCategories);
+        setMechanics(data.mechanics ?? []);
+        setDeductions(data.deductions ?? []);
+        setAttendances(data.attendances ?? []);
+        setSuppliers(data.suppliers ?? []);
+        setPurchases(data.purchases ?? []);
+        setExpenses(data.expenses ?? []);
+        setStaff(data.staff ?? []);
+        setDistributorInvoices(data.distributorInvoices ?? []);
+        setMasterCategories(data.categories ?? []);
+        setMasterRacks(data.racks ?? []);
+        setMasterZones(data.zones ?? []);
+        setExpenseCategories(loadedExpenseCategories ?? []);
         setPostgresConnected(data.postgresConnected);
       } catch (err) {
-        console.warn('Backend bootstrap fallback to local initial state:', err);
+        if (!isMounted) return;
+        const message = err instanceof Error ? err.message : 'Gagal memuat data dari server.';
+        setBootstrapError(message);
+        setPostgresConnected(false);
       }
     }
     loadBootstrap();
@@ -989,6 +865,12 @@ export default function AppLayout() {
 
         {/* Scrollable Viewport */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-10 custom-scrollbar bg-slate-50/50">
+          {bootstrapError && (
+            <div role="alert" className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+              <p className="font-black">Data tidak dapat dimuat dari server</p>
+              <p className="mt-1 text-xs">{bootstrapError}. Tidak ada data contoh yang ditampilkan. Periksa koneksi API/database lalu muat ulang halaman.</p>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {!showPOSForm && activeTab === 'dashboard' && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>

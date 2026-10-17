@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { SparePart, Supplier, PurchaseRecord, PartCategory, WarehouseRack, WarehouseZone } from '../types';
 import { cn } from '../lib/utils';
-import { formatPartLocation, groupPartsByRack, DEFAULT_RACK_LIST, DEFAULT_PART_CATEGORIES } from '../utils/inventory';
+import { formatPartLocation, groupPartsByRack } from '../utils/inventory';
 import { Modal } from './Modal';
 import { LowStockModal } from './LowStockModal';
 
@@ -348,8 +348,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             </button>
             <button 
               onClick={onAdd} 
+              disabled={!masterCategories?.length}
+              title={!masterCategories?.length ? 'Buat kategori sparepart terlebih dahulu.' : undefined}
               aria-label="Tambah Sparepart Baru"
-              className="h-12 px-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-blue-100 shrink-0 hover:bg-blue-700 transition-colors font-black text-xs uppercase tracking-wider"
+              className="h-12 px-4 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-blue-100 shrink-0 hover:bg-blue-700 transition-colors font-black text-xs uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-50"
             >
                <Plus className="w-5 h-5" />
                <span className="hidden sm:inline">Part Baru</span>
@@ -819,7 +821,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             {filteredParts.length === 0 && (
               <div className="p-12 text-center text-slate-400 text-xs font-bold bg-white rounded-3xl border border-dashed border-slate-200 space-y-2">
                 <Package className="w-8 h-8 mx-auto text-slate-300" />
-                <p>Tidak ada sparepart yang sesuai dengan filter atau kata kunci pencarian.</p>
+                <p>{parts.length === 0 ? 'Belum ada sparepart. Buat kategori sparepart terlebih dahulu, lalu tambahkan part baru untuk memulai.' : 'Tidak ada sparepart yang sesuai dengan filter atau kata kunci pencarian.'}</p>
                 <button
                   onClick={() => { setSearchTerm(''); setSelectedRackFilter('all'); setSelectedCategoryFilter('all'); }}
                   className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl font-black text-xs hover:bg-blue-100 transition-colors"
@@ -1078,7 +1080,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold text-slate-900 focus:border-amber-500"
                 />
                 <datalist id="quick-rack-list">
-                  {DEFAULT_RACK_LIST.map(r => (
+                  {(masterRacks || []).map(r => (
                     <option key={r.code} value={r.code}>{r.name}</option>
                   ))}
                 </datalist>

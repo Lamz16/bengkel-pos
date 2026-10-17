@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { SparePart, Supplier, PartCategory, WarehouseRack, WarehouseZone, StorageLocation } from '../../types';
 import { Sparkles, MapPin, Hash, Barcode as BarcodeIcon, Image as ImageIcon, Upload, Trash2, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { generatePartSKU, DEFAULT_RACK_LIST, DEFAULT_PART_CATEGORIES, DEFAULT_WAREHOUSE_ZONES } from '../../utils/inventory';
+import { generatePartSKU } from '../../utils/inventory';
 import { compressAndConvertToWebP, formatBytes, CompressionResult } from '../../utils/imageCompressor';
 import { api } from '../../services/api';
 import { CurrencyInput } from '../CurrencyInput';
@@ -21,9 +21,9 @@ export const PartForm: React.FC<PartFormProps> = ({
   part, 
   suppliers, 
   existingParts = [], 
-  categories = DEFAULT_PART_CATEGORIES,
+  categories = [],
   racks,
-  zones = DEFAULT_WAREHOUSE_ZONES,
+  zones = [],
   onSave, 
   onCancel 
 }) => {
@@ -37,9 +37,9 @@ export const PartForm: React.FC<PartFormProps> = ({
 
   const [formData, setFormData] = useState<SparePart>(() => {
     if (part && part.id) return part;
-    const initialCategory = categories[0] || DEFAULT_PART_CATEGORIES[0];
+    const initialCategory = categories[0];
     const initialRack = racks?.[0];
-    const autoSku = generatePartSKU(initialCategory.name, existingParts, categories);
+    const autoSku = generatePartSKU(initialCategory?.name || 'PRT', existingParts, categories);
     return {
       id: 'P' + Math.floor(Math.random() * 1000),
       sku: autoSku,
@@ -54,8 +54,8 @@ export const PartForm: React.FC<PartFormProps> = ({
       hasProductWarranty: false,
       warrantyDurationDays: 0,
       warrantyTerms: '',
-      category: initialCategory.name,
-      categoryId: initialCategory.id,
+      category: initialCategory?.name || '',
+      categoryId: initialCategory?.id,
       rackCode: initialRack?.code,
       rackId: initialRack?.id,
       shelfLevel: 'Tingkat 1',
@@ -416,12 +416,15 @@ export const PartForm: React.FC<PartFormProps> = ({
           <select 
             value={formData.categoryId || categories.find(c => c.name === formData.category)?.id || ''}
             onChange={e => handleCategoryChange(e.target.value)}
+            disabled={categories.length === 0}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
           >
+            {categories.length === 0 && <option value="">Belum ada kategori</option>}
             {categories.map(c => (
               <option key={c.id} value={c.id}>{c.name} ({c.skuPrefix || c.name.slice(0, 3).toUpperCase()})</option>
             ))}
           </select>
+          {categories.length === 0 && <p className="mt-1 text-[10px] font-bold text-amber-700">Buat kategori sparepart terlebih dahulu melalui Pengaturan → Manajemen Kategori & Lokasi Stok.</p>}
         </div>
       </div>
       
@@ -458,7 +461,8 @@ export const PartForm: React.FC<PartFormProps> = ({
             }
             onSave(formData);
           }} 
-          className="flex-1 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-200 transition-colors"
+          disabled={categories.length === 0}
+          className="flex-1 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-200 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           Simpan Part
         </button>

@@ -4,15 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="add initate completed">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/repositories/interfaces.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/interfaces.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/repositories/staffRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/staffRepository.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/services/settingsService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/settingsService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/InventoryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InventoryView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/MasterDataModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/MasterDataModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/StorageLocationsPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/StorageLocationsPanel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/forms/PartForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/PartForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controllers/authController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/authController.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/inventory.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/inventory.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -81,7 +81,7 @@
     &quot;npm.db:push.executor&quot;: &quot;Run&quot;,
     &quot;npm.dev.executor&quot;: &quot;Run&quot;,
     &quot;npm.install.executor&quot;: &quot;Run&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\andik\\WebstormProjects\\bengkel-pos\\node_modules\\typescript\\lib&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
@@ -200,7 +200,8 @@
       <workItem from="1790683990557" duration="1699000" />
       <workItem from="1791167429542" duration="16000" />
       <workItem from="1791280561325" duration="381000" />
-      <workItem from="1791340723248" duration="5607000" />
+      <workItem from="1791340723248" duration="5681000" />
+      <workItem from="1792258298516" duration="1580000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -242,7 +243,15 @@
       <option name="project" value="LOCAL" />
       <updated>1791341285844</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="fix cant update and delete users">
+      <option name="closed" value="true" />
+      <created>1791347804562</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1791347804562</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -263,6 +272,7 @@
     <MESSAGE value="update sidebar" />
     <MESSAGE value="update atur stock and plus minus margin left" />
     <MESSAGE value="add initate completed" />
-    <option name="LAST_COMMIT_MESSAGE" value="add initate completed" />
+    <MESSAGE value="fix cant update and delete users" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix cant update and delete users" />
   </component>
 </project>
