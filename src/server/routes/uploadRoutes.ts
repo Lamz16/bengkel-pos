@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
+import { ownerOnly } from '../auth';
 
 export const uploadRouter = Router();
+uploadRouter.use(ownerOnly);
 
 // Ensure local directory exists for part images
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads', 'parts');

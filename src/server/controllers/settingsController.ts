@@ -96,7 +96,7 @@ export class SettingsController {
       if (!name || !email || !password || password.length < 8) {
         return res.status(400).json({ error: 'Nama, email, dan password minimal 8 karakter wajib diisi.' });
       }
-      if (!['Owner', 'Admin'].includes(role)) return res.status(400).json({ error: 'Peran staf tidak valid.' });
+      if (!['Owner', 'Admin', 'Kasir', 'Staf'].includes(role)) return res.status(400).json({ error: 'Peran staf tidak valid.' });
       const staff = await settingsService.createStaff(req.body);
       res.status(201).json(staff);
     } catch (err: any) {
@@ -113,7 +113,7 @@ export class SettingsController {
       const { name, email, password, role, status, shifts } = req.body;
       if (!name || !email) return res.status(400).json({ error: 'Nama dan email wajib diisi.' });
       if (password && password.length < 8) return res.status(400).json({ error: 'Password minimal 8 karakter.' });
-      if (!['Owner', 'Admin'].includes(role)) return res.status(400).json({ error: 'Peran staf tidak valid.' });
+      if (!['Owner', 'Admin', 'Kasir', 'Staf'].includes(role)) return res.status(400).json({ error: 'Peran staf tidak valid.' });
       if (!['Active', 'Inactive'].includes(status)) return res.status(400).json({ error: 'Status staf tidak valid.' });
       if (before.role === 'Owner' && (role !== 'Owner' || status !== 'Active') && !(await settingsService.hasAnotherOwner(id))) {
         return res.status(400).json({ error: 'Tidak dapat menonaktifkan atau mengubah peran Owner terakhir.' });

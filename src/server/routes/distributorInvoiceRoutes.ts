@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { distributorInvoiceController } from '../controllers/distributorInvoiceController';
+import { ownerOnly } from '../auth';
 
 export const distributorInvoiceRouter = Router();
+distributorInvoiceRouter.use(ownerOnly);
 
 distributorInvoiceRouter.get('/', (req, res) => distributorInvoiceController.getAll(req, res));
 distributorInvoiceRouter.post('/', (req, res) => distributorInvoiceController.create(req, res));

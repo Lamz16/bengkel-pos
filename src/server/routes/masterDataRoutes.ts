@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { masterDataController } from '../controllers/masterDataController';
+import { ownerOnly } from '../auth';
 
 export const masterDataRouter = Router();
+masterDataRouter.use(ownerOnly);
 masterDataRouter.get('/categories', masterDataController.getCategories);
 masterDataRouter.post('/categories', masterDataController.createCategory);
 masterDataRouter.put('/categories/:id', masterDataController.updateCategory);

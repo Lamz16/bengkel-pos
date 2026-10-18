@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { inventoryService } from '../container';
 import { recordAudit } from '../services/auditLogService';
+import { isOwner } from '../auth';
+import { cashierPart } from '../services/roleData';
 
 export class PartController {
   async getParts(req: Request, res: Response) {
@@ -11,11 +13,11 @@ export class PartController {
 
       if (page || limit || search) {
         const paginated = await (inventoryService as any).partRepo.getPaginated({ page, limit, search });
-        return res.json(paginated);
+        return res.json(isOwner(req) ? paginated : { ...paginated, data: paginated.data.map(cashierPart) });
       }
 
       const parts = await inventoryService.getParts();
-      res.json(parts);
+      res.json(isOwner(req) ? parts : parts.map(cashierPart));
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Gagal memuat suku cadang' });
     }

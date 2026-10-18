@@ -15,7 +15,7 @@ import { uploadRouter } from './uploadRoutes';
 import { masterDataRouter } from './masterDataRoutes';
 import { databaseRouter } from './databaseRoutes';
 import { storageLocationRouter } from './storageLocationRoutes';
-import { authorize, requireAuth } from '../auth';
+import { ownerOnly, requireAuth } from '../auth';
 import { idempotencyMiddleware } from '../middleware/idempotency';
 import { systemMonitor } from '../middleware/monitoring';
 import { requireDatabase } from '../middleware/databaseRequired';
@@ -37,13 +37,13 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-apiRouter.get('/monitoring/metrics', (_req: Request, res: Response) => {
+apiRouter.get('/monitoring/metrics', requireAuth, ownerOnly, (_req: Request, res: Response) => {
   res.json(systemMonitor.getMetrics());
 });
 
-// Authentication is public; every business endpoint below requires a valid Owner/Admin JWT.
+// Authentication is public; every business endpoint below requires a valid JWT.
 apiRouter.use('/auth', authRouter);
-apiRouter.use(requireAuth, authorize('Owner', 'Admin'));
+apiRouter.use(requireAuth);
 apiRouter.use(requireDatabase);
 apiRouter.use(activityLogger);
 

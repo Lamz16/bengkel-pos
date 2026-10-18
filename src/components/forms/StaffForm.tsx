@@ -43,6 +43,8 @@ export const StaffForm: React.FC<StaffFormProps> = ({ staff, onSave, onCancel })
             className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-bold"
           >
             <option value="Admin">Admin / PIC</option>
+            <option value="Kasir">Kasir</option>
+            <option value="Staf">Staf Operasional</option>
             <option value="Owner">Superadmin / Owner</option>
           </select>
         </div>

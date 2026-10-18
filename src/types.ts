@@ -30,7 +30,7 @@ export interface ServiceQueue {
   version?: number;
 }
 // Hak Akses Sistem: Superadmin/Owner dan Admin/PIC
-export type UserRole = 'Owner' | 'Admin';
+export type UserRole = 'Owner' | 'Admin' | 'Kasir' | 'Staf';
 
 export interface CompanySettings {
   id?: string;

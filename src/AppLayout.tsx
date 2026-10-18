@@ -273,21 +273,21 @@ export default function AppLayout() {
 
   // Navigation Items Definition
   const navItems: NavItem[] = useMemo(() => [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Owner', 'Admin'] },
-    { id: 'pos', label: 'Transaksi', icon: PaymentIcon, roles: ['Owner', 'Admin'] },
-    { id: 'receivables', label: 'Piutang', icon: Wallet, roles: ['Owner', 'Admin'] },
-    { id: 'queue', label: 'Antrean Servis', icon: Wrench, roles: ['Owner', 'Admin'] },
-    { id: 'distributor_tempo', label: 'Nota Tempo', icon: CalendarIcon, roles: ['Owner', 'Admin'] },
-    { id: 'mechanics', label: 'Mekanik & Gaji', icon: Award, roles: ['Owner', 'Admin'] },
-    { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['Owner', 'Admin'] },
-    { id: 'inventory', label: 'Stok Barang', icon: Package, roles: ['Owner', 'Admin'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Owner'] },
+    { id: 'pos', label: 'Transaksi', icon: PaymentIcon, roles: ['Owner', 'Admin', 'Kasir', 'Staf'] },
+    { id: 'receivables', label: 'Piutang', icon: Wallet, roles: ['Owner'] },
+    { id: 'queue', label: 'Antrean Servis', icon: Wrench, roles: ['Owner', 'Admin', 'Kasir', 'Staf'] },
+    { id: 'distributor_tempo', label: 'Nota Tempo', icon: CalendarIcon, roles: ['Owner'] },
+    { id: 'mechanics', label: 'Mekanik & Gaji', icon: Award, roles: ['Owner'] },
+    { id: 'customers', label: 'Pelanggan', icon: Users, roles: ['Owner'] },
+    { id: 'inventory', label: 'Stok Barang', icon: Package, roles: ['Owner', 'Admin', 'Kasir', 'Staf'] },
     { id: 'suppliers', label: 'Pemasok', icon: Store, roles: ['Owner'] },
     { id: 'expenses', label: 'Pengeluaran', icon: Wallet, roles: ['Owner'] },
     { id: 'reports', label: 'Laporan', icon: TrendingUp, roles: ['Owner'] },
     { id: 'completed_transactions_report', label: 'Laporan Transaksi Selesai', icon: FileSpreadsheet, roles: ['Owner'] },
     { id: 'logs', label: 'Log Sistem', icon: ScrollText, roles: ['Owner'] },
     { id: 'staff', label: 'Pengguna', icon: UserCircle, roles: ['Owner'] },
-    { id: 'settings', label: 'Pengaturan', icon: Settings, roles: ['Owner', 'Admin'] },
+    { id: 'settings', label: 'Pengaturan', icon: Settings, roles: ['Owner'] },
   ], []);
 
   const filteredNavItems = useMemo(() => {
@@ -307,7 +307,7 @@ export default function AppLayout() {
       try {
         setBootstrapError(null);
         const data = await api.getBootstrap();
-        const loadedExpenseCategories = await api.getExpenseCategories();
+        const loadedExpenseCategories = currentUser.role === 'Owner' ? await api.getExpenseCategories() : [];
         if (!isMounted) return;
         if (data.settings) setCompanySettings(data.settings);
         setCustomers(data.customers ?? []);
@@ -959,6 +959,7 @@ export default function AppLayout() {
                   onOpenLowStockModal={() => setShowLowStockModal(true)}
                   onOpenMasterDataModal={() => setShowMasterDataModal(true)}
                   onCheckoutCart={(items) => { setEditingService(null); setSaleCart(items); setShowPOSForm(true); }}
+                  canManageInventory={currentUser.role === 'Owner'}
                 />
               </motion.div>
             )}
@@ -1028,7 +1029,7 @@ export default function AppLayout() {
               </motion.div>
             )}
 
-            {activeTab === 'settings' && (currentUser.role === 'Owner' || currentUser.role === 'Admin') && !showPOSForm && (
+            {activeTab === 'settings' && currentUser.role === 'Owner' && !showPOSForm && (
               <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <SettingsView 
                   settings={companySettings} 

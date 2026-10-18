@@ -50,6 +50,7 @@ interface InventoryViewProps {
   onOpenLowStockModal?: () => void;
   onOpenMasterDataModal?: () => void;
   onCheckoutCart: (items: Array<{ partId: string; quantity: number }>) => void;
+  canManageInventory?: boolean;
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
@@ -66,7 +67,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   initialShowLowStockModal = false,
   onOpenLowStockModal,
   onOpenMasterDataModal,
-  onCheckoutCart
+  onCheckoutCart,
+  canManageInventory = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'stock' | 'rack_locator' | 'purchases'>('stock');
@@ -236,9 +238,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           )}
         >
           <Package className="w-3.5 h-3.5" />
-          Daftar Stok & Rak
+          {canManageInventory ? 'Daftar Stok & Rak' : 'Daftar Stok Barang'}
         </button>
-        <button
+        {canManageInventory && <button
           onClick={() => setActiveSubTab('rack_locator')}
           className={cn(
             "flex-1 py-2.5 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5",
@@ -249,8 +251,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         >
           <MapPin className="w-3.5 h-3.5" />
           Peta & Cari Rak Gudang
-        </button>
-        <button
+        </button>}
+        {canManageInventory && <button
           onClick={() => setActiveSubTab('purchases')}
           className={cn(
             "flex-1 py-2.5 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5",
@@ -261,7 +263,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         >
           <Boxes className="w-3.5 h-3.5" />
           Transaksi Masuk
-        </button>
+        </button>}
       </div>
 
       {/* ================= TAB 1: DAFTAR STOK & LOKASI RAK ================= */}
@@ -280,15 +282,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <p className="text-[10px] font-bold text-slate-400 uppercase">Total Jenis Part</p>
               <p className="text-lg font-black text-slate-900 mt-0.5">{parts.length} Item</p>
             </div>
-            <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-2xs">
+            {canManageInventory && <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-2xs">
               <p className="text-[10px] font-bold text-slate-400 uppercase">Total Unit Fisik</p>
               <p className="text-lg font-black text-blue-600 mt-0.5">{totalUnits} Pcs</p>
-            </div>
-            <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-2xs">
+            </div>}
+            {canManageInventory && <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-2xs">
               <p className="text-[10px] font-bold text-slate-400 uppercase">Rak Terdaftar</p>
               <p className="text-lg font-black text-amber-600 mt-0.5">{availableRacks.length} Rak</p>
-            </div>
-            <div 
+            </div>}
+            {canManageInventory && <div
               onClick={handleOpenLowStock}
               className={cn(
                 "p-3 rounded-2xl border shadow-2xs flex items-center justify-between cursor-pointer transition-all hover:scale-[1.02] group",
@@ -314,7 +316,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   <AlertTriangle className="w-4 h-4 animate-bounce" />
                 </div>
               )}
-            </div>
+            </div>}
           </div>
 
           {/* Search and Action Buttons */}
@@ -323,13 +325,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="Cari nama part, SKU (e.g. OLI-001), kode rak (e.g. Rak A)..." 
+                placeholder={canManageInventory ? 'Cari nama part, SKU, atau kode rak...' : 'Cari nama part, SKU, atau barcode...'}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl shadow-sm outline-none text-sm font-bold text-slate-900 focus:border-blue-500 transition-colors"
               />
             </div>
-            {lowStockCount > 0 && (
+            {canManageInventory && lowStockCount > 0 && (
               <button
                 type="button"
                 onClick={handleOpenLowStock}
@@ -339,14 +341,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 <span>Monitoring ({lowStockCount})</span>
               </button>
             )}
-            <button 
+            {canManageInventory && <button
               onClick={() => onAddStock()} 
               className="hidden md:flex items-center gap-2 h-12 px-5 bg-amber-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-amber-100 hover:bg-amber-600 transition-colors shrink-0"
             >
               <Package className="w-4 h-4" />
               Tambah Stok
-            </button>
-            <button 
+            </button>}
+            {canManageInventory && <button
               onClick={onAdd} 
               disabled={!masterCategories?.length}
               title={!masterCategories?.length ? 'Buat kategori sparepart terlebih dahulu.' : undefined}
@@ -355,7 +357,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             >
                <Plus className="w-5 h-5" />
                <span className="hidden sm:inline">Part Baru</span>
-            </button>
+            </button>}
           </div>
 
           {/* Modern Dropdown Filters Toolbar */}
@@ -644,7 +646,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             </div>
 
             {/* Manage Master Data Button */}
-            {onOpenMasterDataModal && (
+            {canManageInventory && onOpenMasterDataModal && (
               <button
                 type="button"
                 onClick={onOpenMasterDataModal}
@@ -700,13 +702,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                         )}>
                           <span className="text-sm font-black leading-none">{part.stock}</span>
                           <span className="text-[8px] font-bold uppercase mt-0.5">Pcs</span>
-                          <button
+                          {canManageInventory && <button
                             onClick={() => onEdit(part)}
                             className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xs hover:scale-110 transition-transform"
                             title="Tambah foto barang"
                           >
                             <ImageIcon className="w-2.5 h-2.5" />
-                          </button>
+                          </button>}
                         </div>
                       )}
 
@@ -729,6 +731,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
                         {/* RACK LOCATION BADGE (PROMINENT) */}
                         <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {canManageInventory && <>
                           <div 
                             onClick={() => openQuickRackEditor(part)}
                             className={cn(
@@ -751,12 +754,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                               {part.rackZone}
                             </span>
                           )}
+                          </>}
 
                           <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
                             {part.category}
                           </span>
 
-                          {supplier && (
+                          {canManageInventory && supplier && (
                             <span className="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-bold">
                               Supplier: {supplier.name}
                             </span>
@@ -764,7 +768,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                         </div>
 
                         {/* Location Notes if available */}
-                        {part.locationNotes && (
+                        {canManageInventory && part.locationNotes && (
                           <p className="text-[11px] text-slate-500 italic mt-1.5 flex items-center gap-1">
                             <span className="text-amber-500 font-bold">💡 Catatan Letak:</span>
                             {part.locationNotes}
@@ -774,8 +778,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                         {/* Pricing details */}
                         <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500 font-bold">
                           <p>Harga Jual: <span className="text-blue-600 font-black">Rp {(part.price || 0).toLocaleString()}</span></p>
-                          <p className="text-slate-300">•</p>
-                          <p>Modal: <span className="text-slate-700">Rp {(part.purchasePrice || 0).toLocaleString()}</span></p>
+                          {canManageInventory && <><p className="text-slate-300">•</p><p>Modal: <span className="text-slate-700">Rp {(part.purchasePrice || 0).toLocaleString()}</span></p></>}
                           {part.barcode && (
                             <>
                               <p className="text-slate-300">•</p>
@@ -787,7 +790,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    {canManageInventory && <div className="flex items-center gap-1.5 shrink-0">
                       <button 
                         onClick={() => openQuickRackEditor(part)} 
                         aria-label="Atur Rak"
@@ -812,7 +815,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                    </div>
+                    </div>}
                   </div>
                 </div>
               );
@@ -835,7 +838,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       )}
 
       {/* ================= TAB 2: PETA & CARI RAK GUDANG (WAREHOUSE LOCATOR) ================= */}
-      {activeSubTab === 'rack_locator' && (
+      {canManageInventory && activeSubTab === 'rack_locator' && (
         <div className="space-y-4">
           {/* Instant Search Bar: "Cari Letak Barang" */}
           <div className="p-4 bg-linear-to-r from-blue-600 to-indigo-700 text-white rounded-3xl shadow-lg space-y-3">
@@ -1011,7 +1014,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       )}
 
       {/* ================= TAB 3: TRANSAKSI MASUK SUPPLIER ================= */}
-      {activeSubTab === 'purchases' && (
+      {canManageInventory && activeSubTab === 'purchases' && (
         <div className="space-y-3">
           {purchases.map((pr) => {
             const part = parts.find(p => p.id === pr.partId);
@@ -1199,21 +1202,21 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   WebP Compressed Asset
                 </span>
               </div>
-              <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+              {canManageInventory && <div className="flex justify-between items-center pt-1 border-t border-slate-200">
                 <span className="font-bold text-slate-500">Lokasi Rak:</span>
                 <span className="font-bold text-amber-700">
                   {selectedImagePart.rackCode ? formatPartLocation(selectedImagePart) : 'Belum Diatur'}
                 </span>
-              </div>
+              </div>}
             </div>
 
             <div className="flex gap-2">
-              <button
+              {canManageInventory && <button
                 onClick={() => setSelectedImagePart(null)}
                 className="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
               >
                 Tutup
-              </button>
+              </button>}
               <button
                 onClick={() => {
                   const p = selectedImagePart;
@@ -1231,7 +1234,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       )}
 
       {/* Low Stock Monitoring Modal (Fallback if not passed from parent) */}
-      {showLowStockModal && (
+      {canManageInventory && showLowStockModal && (
         <LowStockModal
           isOpen={showLowStockModal}
           onClose={() => setShowLowStockModal(false)}

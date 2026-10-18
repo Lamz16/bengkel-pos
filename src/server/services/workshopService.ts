@@ -106,7 +106,7 @@ export class WorkshopServiceLayer {
         const partIds = [...new Set((effectiveData.partsUsed || []).map(item => item.partId).filter(Boolean))];
         const partWarranty = new Map((await tx.sparePart.findMany({
           where: { id: { in: partIds } },
-          select: { id: true, hasProductWarranty: true, warrantyDurationDays: true, warrantyTerms: true },
+          select: { id: true, hasProductWarranty: true, warrantyDurationDays: true, warrantyTerms: true, purchasePrice: true },
         })).map(part => [part.id, part]));
 
         for (const item of effectiveData.partsUsed || []) {
@@ -177,7 +177,9 @@ export class WorkshopServiceLayer {
               wholesaleType: item.wholesaleType || null,
               wholesaleValue: item.wholesaleValue || null,
               wholesaleUnitPrice: item.wholesaleUnitPrice || null,
-              purchasePriceAtTime: item.purchasePriceAtTime ?? undefined,
+              // Cost snapshots are always taken from the server-side master;
+              // never trust a browser payload for financial reporting.
+              purchasePriceAtTime: warranty ? warranty.purchasePrice : undefined,
               hasProductWarranty: enabled,
               warrantyDurationDays: duration,
               warrantyTerms: terms,

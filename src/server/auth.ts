@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { NextFunction, Request, Response } from 'express';
 
-export type AuthorizedRole = 'Owner' | 'Admin';
+// Owner is the only privileged role. All other authenticated roles are
+// operational accounts and must be authorized explicitly per route.
+export type AuthorizedRole = 'Owner' | 'Admin' | 'Kasir' | 'Staf';
 export interface AuthenticatedUser { id: string; email: string; role: AuthorizedRole; name: string }
 
 declare global {
@@ -36,7 +38,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const payload = jwt.verify(token, jwtSecret(), {
       issuer: 'bengkel-pos', audience: 'bengkel-pos-web',
     }) as JwtPayload;
-    if (!payload.sub || !payload.email || !['Owner', 'Admin'].includes(payload.role)) {
+    if (!payload.sub || !payload.email || !['Owner', 'Admin', 'Kasir', 'Staf'].includes(payload.role)) {
       return res.status(401).json({ error: 'Token sesi tidak valid.' });
     }
     req.authUser = { id: payload.sub, email: payload.email, role: payload.role, name: payload.name || '' };
@@ -45,6 +47,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: 'Sesi login tidak valid atau sudah kedaluwarsa.' });
   }
 }
+
+export const ownerOnly = authorize('Owner');
+export const isOwner = (req: Request) => req.authUser?.role === 'Owner';
 
 export function authorize(...roles: AuthorizedRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {

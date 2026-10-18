@@ -1,6 +1,14 @@
 import { Request, Response } from 'express';
 import { workshopService } from '../container';
 import { recordAudit } from '../services/auditLogService';
+import { isOwner } from '../auth';
+import { cashierService } from '../services/roleData';
+
+async function canAccessService(req: Request, id: string) {
+  if (isOwner(req)) return true;
+  const service = await workshopService.getServiceById(id);
+  return service?.createdByUserId === req.authUser?.id;
+}
 
 export class ServiceController {
   async getServices(req: Request, res: Response) {
@@ -19,6 +27,10 @@ export class ServiceController {
       // Riwayat transaksi selalu dipaginasi. Jangan kembalikan seluruh tabel
       // saat parameter query tidak diberikan.
       const paginated = await workshopService.getPaginatedServices({ page, limit, search, status });
+      if (!isOwner(req)) {
+        const data = paginated.data.filter(service => service.createdByUserId === req.authUser?.id).map(cashierService);
+        return res.json({ ...paginated, data, pagination: { ...paginated.pagination, total: data.length, totalPages: 1 } });
+      }
       return res.json(paginated);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Gagal memuat daftar servis' });
@@ -43,7 +55,7 @@ export class ServiceController {
       }
       const service = await workshopService.createService(req.body, req.authUser);
       await recordAudit(req, { action: 'Membuat transaksi', entity: 'WorkshopService', entityId: service.id, after: service, description: `Transaksi ${service.invoiceNumber || service.id} dibuat.` });
-      res.status(201).json(service);
+      res.status(201).json(isOwner(req) ? service : cashierService(service));
     } catch (err: any) {
       const status = String(err.message).includes('tidak mencukupi') ? 409 : 500;
       res.status(status).json({ error: err.message || 'Gagal membuat order servis' });
@@ -52,13 +64,14 @@ export class ServiceController {
 
   async updateService(req: Request, res: Response) {
     try {
+      if (!(await canAccessService(req, req.params.id))) return res.status(403).json({ error: 'Transaksi ini bukan milik akun Anda.' });
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
       const before = await workshopService.getServiceById(req.params.id);
       const updated = await workshopService.updateService(req.params.id, req.body, expVer);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
       await recordAudit(req, { action: 'Mengubah transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Transaksi ${updated.invoiceNumber || updated.id} diperbarui.` });
-      res.json(updated);
+      res.json(isOwner(req) ? updated : cashierService(updated));
     } catch (err: any) {
       const message = err.message || 'Gagal mengubah order servis';
       const conflict = /telah diubah/.test(message);
@@ -68,6 +81,7 @@ export class ServiceController {
 
   async updateStatus(req: Request, res: Response) {
     try {
+      if (!(await canAccessService(req, req.params.id))) return res.status(403).json({ error: 'Transaksi ini bukan milik akun Anda.' });
       const { status, version, expectedVersion } = req.body;
       if (!status) {
         return res.status(400).json({ error: 'Status pengerjaan servis wajib diisi.' });
@@ -79,7 +93,7 @@ export class ServiceController {
         return res.status(404).json({ error: 'Order servis tidak ditemukan' });
       }
       await recordAudit(req, { action: 'Mengubah status transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Status transaksi ${updated.invoiceNumber || updated.id} diubah menjadi ${status}.` });
-      res.json(updated);
+      res.json(isOwner(req) ? updated : cashierService(updated));
     } catch (err: any) {
       const isConflict = String(err.message).includes('Optimistic Lock') || String(err.message).includes('telah diubah oleh kasir');
       res.status(isConflict ? 409 : 500).json({ error: err.message || 'Gagal memperbarui status servis' });
@@ -88,13 +102,14 @@ export class ServiceController {
 
   async markPaid(req: Request, res: Response) {
     try {
+      if (!(await canAccessService(req, req.params.id))) return res.status(403).json({ error: 'Transaksi ini bukan milik akun Anda.' });
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
       const before = await workshopService.getServiceById(req.params.id);
       const updated = await (workshopService as any).serviceRepo.markPaid(req.params.id, expVer);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan' });
       await recordAudit(req, { action: 'Melunasi transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran transaksi ${updated.invoiceNumber || updated.id} ditandai lunas.` });
-      res.json(updated);
+      res.json(isOwner(req) ? updated : cashierService(updated));
     } catch (err: any) {
       const isConflict = String(err.message).includes('telah diubah oleh kasir');
       res.status(isConflict ? 409 : 500).json({ error: err.message || 'Gagal memperbarui status pembayaran servis' });
@@ -103,11 +118,12 @@ export class ServiceController {
 
   async addPayment(req: Request, res: Response) {
     try {
+      if (!(await canAccessService(req, req.params.id))) return res.status(403).json({ error: 'Transaksi ini bukan milik akun Anda.' });
       const before = await workshopService.getServiceById(req.params.id);
       const updated = await workshopService.addPayment(req.params.id, req.body);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
       await recordAudit(req, { action: 'Mencatat pembayaran transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran ${req.body.paymentMethod} sebesar ${Number(req.body.amount).toLocaleString('id-ID')} dicatat untuk transaksi ${updated.invoiceNumber || updated.id}.` });
-      res.status(201).json(updated);
+      res.status(201).json(isOwner(req) ? updated : cashierService(updated));
     } catch (err: any) {
       res.status(/nominal|metode|tanggal|melebihi/.test(String(err.message)) ? 400 : 500).json({ error: err.message || 'Gagal mencatat pembayaran transaksi.' });
     }

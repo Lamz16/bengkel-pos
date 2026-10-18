@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { supplierController } from '../controllers/supplierController';
+import { ownerOnly } from '../auth';
 
 export const supplierRouter = Router();
+supplierRouter.use(ownerOnly);
 
 supplierRouter.get('/', (req, res) => supplierController.getSuppliers(req, res));
 supplierRouter.post('/', (req, res) => supplierController.createSupplier(req, res));

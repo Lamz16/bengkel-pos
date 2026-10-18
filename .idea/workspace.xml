@@ -4,26 +4,29 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: add service queue management and completed transaction reporting">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: enhance service queue with creator information and transaction reporting">
       <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/CompletedTransactionsReportView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/CompletedTransactionsReportView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ServiceDetail.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ServiceDetail.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ServiceQueueView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ServiceQueueView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SettingsView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SettingsView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Sidebar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/InventoryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InventoryView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controllers/bootstrapController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/bootstrapController.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controllers/partController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/partController.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/serviceQueueController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/serviceQueueController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/transactionReportController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/transactionReportController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/repositories/transactionReportRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/transactionReportRepository.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/serviceQueueRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/serviceQueueRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/services/serviceQueueService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/serviceQueueService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/aiRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/aiRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/customerRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/customerRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/distributorInvoiceRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/distributorInvoiceRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/financeRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/financeRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/masterDataRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/masterDataRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/mechanicRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/mechanicRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/partRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/partRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/serviceRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/serviceRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/storageLocationRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/storageLocationRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/supplierRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/supplierRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/uploadRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/uploadRoutes.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/services/workshopService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/workshopService.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -245,7 +248,7 @@
       <workItem from="1791340723248" duration="5681000" />
       <workItem from="1792258298516" duration="1580000" />
       <workItem from="1792259971207" duration="9481000" />
-      <workItem from="1792299492706" duration="5623000" />
+      <workItem from="1792299492706" duration="6801000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -311,7 +314,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792274208900</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="feat: enhance service queue with creator information and transaction reporting">
+      <option name="closed" value="true" />
+      <created>1792305356186</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1792305356186</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -335,6 +346,7 @@
     <MESSAGE value="fix cant update and delete users" />
     <MESSAGE value="refactor: clear initial state for various data sets and improve error handling" />
     <MESSAGE value="feat: add service queue management and completed transaction reporting" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: add service queue management and completed transaction reporting" />
+    <MESSAGE value="feat: enhance service queue with creator information and transaction reporting" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: enhance service queue with creator information and transaction reporting" />
   </component>
 </project>

@@ -11,9 +11,11 @@ import {
 import { distributorInvoiceRepository } from '../repositories/distributorInvoiceRepository';
 import { masterDataRepository } from '../repositories/masterDataRepository';
 import { isDbConnected } from '../db/connection';
+import { isOwner } from '../auth';
+import { cashierBootstrap } from '../services/roleData';
 
 export class BootstrapController {
-  async getBootstrapData(_req: Request, res: Response) {
+  async getBootstrapData(req: Request, res: Response) {
     try {
       const [
         settings,
@@ -54,7 +56,7 @@ export class BootstrapController {
         masterDataRepository.getZones(),
       ]);
 
-      res.json({
+      const payload = {
         settings,
         customers,
         vehicles,
@@ -73,7 +75,8 @@ export class BootstrapController {
         racks,
         zones,
         postgresConnected: isDbConnected(),
-      });
+      };
+      res.json(isOwner(req) ? payload : cashierBootstrap(payload, req.authUser!.id));
 
     } catch (err: any) {
       console.error('Bootstrap API error:', err);
