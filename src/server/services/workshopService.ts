@@ -295,10 +295,8 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.markPaid(id);
   }
 
-  async addPayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string; expectedVersion: number }): Promise<WorkshopService | null> {
+  async addPayment(id: string, data: { amount?: number; cashReceived?: number; amountTendered?: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string; expectedVersion: number }): Promise<WorkshopService | null> {
     if (!isDbConnected()) throw new Error('Pembayaran transaksi memerlukan koneksi database.');
-    const amount = Number(data.amount);
-    if (!Number.isFinite(amount) || amount <= 0) throw new Error('Nominal pembayaran harus lebih besar dari nol.');
     if (!['Cash', 'Transfer', 'QRIS'].includes(data.paymentMethod)) throw new Error('Metode pembayaran tidak valid.');
     const paymentDate = data.paymentDate ? new Date(data.paymentDate) : new Date();
     if (Number.isNaN(paymentDate.getTime())) throw new Error('Tanggal pembayaran tidak valid.');
@@ -309,9 +307,14 @@ export class WorkshopServiceLayer {
       if (service.version !== data.expectedVersion) throw new Error('Transaksi telah diubah oleh pengguna lain. Silakan muat ulang data.');
       const paid = service.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
       const remaining = Number(service.totalAmount) - paid;
-      if (amount > remaining + 0.01) throw new Error(`Nominal melebihi sisa tagihan (${remaining.toLocaleString('id-ID')}).`);
+      if (remaining <= 0) throw new Error('Transaksi ini sudah lunas dan tidak dapat menerima pembayaran baru.');
+      const tendered = Number(data.cashReceived ?? data.amountTendered ?? data.amount);
+      if (!Number.isSafeInteger(tendered) || tendered <= 0) throw new Error('Nominal pembayaran harus berupa rupiah positif tanpa pecahan.');
+      if (data.paymentMethod !== 'Cash' && tendered > remaining) throw new Error(`Nominal melebihi sisa tagihan (${remaining.toLocaleString('id-ID')}).`);
+      const amount = data.paymentMethod === 'Cash' ? Math.min(tendered, remaining) : tendered;
+      const changeAmount = data.paymentMethod === 'Cash' ? Math.max(0, tendered - remaining) : 0;
       const nextPaid = paid + amount;
-      await tx.servicePayment.create({ data: { serviceId: id, amount, paymentMethod: data.paymentMethod, referenceNo: data.referenceNo || null, notes: data.notes || null, paymentDate } });
+      await tx.servicePayment.create({ data: { serviceId: id, amount, cashReceived: data.paymentMethod === 'Cash' ? tendered : null, changeAmount: data.paymentMethod === 'Cash' ? changeAmount : null, paymentMethod: data.paymentMethod, referenceNo: data.referenceNo || null, notes: data.notes || null, paymentDate } });
       const isPaid = nextPaid + 0.01 >= Number(service.totalAmount);
       const changed = await tx.workshopService.updateMany({
         where: { id, version: data.expectedVersion },

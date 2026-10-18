@@ -127,7 +127,7 @@ export interface ActivityLogPage {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 export interface CompletedTransactionReportRow {
-  id: string; completedAt: string; invoiceNumber: string; receiptType: 'SERVICE' | 'SALE'; customerName: string; vehiclePlate: string; vehicleModel: string; mechanicId?: string | null; mechanicName?: string | null; createdByUserId?: string | null; createdByNameSnapshot?: string | null;
+  id: string; completedAt: string; invoiceNumber: string; receiptType: 'SERVICE' | 'SALE'; customerName: string; vehiclePlate: string; vehicleModel: string; mechanicId?: string | null; mechanicName?: string | null; createdByUserId?: string | null; createdByNameSnapshot?: string | null; createdByRoleSnapshot?: string | null;
   serviceItems: Array<{ name: string; price: number }>; parts: Array<{ name: string; quantity: number; unitPrice: number; subtotal: number; unitCost: number; cost: number }>;
   totalLabor: number; totalParts: number; discount: number; revenue: number; cost: number; mechanicBonus: number; grossProfit: number; paymentStatus: string; paymentMethods: string[];
 }
@@ -474,7 +474,7 @@ export const api = {
     });
   },
 
-  async addServicePayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string; expectedVersion: number }): Promise<WorkshopService> {
+  async addServicePayment(id: string, data: { amount?: number; cashReceived?: number; amountTendered?: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string; expectedVersion: number }): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${id}/payments`, { method: 'POST', body: JSON.stringify(data) });
   },
 

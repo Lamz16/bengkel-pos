@@ -49,6 +49,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
   const companyPhone = service.companyPhoneSnapshot || settings.phone;
   const companySlogan = service.companySloganSnapshot || settings.slogan;
   const cashierName = service.createdByNameSnapshot || 'Tidak tercatat';
+  const cashPayments = (service.payments || []).filter(payment => payment.paymentMethod === 'Cash');
 
   const handlePrint = async () => {
     if (isPrinting) return;
@@ -225,6 +226,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
             <span className="text-lg font-black text-blue-600 tracking-tight">{rupiah(service.totalAmount)}</span>
           </div>
 
+          {cashPayments.map(payment => <div key={payment.id} className="space-y-1 border-b border-dashed border-slate-200 py-2 text-[10px]">
+            <div className="flex justify-between"><span>Total Tagihan</span><b>{rupiah(service.totalAmount)}</b></div>
+            <div className="flex justify-between"><span>Uang Diterima</span><b>{rupiah(payment.cashReceived ?? payment.amount)}</b></div>
+            <div className="flex justify-between"><span>Pembayaran Tercatat</span><b>{rupiah(payment.amount)}</b></div>
+            {(payment.changeAmount || 0) > 0 && <div className="flex justify-between text-emerald-700"><span>Kembalian</span><b>{rupiah(payment.changeAmount || 0)}</b></div>}
+          </div>)}
+
           {settings.showWarrantyOnReceipt && !isSale && hasServiceWarranty && serviceWarrantyDays > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Garansi Jasa Servis</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{serviceWarrantyDays} hari{service.serviceWarrantyExpiresAt ? ` · hingga ${format(new Date(service.serviceWarrantyExpiresAt), 'dd MMM yyyy')}` : ''}{serviceWarrantyTerms ? ` · ${serviceWarrantyTerms}` : ''}</p></div>}
 
           {isSale && (service.saleWarrantyEnabled || legacySaleWarranty) && saleWarrantyDays > 0 && <div className="py-2 space-y-1"><div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider"><ShieldCheck className="w-3.5 h-3.5 text-blue-600" /><span>Garansi Transaksi</span></div><p className="text-[10px] text-blue-800 leading-relaxed font-medium">{saleWarrantyDays} hari{saleWarrantyExpiresAt ? ` · hingga ${format(new Date(saleWarrantyExpiresAt), 'dd MMM yyyy')}` : ''}{saleWarrantyTerms ? ` · ${saleWarrantyTerms}` : ''}</p></div>}
@@ -258,6 +266,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
           <div className="border-b border-dashed border-black py-2 space-y-0.5"><div>{receiptHeader}</div><div>No: {invoiceNumber}</div><div>{invoiceDate}</div><div>Pelanggan: {service.customerName || 'Umum'}</div>{!isSale && <><div>Kendaraan: {service.vehiclePlate} {service.vehicleModel}</div>{settings.showOdometerOnReceipt && service.kilometers > 0 && <div>Odometer: {service.kilometers.toLocaleString('id-ID')} KM</div>}{settings.showMechanicOnReceipt && service.mechanicName && <div>Mekanik: {service.mechanicName}</div>}</>}<div>Kasir: {cashierName}</div></div>
           <div className="border-b border-dashed border-black py-2 space-y-2">{serviceItems.map((item, index) => <div key={`thermal-service-${index}`}><b>{item.name}</b><div className="flex justify-between"><span>Jasa</span><span>{rupiah(item.price || 0)}</span></div></div>)}{service.partsUsed.map((item, index) => <div key={`thermal-part-${index}`}><b>{item.name || 'Sparepart'}</b><div className="flex justify-between gap-2"><span>{item.quantity || 1} x {rupiah(item.priceAtTime || 0)}</span><span>{rupiah((item.quantity || 1) * (item.priceAtTime || 0))}</span></div></div>)}{(service.discountAmount || 0) > 0 && <div className="flex justify-between"><span>Diskon {service.discountReason || ''}</span><span>-{rupiah(service.discountAmount)}</span></div>}</div>
           <div className="border-b border-dashed border-black py-2"><div className="flex justify-between font-bold text-xs"><span>TOTAL</span><span>{rupiah(service.totalAmount)}</span></div><div>Status: {service.paymentStatus === 'Paid' ? 'LUNAS' : service.paymentStatus === 'Partial' ? 'SEBAGIAN' : 'BELUM LUNAS'}{service.payments?.[0] ? ` · ${service.payments[0].paymentMethod}` : ''}</div></div>
+          {cashPayments.map(payment => <div key={`thermal-cash-${payment.id}`} className="border-b border-dashed border-black py-2 space-y-0.5"><div className="flex justify-between"><span>UANG DIBAYARKAN</span><b>{rupiah(payment.cashReceived ?? payment.amount)}</b></div><div className="flex justify-between"><span>PEMBAYARAN DICATAT</span><b>{rupiah(payment.amount)}</b></div>{(payment.changeAmount || 0) > 0 && <div className="flex justify-between"><span>KEMBALIAN</span><b>{rupiah(payment.changeAmount || 0)}</b></div>}</div>)}
           {settings.showWarrantyOnReceipt && ((hasServiceWarranty && serviceWarrantyDays > 0) || ((service.saleWarrantyEnabled || legacySaleWarranty) && saleWarrantyDays > 0)) && <div className="border-b border-dashed border-black py-2"><b>GARANSI</b><div>{isSale ? `${saleWarrantyDays} hari${saleWarrantyTerms ? ` · ${saleWarrantyTerms}` : ''}` : `${serviceWarrantyDays} hari${serviceWarrantyTerms ? ` · ${serviceWarrantyTerms}` : ''}`}</div></div>}
           {productWarrantyItems.length > 0 && <div className="border-b border-dashed border-black py-2"><b>GARANSI PRODUK</b>{productWarrantyItems.map((item, index) => <div key={`thermal-warranty-${index}`}>{item.name}: {item.warrantyDurationDays} hari</div>)}</div>}
           {receiptFooter.trim() && <div className="pt-2 text-center">{receiptFooter}</div>}

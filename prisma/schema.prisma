@@ -341,6 +341,10 @@ model ServicePayment {
   id            String          @id @default(uuid())
   serviceId     String
   amount        Decimal         @db.Decimal(18, 2)
+  // Tender and change are immutable cash drawer metadata. `amount` remains
+  // the only applied amount used for receivables and revenue.
+  cashReceived  Decimal?        @db.Decimal(18, 2)
+  changeAmount  Decimal?        @db.Decimal(18, 2)
   paymentMethod String
   referenceNo   String?
   notes         String?

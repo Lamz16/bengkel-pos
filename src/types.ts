@@ -295,6 +295,8 @@ export interface ServicePayment {
   id?: string;
   serviceId?: string;
   amount: number;
+  cashReceived?: number;
+  changeAmount?: number;
   paymentMethod: ServicePaymentMethod;
   referenceNo?: string;
   notes?: string;

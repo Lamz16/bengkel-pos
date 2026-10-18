@@ -4,29 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: enhance service queue with creator information and transaction reporting">
-      <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/InventoryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InventoryView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/StaffForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/auth.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/bootstrapController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/bootstrapController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/partController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/partController.ts" afterDir="false" />
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: add optimistic concurrency control with expectedVersion for service queue and payment updates">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/settingsController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/aiRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/aiRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/customerRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/customerRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/distributorInvoiceRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/distributorInvoiceRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/financeRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/financeRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/masterDataRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/masterDataRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/mechanicRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/mechanicRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/partRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/partRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/serviceRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/serviceRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/settingsRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/storageLocationRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/storageLocationRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/supplierRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/supplierRoutes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/uploadRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/uploadRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/repositories/transactionReportRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/transactionReportRepository.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/services/workshopService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/workshopService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -145,9 +131,9 @@
       <command value="npm run db:seed" />
       <command value="npx prisma migrate resolve --applied 20261018090000_separate_transaction_warranties" />
       <command value="npm run db:generate" />
-      <command value="npm run db:migrate" />
       <command value="npm run db:push" />
       <command value="npx prisma migrate status" />
+      <command value="npm run db:migrate" />
     </option>
   </component>
   <component name="RunManager" selected="npm.dev">
@@ -204,8 +190,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="npm.dev" />
-        <item itemvalue="npm.db:push" />
         <item itemvalue="npm.db:migrate" />
+        <item itemvalue="npm.db:push" />
         <item itemvalue="npm.db:generate" />
         <item itemvalue="npm.db:seed" />
       </list>
@@ -248,7 +234,7 @@
       <workItem from="1791340723248" duration="5681000" />
       <workItem from="1792258298516" duration="1580000" />
       <workItem from="1792259971207" duration="9481000" />
-      <workItem from="1792299492706" duration="6801000" />
+      <workItem from="1792299492706" duration="9979000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -322,7 +308,23 @@
       <option name="project" value="LOCAL" />
       <updated>1792305356186</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="feat: implement owner-only access control for various routes and enhance role management">
+      <option name="closed" value="true" />
+      <created>1792307628003</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1792307628003</updated>
+    </task>
+    <task id="LOCAL-00011" summary="feat: add optimistic concurrency control with expectedVersion for service queue and payment updates">
+      <option name="closed" value="true" />
+      <created>1792309770562</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1792309770562</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -347,6 +349,8 @@
     <MESSAGE value="refactor: clear initial state for various data sets and improve error handling" />
     <MESSAGE value="feat: add service queue management and completed transaction reporting" />
     <MESSAGE value="feat: enhance service queue with creator information and transaction reporting" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: enhance service queue with creator information and transaction reporting" />
+    <MESSAGE value="feat: implement owner-only access control for various routes and enhance role management" />
+    <MESSAGE value="feat: add optimistic concurrency control with expectedVersion for service queue and payment updates" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: add optimistic concurrency control with expectedVersion for service queue and payment updates" />
   </component>
 </project>

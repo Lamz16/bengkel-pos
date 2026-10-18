@@ -110,10 +110,10 @@ export class ServiceController {
       const before = await workshopService.getServiceById(req.params.id);
       const updated = await workshopService.addPayment(req.params.id, { ...req.body, expectedVersion: expVer });
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
-      await recordAudit(req, { action: 'Mencatat pembayaran transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran ${req.body.paymentMethod} sebesar ${Number(req.body.amount).toLocaleString('id-ID')} dicatat untuk transaksi ${updated.invoiceNumber || updated.id}.` });
+      await recordAudit(req, { action: 'Mencatat pembayaran transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran ${req.body.paymentMethod} dicatat untuk transaksi ${updated.invoiceNumber || updated.id}.` });
       res.status(201).json(isOwner(req) ? updated : cashierService(updated));
     } catch (err: any) {
-      res.status(/telah diubah|versi/.test(String(err.message)) ? 409 : /nominal|metode|tanggal|melebihi/.test(String(err.message)) ? 400 : 500).json({ error: err.message || 'Gagal mencatat pembayaran transaksi.' });
+      res.status(/telah diubah|versi/.test(String(err.message)) ? 409 : /nominal|metode|tanggal|melebihi|sudah lunas/.test(String(err.message)) ? 400 : /tidak ditemukan/.test(String(err.message)) ? 404 : 500).json({ error: err.message || 'Gagal mencatat pembayaran transaksi.' });
     }
   }
 
