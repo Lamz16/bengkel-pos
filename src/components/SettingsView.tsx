@@ -974,32 +974,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-1">
-                    Ketentuan Garansi Servis (Ditampilkan di Nota)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formData.warrantyTerms}
-                    onChange={e => setFormData({ ...formData, warrantyTerms: e.target.value })}
-                    placeholder="Contoh: Garansi servis 7 hari atau 500 KM untuk pengerjaan yang sama. Simpan nota ini sebagai bukti klaim."
-                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none resize-none focus:bg-white focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-1">
-                    Kontak Bantuan & Booking WhatsApp (Di Nota)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.receiptContactHelp || ''}
-                    onChange={e => setFormData({ ...formData, receiptContactHelp: e.target.value })}
-                    placeholder="Contoh: WhatsApp CS: 0812-3456-7890"
-                    className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-1">
                     Catatan Kaki (Footer Note / Ucapan Terima Kasih)
                   </label>
                   <textarea
@@ -1144,26 +1118,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
                 <span className="text-lg font-black text-blue-600 tracking-tight">Rp 195.000</span>
               </div>
-
-              {/* Warranty Notice (if enabled) */}
-              {formData.showWarrantyOnReceipt && formData.warrantyTerms && (
-                <div className="py-2 space-y-1">
-                  <div className="flex items-center gap-1.5 text-blue-900 text-[10px] font-black uppercase tracking-wider">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Ketentuan Garansi Servis:</span>
-                  </div>
-                  <p className="text-[10px] text-blue-800 leading-relaxed font-medium">
-                    {formData.warrantyTerms}
-                  </p>
-                </div>
-              )}
-
-              {/* Contact Help */}
-              {formData.receiptContactHelp && (
-                <div className="text-center text-[10px] text-slate-600 font-bold py-1">
-                  📞 {formData.receiptContactHelp}
-                </div>
-              )}
 
               {/* Footer Note */}
               <div className="text-center space-y-1 pt-2">

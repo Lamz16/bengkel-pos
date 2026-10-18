@@ -3,7 +3,7 @@ import { prisma } from '../db/connection';
 
 export type CompletedTransactionReportParams = {
   page: number; limit: number; search?: string; from?: Date; to?: Date;
-  receiptType?: 'SERVICE' | 'SALE'; paymentStatus?: string; mechanicId?: string; paymentMethod?: string;
+  receiptType?: 'SERVICE' | 'SALE'; paymentStatus?: string; mechanicId?: string; paymentMethod?: string; createdByUserId?: string;
   sort?: 'completedAt' | 'revenue' | 'cost' | 'profit'; direction?: 'asc' | 'desc';
 };
 
@@ -19,6 +19,7 @@ export class TransactionReportRepository {
     if (params.receiptType) filters.push({ receiptType: params.receiptType });
     if (params.paymentStatus) filters.push({ paymentStatus: params.paymentStatus });
     if (params.mechanicId) filters.push({ mechanicId: params.mechanicId });
+    if (params.createdByUserId) filters.push({ createdByUserId: params.createdByUserId });
     if (params.paymentMethod) filters.push({ payments: { some: { paymentMethod: params.paymentMethod } } });
     if (params.search) filters.push({ OR: [
       { id: { contains: params.search, mode: 'insensitive' } },
@@ -37,6 +38,7 @@ export class TransactionReportRepository {
     if (params.receiptType) aggregateFilters.push(Prisma.sql`s."receiptType" = ${params.receiptType}`);
     if (params.paymentStatus) aggregateFilters.push(Prisma.sql`s."paymentStatus" = ${params.paymentStatus}`);
     if (params.mechanicId) aggregateFilters.push(Prisma.sql`s."mechanicId" = ${params.mechanicId}`);
+    if (params.createdByUserId) aggregateFilters.push(Prisma.sql`s."createdByUserId" = ${params.createdByUserId}`);
     if (params.paymentMethod) aggregateFilters.push(Prisma.sql`EXISTS (SELECT 1 FROM "ServicePayment" pay WHERE pay."serviceId" = s.id AND pay."paymentMethod" = ${params.paymentMethod})`);
     if (params.search) { const like = `%${params.search}%`; aggregateFilters.push(Prisma.sql`(s.id ILIKE ${like} OR s."invoiceNumber" ILIKE ${like} OR s."customerName" ILIKE ${like} OR s."vehiclePlate" ILIKE ${like} OR EXISTS (SELECT 1 FROM "ServiceLaborItem" li WHERE li."serviceId" = s.id AND li.name ILIKE ${like}) OR EXISTS (SELECT 1 FROM "ServicePartItem" pi WHERE pi."serviceId" = s.id AND pi.name ILIKE ${like}))`); }
     const aggregateWhere = Prisma.join(aggregateFilters, ' AND ');
@@ -54,7 +56,7 @@ export class TransactionReportRepository {
       const totalParts = parts.reduce((sum: number, part: any) => sum + part.subtotal, 0);
       const cost = parts.reduce((sum: number, part: any) => sum + part.cost, 0);
       const labor = number(row.laborFee), bonus = number(row.mechanicBonusAmount), revenue = number(row.totalAmount);
-      return { id: row.id, completedAt: (row.completedAt || row.createdAt).toISOString(), invoiceNumber: row.invoiceNumber, receiptType: row.receiptType, customerName: row.customerName, vehiclePlate: row.vehiclePlate, vehicleModel: row.vehicleModel, mechanicId: row.mechanicId, mechanicName: row.mechanicName, serviceItems: row.serviceItems.map((item: any) => ({ name: item.name, price: number(item.price) })), parts, totalLabor: labor, totalParts, discount: number(row.discountAmount), revenue, cost, mechanicBonus: bonus, grossProfit: (labor - bonus) + (totalParts - cost) - number(row.discountAmount), paymentStatus: row.paymentStatus, paymentMethods: [...new Set(row.payments.map((payment: any) => payment.paymentMethod))] };
+      return { id: row.id, completedAt: (row.completedAt || row.createdAt).toISOString(), invoiceNumber: row.invoiceNumber, receiptType: row.receiptType, customerName: row.customerName, vehiclePlate: row.vehiclePlate, vehicleModel: row.vehicleModel, mechanicId: row.mechanicId, mechanicName: row.mechanicName, createdByUserId: row.createdByUserId, createdByNameSnapshot: row.createdByNameSnapshot, serviceItems: row.serviceItems.map((item: any) => ({ name: item.name, price: number(item.price) })), parts, totalLabor: labor, totalParts, discount: number(row.discountAmount), revenue, cost, mechanicBonus: bonus, grossProfit: (labor - bonus) + (totalParts - cost) - number(row.discountAmount), paymentStatus: row.paymentStatus, paymentMethods: [...new Set(row.payments.map((payment: any) => payment.paymentMethod))] };
     };
     const data = rows.map(map);
     if (params.sort && params.sort !== 'completedAt') {

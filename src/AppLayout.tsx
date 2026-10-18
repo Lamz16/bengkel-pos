@@ -1024,7 +1024,7 @@ export default function AppLayout() {
 
             {activeTab === 'completed_transactions_report' && currentUser.role === 'Owner' && !showPOSForm && (
               <motion.div key="completed-transactions-report" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <CompletedTransactionsReportView mechanics={mechanics} />
+                <CompletedTransactionsReportView mechanics={mechanics} users={staff} />
               </motion.div>
             )}
 

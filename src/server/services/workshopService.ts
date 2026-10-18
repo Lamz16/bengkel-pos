@@ -9,6 +9,7 @@ import { PaginatedResult, WorkshopService } from '../../types';
 import { PaginationParams } from '../repositories/interfaces';
 import { isDbConnected, prisma } from '../db/connection';
 import { randomUUID } from 'node:crypto';
+import { AuthenticatedUser } from '../auth';
 
 export class WorkshopServiceLayer {
   constructor(
@@ -35,7 +36,7 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.getById(id);
   }
 
-  async createService(data: WorkshopService): Promise<WorkshopService> {
+  async createService(data: WorkshopService, actor?: AuthenticatedUser): Promise<WorkshopService> {
     const serviceItems = data.receiptType === 'SALE' ? [] : (data.serviceItems || []).map(item => ({
       name: item.name.trim(), price: Number(item.price || 0),
     })).filter(item => item.name && item.price >= 0);
@@ -121,8 +122,19 @@ export class WorkshopServiceLayer {
           }});
         }
 
-        await tx.workshopService.create({ data: {
+        await (tx.workshopService as any).create({ data: {
           id, customerId: effectiveData.customerId || null, customerName: effectiveData.customerName,
+          // Creator comes exclusively from authenticated server context, never
+          // from the client payload, and keeps an immutable audit snapshot.
+          createdByUserId: actor?.id || null,
+          createdByNameSnapshot: actor?.name || null,
+          createdByRoleSnapshot: actor?.role || null,
+          // Merchant identity is copied with the transaction so an old receipt
+          // remains truthful after the workshop profile is changed.
+          companyNameSnapshot: receiptSettings?.name || null,
+          companyAddressSnapshot: receiptSettings?.address || null,
+          companyPhoneSnapshot: receiptSettings?.phone || null,
+          companySloganSnapshot: receiptSettings?.slogan || null,
           customerPhone: effectiveData.customerPhone, vehicleId: effectiveData.vehicleId || null,
           vehiclePlate: effectiveData.vehiclePlate, vehicleModel: effectiveData.vehicleModel,
           kilometers: effectiveData.kilometers, complaint: effectiveData.complaint,

@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { prisma } from '../db/connection';
-import { PaginatedResult, ServiceQueue, ServiceQueueStatus } from '../../types';
+import { PaginatedResult, ServiceQueue } from '../../types';
 
 type QueueInput = Omit<ServiceQueue, 'id' | 'queueDate' | 'queueNumber' | 'queueCode' | 'status' | 'createdAt' | 'updatedAt'>;
-const statuses: ServiceQueueStatus[] = ['Waiting', 'In Progress', 'Ready', 'Cancelled', 'Converted'];
 
 function mapQueue(q: any): ServiceQueue {
   return {
@@ -79,20 +78,11 @@ export class ServiceQueueService {
     return mapQueue(row);
   }
 
-  async changeStatus(id: string, status: ServiceQueueStatus): Promise<ServiceQueue | null> {
-    if (!statuses.includes(status)) throw new Error('Status antrean tidak valid.');
+  async cancel(id: string): Promise<ServiceQueue | null> {
     const current = await this.get(id); if (!current) return null;
     if (current.status === 'Converted') throw new Error('Antrean yang telah dikonversi tidak dapat diubah.');
-    if (status === 'Converted') throw new Error('Gunakan pembuatan transaksi untuk mengonversi antrean.');
-    const now = new Date();
-    const row = await prisma.serviceQueue.update({ where: { id }, data: { status, version: { increment: 1 }, ...(status === 'In Progress' ? { startedAt: now } : {}), ...(status === 'Ready' ? { readyAt: now } : {}), ...(status === 'Cancelled' ? { cancelledAt: now } : {}) }, include: { transaction: { select: { id: true } } } });
+    if (current.status === 'Cancelled') throw new Error('Antrean sudah dibatalkan.');
+    const row = await prisma.serviceQueue.update({ where: { id }, data: { status: 'Cancelled', cancelledAt: new Date(), version: { increment: 1 } }, include: { transaction: { select: { id: true } } } });
     return mapQueue(row);
   }
-
-  async call(id: string): Promise<ServiceQueue | null> {
-    const current = await this.get(id); if (!current) return null;
-    if (current.status !== 'Waiting') throw new Error('Hanya antrean menunggu yang dapat dipanggil.');
-    return this.updateCalled(id);
-  }
-  private async updateCalled(id: string): Promise<ServiceQueue> { const row = await prisma.serviceQueue.update({ where: { id }, data: { calledAt: new Date(), version: { increment: 1 } }, include: { transaction: { select: { id: true } } } }); return mapQueue(row); }
 }

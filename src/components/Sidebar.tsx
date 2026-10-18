@@ -50,8 +50,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Sidebar for Desktop (Hidden on Mobile) */}
       <aside className="w-64 bg-white border-r border-slate-200 flex-col hidden lg:flex shrink-0">
-        <div className="p-6">
-          <div className="flex items-center gap-3 text-blue-600 mb-8 min-w-0">
+        <div className="shrink-0 px-6 pt-6 pb-4">
+          <div className="flex items-center gap-3 text-blue-600 min-w-0">
             {logoUrl ? (
               <img 
                 src={logoUrl} 
@@ -67,21 +67,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {displayTitle}
             </span>
           </div>
-          <nav className="space-y-1">
+        </div>
+        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6 space-y-1">
             {navItems.map((item) => (
               <button key={item.id} onClick={() => onSelectTab(item.id)} className={cn(
-                "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all group",
+                "w-full flex items-center justify-between px-3 py-2 rounded-md text-left text-sm transition-all group",
                 activeTab === item.id && !showPOSForm ? "bg-blue-50 text-blue-700 font-medium" : "text-slate-500 hover:bg-slate-50 rounded-md transition-colors"
               )}>
-                <div className="flex items-center gap-3">
-                  <item.icon className={cn("w-5 h-5", activeTab === item.id && !showPOSForm ? "text-blue-700" : "text-slate-400 group-hover:text-slate-600")} />
-                  {item.label}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <item.icon className={cn("w-5 h-5 shrink-0", activeTab === item.id && !showPOSForm ? "text-blue-700" : "text-slate-400 group-hover:text-slate-600")} />
+                  <span className="min-w-0 text-left">{item.label}</span>
                 </div>
                 {item.id === 'inventory' && lowStockCount > 0 && <span className="text-[10px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-full shadow-2xs animate-pulse">{lowStockCount}</span>}
               </button>
             ))}
-          </nav>
-        </div>
+        </nav>
         <div className="mt-auto p-6 border-t border-slate-100">
           <button onClick={onLogout} className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-widest">
             <LogOut className="w-4 h-4" /> Keluar
@@ -115,10 +115,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <nav className="flex-1 overflow-y-auto p-4 space-y-1">
                 {navItems.map((item) => (
                   <button key={item.id} onClick={() => { onSelectTab(item.id); onCloseMobile(); }} className={cn(
-                    "w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all",
+                    "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-left transition-all",
                     activeTab === item.id && !showPOSForm ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-500 hover:bg-slate-50"
                   )}>
-                    <div className="flex items-center gap-3"><item.icon className="w-5 h-5" /><span className="text-sm font-bold">{item.label}</span></div>
+                    <div className="flex min-w-0 flex-1 items-center gap-3"><item.icon className="w-5 h-5 shrink-0" /><span className="min-w-0 text-left text-sm font-bold">{item.label}</span></div>
                     {item.id === 'inventory' && lowStockCount > 0 && <span className="text-[10px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-full shadow-2xs animate-pulse">{lowStockCount} Menipis</span>}
                   </button>
                 ))}

@@ -62,6 +62,11 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
         <button type="button" onClick={() => onEdit(service)} className="w-full py-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-blue-100"><Pencil className="w-4 h-4" /> Edit Transaksi Berjalan</button>
       )}
 
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Diinput oleh</p>
+        <p className="mt-1 text-xs font-black text-slate-700">{service.createdByNameSnapshot || 'Data Lama / Tidak diketahui'}{service.createdByRoleSnapshot ? ` · ${service.createdByRoleSnapshot}` : ''}</p>
+      </div>
+
       {/* Warranty Claim Alert if exists */}
       {service.hasWarrantyClaim && (
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-2">

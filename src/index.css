@@ -210,6 +210,39 @@ html[data-theme="dark"] .divide-slate-100 > :not(:last-child) {
   border-color: #334155 !important;
 }
 
+/* Zebra striping khusus laporan transaksi agar tetap kontras pada kedua tema. */
+.completed-transaction-row--odd {
+  background-color: #ffffff;
+}
+
+.completed-transaction-row--even {
+  background-color: #f1f5f9;
+}
+
+.completed-transaction-row--odd:hover {
+  background-color: #f8fafc;
+}
+
+.completed-transaction-row--even:hover {
+  background-color: #e2e8f0;
+}
+
+html[data-theme="dark"] .completed-transaction-row--odd {
+  background-color: #0f172a !important;
+}
+
+html[data-theme="dark"] .completed-transaction-row--even {
+  background-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .completed-transaction-row--odd:hover {
+  background-color: #172033 !important;
+}
+
+html[data-theme="dark"] .completed-transaction-row--even:hover {
+  background-color: #334155 !important;
+}
+
 html[data-theme="dark"] .bg-blue-50,
 html[data-theme="dark"] .bg-blue-100 {
   background-color: #172554 !important;

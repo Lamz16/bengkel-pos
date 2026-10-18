@@ -281,6 +281,13 @@ export interface WorkshopService {
   version?: number;
   originQueueId?: string;
   invoiceNumber?: string;
+  createdByUserId?: string;
+  createdByNameSnapshot?: string;
+  createdByRoleSnapshot?: string;
+  companyNameSnapshot?: string;
+  companyAddressSnapshot?: string;
+  companyPhoneSnapshot?: string;
+  companySloganSnapshot?: string;
 }
 
 export type ServicePaymentMethod = 'Cash' | 'Transfer' | 'QRIS';

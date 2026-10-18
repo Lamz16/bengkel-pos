@@ -127,7 +127,7 @@ export interface ActivityLogPage {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 export interface CompletedTransactionReportRow {
-  id: string; completedAt: string; invoiceNumber: string; receiptType: 'SERVICE' | 'SALE'; customerName: string; vehiclePlate: string; vehicleModel: string; mechanicId?: string | null; mechanicName?: string | null;
+  id: string; completedAt: string; invoiceNumber: string; receiptType: 'SERVICE' | 'SALE'; customerName: string; vehiclePlate: string; vehicleModel: string; mechanicId?: string | null; mechanicName?: string | null; createdByUserId?: string | null; createdByNameSnapshot?: string | null;
   serviceItems: Array<{ name: string; price: number }>; parts: Array<{ name: string; quantity: number; unitPrice: number; subtotal: number; unitCost: number; cost: number }>;
   totalLabor: number; totalParts: number; discount: number; revenue: number; cost: number; mechanicBonus: number; grossProfit: number; paymentStatus: string; paymentMethods: string[];
 }
@@ -436,8 +436,7 @@ export const api = {
     return request<PaginatedResult<ServiceQueue>>(`/api/service-queues?${query}`);
   },
   async createServiceQueue(data: Omit<ServiceQueue, 'id' | 'queueDate' | 'queueNumber' | 'queueCode' | 'status' | 'createdAt'>): Promise<ServiceQueue> { return request<ServiceQueue>('/api/service-queues', { method: 'POST', body: JSON.stringify(data) }); },
-  async updateServiceQueueStatus(id: string, status: ServiceQueueStatus): Promise<ServiceQueue> { return request<ServiceQueue>(`/api/service-queues/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }); },
-  async callServiceQueue(id: string): Promise<ServiceQueue> { return request<ServiceQueue>(`/api/service-queues/${id}/call`, { method: 'POST' }); },
+  async cancelServiceQueue(id: string): Promise<ServiceQueue> { return request<ServiceQueue>(`/api/service-queues/${id}/cancel`, { method: 'PUT' }); },
   async getServices(params: { page?: number; limit?: number; search?: string; status?: string } = {}): Promise<PaginatedResult<WorkshopService>> {
     const query = new URLSearchParams();
     query.set('page', String(params.page || 1));
@@ -451,7 +450,7 @@ export const api = {
     if (params.search?.trim()) query.set('search', params.search.trim());
     return request<PaginatedResult<WorkshopService>>(`/api/services/receivables?${query}`);
   },
-  async getCompletedTransactionReport(params: { page?: number; limit?: number; search?: string; from?: string; to?: string; receiptType?: 'SERVICE' | 'SALE'; paymentStatus?: string; mechanicId?: string; paymentMethod?: string; sort?: 'completedAt' | 'revenue' | 'cost' | 'profit'; direction?: 'asc' | 'desc' } = {}): Promise<CompletedTransactionReport> {
+  async getCompletedTransactionReport(params: { page?: number; limit?: number; search?: string; from?: string; to?: string; receiptType?: 'SERVICE' | 'SALE'; paymentStatus?: string; mechanicId?: string; paymentMethod?: string; createdByUserId?: string; sort?: 'completedAt' | 'revenue' | 'cost' | 'profit'; direction?: 'asc' | 'desc' } = {}): Promise<CompletedTransactionReport> {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== '') query.set(key, String(value)); });
     return request<CompletedTransactionReport>(`/api/transaction-reports/completed?${query.toString()}`);

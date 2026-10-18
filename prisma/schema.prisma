@@ -79,6 +79,7 @@ model User {
   shifts       String?  @default("Pagi")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  createdTransactions WorkshopService[] @relation("WorkshopServiceCreatedBy")
 }
 
 model DatabaseBackupRecord {
@@ -225,6 +226,13 @@ model WorkshopService {
   id                      String            @id @default(uuid())
   // Public-facing, immutable receipt number. Internal IDs remain opaque UUIDs.
   invoiceNumber           String            @unique @default(dbgenerated("'TRX-' || lpad(nextval('\\\"WorkshopService_invoiceNumber_seq\\\"'::regclass)::text, 9, '0')"))
+  createdByUserId         String?
+  createdByNameSnapshot   String?
+  createdByRoleSnapshot   String?
+  companyNameSnapshot     String?
+  companyAddressSnapshot  String?
+  companyPhoneSnapshot    String?
+  companySloganSnapshot   String?
   customerId              String?
   customerName            String
   customerPhone           String?
@@ -282,6 +290,9 @@ model WorkshopService {
   serviceItems            ServiceLaborItem[]
   payments                ServicePayment[]
   originQueue             ServiceQueue?     @relation("QueueTransaction", fields: [originQueueId], references: [id], onDelete: Restrict)
+  createdByUser           User?             @relation("WorkshopServiceCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdByUserId, completedAt])
 }
 
 // ServiceQueue is an operational record only. It intentionally has no prices,

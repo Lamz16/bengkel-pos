@@ -41,7 +41,7 @@ export class ServiceController {
       if (!customerName?.trim() || totalAmount === undefined || (!isSale && !vehiclePlate?.trim())) {
         return res.status(400).json({ error: 'Data transaksi tidak lengkap.', details: { customerName: !customerName?.trim() ? 'Nama pelanggan wajib diisi.' : undefined, vehiclePlate: !isSale && !vehiclePlate?.trim() ? 'Nomor polisi wajib diisi untuk transaksi servis.' : undefined, totalAmount: totalAmount === undefined ? 'Total transaksi wajib diisi.' : undefined, receiptType: receiptType || 'SERVICE' } });
       }
-      const service = await workshopService.createService(req.body);
+      const service = await workshopService.createService(req.body, req.authUser);
       await recordAudit(req, { action: 'Membuat transaksi', entity: 'WorkshopService', entityId: service.id, after: service, description: `Transaksi ${service.invoiceNumber || service.id} dibuat.` });
       res.status(201).json(service);
     } catch (err: any) {
