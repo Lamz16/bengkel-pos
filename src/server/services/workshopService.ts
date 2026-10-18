@@ -295,7 +295,7 @@ export class WorkshopServiceLayer {
     return this.serviceRepo.markPaid(id);
   }
 
-  async addPayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string }): Promise<WorkshopService | null> {
+  async addPayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string; expectedVersion: number }): Promise<WorkshopService | null> {
     if (!isDbConnected()) throw new Error('Pembayaran transaksi memerlukan koneksi database.');
     const amount = Number(data.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error('Nominal pembayaran harus lebih besar dari nol.');
@@ -306,14 +306,19 @@ export class WorkshopServiceLayer {
     await prisma.$transaction(async tx => {
       const service = await tx.workshopService.findUnique({ where: { id }, include: { payments: true } });
       if (!service) throw new Error('Order servis tidak ditemukan.');
+      if (service.version !== data.expectedVersion) throw new Error('Transaksi telah diubah oleh pengguna lain. Silakan muat ulang data.');
       const paid = service.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
       const remaining = Number(service.totalAmount) - paid;
       if (amount > remaining + 0.01) throw new Error(`Nominal melebihi sisa tagihan (${remaining.toLocaleString('id-ID')}).`);
       const nextPaid = paid + amount;
       await tx.servicePayment.create({ data: { serviceId: id, amount, paymentMethod: data.paymentMethod, referenceNo: data.referenceNo || null, notes: data.notes || null, paymentDate } });
       const isPaid = nextPaid + 0.01 >= Number(service.totalAmount);
-      await tx.workshopService.update({ where: { id }, data: { paymentStatus: isPaid ? 'Paid' : 'Partial', ...(isPaid ? { paymentDueDate: null } : {}), version: { increment: 1 } } });
-    });
+      const changed = await tx.workshopService.updateMany({
+        where: { id, version: data.expectedVersion },
+        data: { paymentStatus: isPaid ? 'Paid' : 'Partial', ...(isPaid ? { paymentDueDate: null } : {}), version: { increment: 1 } },
+      });
+      if (changed.count !== 1) throw new Error('Transaksi telah diubah oleh pengguna lain. Silakan muat ulang data.');
+    }, { isolationLevel: 'Serializable' });
     return this.serviceRepo.getById(id);
   }
 
@@ -345,13 +350,17 @@ export class WorkshopServiceLayer {
         items: { create: returnItems }
       }});
       for (const item of returnItems) {
-        await tx.servicePartItem.update({ where: { id: item.servicePartId }, data: { returnedQuantity: { increment: item.quantity } } });
+        const returned = await tx.servicePartItem.updateMany({
+          where: { id: item.servicePartId, returnedQuantity: { lte: service.partsUsed.find(part => part.id === item.servicePartId)!.quantity - item.quantity } },
+          data: { returnedQuantity: { increment: item.quantity } },
+        });
+        if (returned.count !== 1) throw new Error(`Jumlah retur ${item.name} melebihi sisa yang dapat diretur.`);
         await tx.sparePart.update({ where: { id: item.partId }, data: { stock: { increment: item.quantity } } });
         await tx.stockHistory.create({ data: { partId: item.partId, partName: item.name, amount: item.quantity, type: 'In', reason: `Retur ${record.id} dari transaksi ${service.id}` } });
       }
       await tx.workshopService.update({ where: { id: service.id }, data: { totalAmount: { decrement: refund }, version: { increment: 1 } } });
       if (service.customerId) await tx.customer.update({ where: { id: service.customerId }, data: { totalSpent: { decrement: refund } } });
-    });
+    }, { isolationLevel: 'Serializable' });
 
     const updated = await this.serviceRepo.getById(data.serviceId);
     if (!updated) throw new Error('Transaksi retur berhasil tetapi data tidak dapat dimuat.');
@@ -394,11 +403,12 @@ export class WorkshopServiceLayer {
     let deductionCreated = false;
     if (isDbConnected()) {
       await prisma.$transaction(async tx => {
-        await tx.workshopService.update({ where: { id: data.serviceId }, data: {
+        const claimed = await tx.workshopService.updateMany({ where: { id: data.serviceId, hasWarrantyClaim: false }, data: {
           hasWarrantyClaim: true, warrantyClaimDate: claimDate, warrantyClaimReason: data.reason,
           isMechanicAbsentOnClaim: data.applyMechanicDeduction && data.isAbsentNextDay,
           warrantyDeductionAmount: penalty, status: srv.receiptType === 'SALE' ? srv.status : 'In Progress', version: { increment: 1 },
         }});
+        if (claimed.count !== 1) throw new Error('Klaim garansi untuk transaksi ini sudah pernah diproses.');
         if (srv.receiptType !== 'SALE' && data.applyMechanicDeduction && srv.mechanicId) {
           await tx.mechanicDeduction.create({ data: {
             mechanicId: srv.mechanicId, mechanicName: srv.mechanicName || 'Mekanik', serviceId: data.serviceId,

@@ -1,5 +1,6 @@
 import { DistributorInvoice } from '../../types';
 import { prisma, isDbConnected } from '../db/connection';
+import { randomUUID } from 'node:crypto';
 
 export class DistributorInvoiceRepository {
   async getAll(params?: { search?: string; status?: string; branchName?: string; supplierId?: string }): Promise<DistributorInvoice[]> {
@@ -281,7 +282,7 @@ export class DistributorInvoiceRepository {
     paymentData: { amount: number; paymentMethod: string; referenceNo?: string; notes?: string; paymentDate?: string },
     expectedVersion?: number
   ): Promise<DistributorInvoice | null> {
-    const paymentId = `PAY-${Date.now().toString().slice(-6)}`;
+    const paymentId = randomUUID();
     const payDate = paymentData.paymentDate ? new Date(paymentData.paymentDate) : new Date();
 
     if (!isDbConnected()) throw new Error('DATABASE_UNAVAILABLE: Pembayaran nota tempo wajib disimpan di PostgreSQL.');
@@ -318,7 +319,7 @@ export class DistributorInvoiceRepository {
           // Sync with Expense Ledger
           await tx.expense.create({
             data: {
-              id: `EXP-TEMPO-${Date.now().toString().slice(-6)}`,
+              id: randomUUID(),
               category: 'Pembayaran Tempo Distributor',
               amount: paymentData.amount,
               note: `Pelunasan/Cicilan Nota #${inv.invoiceNumber} (${inv.supplierName}) - Method: ${paymentData.paymentMethod}`,

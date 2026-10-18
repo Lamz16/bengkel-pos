@@ -66,23 +66,25 @@ export class ServiceQueueService {
     return mapQueue(next);
   }
 
-  async update(id: string, data: Partial<QueueInput>): Promise<ServiceQueue | null> {
+  async update(id: string, data: Partial<QueueInput>, expectedVersion: number): Promise<ServiceQueue | null> {
     const current = await this.get(id); if (!current) return null;
     if (current.status === 'Converted') throw new Error('Antrean yang telah dikonversi tidak dapat diubah.');
-    const row = await prisma.serviceQueue.update({ where: { id }, data: {
+    const changed = await prisma.serviceQueue.updateMany({ where: { id, version: expectedVersion, status: { not: 'Converted' } }, data: {
       customerId: data.customerId === undefined ? undefined : data.customerId || null, customerName: data.customerName?.trim(), customerPhone: data.customerPhone === undefined ? undefined : data.customerPhone?.trim() || null,
       vehicleId: data.vehicleId === undefined ? undefined : data.vehicleId || null, vehiclePlate: data.vehiclePlate?.trim().toUpperCase(), vehicleModel: data.vehicleModel?.trim(), kilometers: data.kilometers === undefined ? undefined : data.kilometers,
       complaint: data.complaint?.trim(), estimateNote: data.estimateNote === undefined ? undefined : data.estimateNote?.trim() || null, diagnosis: data.diagnosis === undefined ? undefined : data.diagnosis?.trim() || null, internalNotes: data.internalNotes === undefined ? undefined : data.internalNotes?.trim() || null,
       mechanicId: data.mechanicId === undefined ? undefined : data.mechanicId || null, mechanicName: data.mechanicName === undefined ? undefined : data.mechanicName?.trim() || null, version: { increment: 1 },
-    }, include: { transaction: { select: { id: true } } } });
-    return mapQueue(row);
+    } });
+    if (!changed.count) throw new Error('Antrean telah diubah oleh pengguna lain. Silakan muat ulang data.');
+    return this.get(id);
   }
 
-  async cancel(id: string): Promise<ServiceQueue | null> {
+  async cancel(id: string, expectedVersion: number): Promise<ServiceQueue | null> {
     const current = await this.get(id); if (!current) return null;
     if (current.status === 'Converted') throw new Error('Antrean yang telah dikonversi tidak dapat diubah.');
     if (current.status === 'Cancelled') throw new Error('Antrean sudah dibatalkan.');
-    const row = await prisma.serviceQueue.update({ where: { id }, data: { status: 'Cancelled', cancelledAt: new Date(), version: { increment: 1 } }, include: { transaction: { select: { id: true } } } });
-    return mapQueue(row);
+    const changed = await prisma.serviceQueue.updateMany({ where: { id, version: expectedVersion, status: { notIn: ['Converted', 'Cancelled'] } }, data: { status: 'Cancelled', cancelledAt: new Date(), version: { increment: 1 } } });
+    if (!changed.count) throw new Error('Antrean telah diubah oleh pengguna lain. Silakan muat ulang data.');
+    return this.get(id);
   }
 }

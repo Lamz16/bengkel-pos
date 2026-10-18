@@ -459,7 +459,9 @@ export default function AppLayout() {
 
   const handleUpdateStatus = async (id: string, newStatus: ServiceStatus) => {
     try {
-      const updated = await api.updateServiceStatus(id, newStatus);
+      const current = services.find(service => service.id === id);
+      if (!current?.version) throw new Error('Versi transaksi tidak tersedia. Muat ulang data terlebih dahulu.');
+      const updated = await api.updateServiceStatus(id, newStatus, current.version);
       setServices(prev => prev.map(service => service.id === id ? updated : service));
       setSelectedServiceId(null);
     } catch (err) {
@@ -470,7 +472,9 @@ export default function AppLayout() {
 
   const handleAddServicePayment = async (id: string, payment: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string }) => {
     try {
-      const updated = await api.addServicePayment(id, payment);
+      const current = services.find(service => service.id === id);
+      if (!current?.version) throw new Error('Versi transaksi tidak tersedia. Muat ulang data terlebih dahulu.');
+      const updated = await api.addServicePayment(id, { ...payment, expectedVersion: current.version });
       setServices(prev => prev.map(service => service.id === id ? updated : service));
     } catch (err) {
       console.error('Error adding payment in backend:', err);

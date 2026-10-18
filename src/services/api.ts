@@ -206,8 +206,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Automatically attach idempotency key for write requests
-  if (['POST', 'PUT', 'PATCH'].includes(method) && !headers['x-idempotency-key']) {
+  // One request invocation gets one key. Callers that retry must pass this
+  // header back unchanged; no transport retry ever regenerates a key.
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && !headers['x-idempotency-key']) {
     headers['x-idempotency-key'] = `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 
@@ -436,7 +437,7 @@ export const api = {
     return request<PaginatedResult<ServiceQueue>>(`/api/service-queues?${query}`);
   },
   async createServiceQueue(data: Omit<ServiceQueue, 'id' | 'queueDate' | 'queueNumber' | 'queueCode' | 'status' | 'createdAt'>): Promise<ServiceQueue> { return request<ServiceQueue>('/api/service-queues', { method: 'POST', body: JSON.stringify(data) }); },
-  async cancelServiceQueue(id: string): Promise<ServiceQueue> { return request<ServiceQueue>(`/api/service-queues/${id}/cancel`, { method: 'PUT' }); },
+  async cancelServiceQueue(id: string, expectedVersion?: number): Promise<ServiceQueue> { return request<ServiceQueue>(`/api/service-queues/${id}/cancel`, { method: 'PUT', body: JSON.stringify({ expectedVersion }) }); },
   async getServices(params: { page?: number; limit?: number; search?: string; status?: string } = {}): Promise<PaginatedResult<WorkshopService>> {
     const query = new URLSearchParams();
     query.set('page', String(params.page || 1));
@@ -467,18 +468,13 @@ export const api = {
     return request<WorkshopService>(`/api/services/${id}`, { method: 'PUT', body: JSON.stringify(serviceData) });
   },
 
-  async updateServiceStatus(id: string, status: ServiceStatus): Promise<WorkshopService> {
+  async updateServiceStatus(id: string, status: ServiceStatus, expectedVersion: number): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${id}/status`, {
-      method: 'PUT', body: JSON.stringify({ status }),
+      method: 'PUT', body: JSON.stringify({ status, expectedVersion }),
     });
   },
 
-  async markServicePaid(id: string): Promise<WorkshopService> {
-    return request<WorkshopService>(`/api/services/${id}/payment`, {
-      method: 'PUT', body: JSON.stringify({}),
-    });
-  },
-  async addServicePayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string }): Promise<WorkshopService> {
+  async addServicePayment(id: string, data: { amount: number; paymentMethod: 'Cash' | 'Transfer' | 'QRIS'; referenceNo?: string; notes?: string; paymentDate?: string; expectedVersion: number }): Promise<WorkshopService> {
     return request<WorkshopService>(`/api/services/${id}/payments`, { method: 'POST', body: JSON.stringify(data) });
   },
 

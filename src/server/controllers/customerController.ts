@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
 import { customerService } from '../container';
+import { isOwner } from '../auth';
+
+function cashierCustomer(customer: any) {
+  const { totalSpent, totalServiceCount, lastVisitDate, ...safe } = customer;
+  return safe;
+}
 
 export class CustomerController {
   async getCustomers(req: Request, res: Response) {
@@ -10,11 +16,11 @@ export class CustomerController {
 
       if (page || limit || search) {
         const paginated = await (customerService as any).customerRepo.getPaginated({ page, limit, search });
-        return res.json(paginated);
+        return res.json(isOwner(req) ? paginated : { ...paginated, data: paginated.data.map(cashierCustomer) });
       }
 
       const customers = await customerService.getCustomers();
-      res.json(customers);
+      res.json(isOwner(req) ? customers : customers.map(cashierCustomer));
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Gagal memuat pelanggan' });
     }
@@ -37,11 +43,12 @@ export class CustomerController {
     try {
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      if (!Number.isInteger(expVer) || expVer < 1) return res.status(400).json({ error: 'expectedVersion wajib diisi untuk memperbarui pelanggan.' });
       const updated = await (customerService as any).customerRepo.update(req.params.id, req.body, expVer);
       if (!updated) {
         return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
       }
-      res.json(updated);
+      res.json(isOwner(req) ? updated : cashierCustomer(updated));
     } catch (err: any) {
       const isConflict = String(err.message).includes('Optimistic Lock') || String(err.message).includes('telah diperbarui oleh pengguna lain');
       res.status(isConflict ? 409 : 500).json({ error: err.message || 'Gagal memperbarui pelanggan' });

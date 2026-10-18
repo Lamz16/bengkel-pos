@@ -54,6 +54,7 @@ export class PartController {
     try {
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      if (!Number.isInteger(expVer) || expVer < 1) return res.status(400).json({ error: 'expectedVersion wajib diisi untuk memperbarui suku cadang.' });
       const before = await inventoryService.getPart(req.params.id);
       const updated = await (inventoryService as any).partRepo.update(req.params.id, req.body, expVer);
       if (!updated) {

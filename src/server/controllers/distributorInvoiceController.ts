@@ -32,6 +32,7 @@ export class DistributorInvoiceController {
       const { id } = req.params;
       const { expectedVersion, version, ...paymentData } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      if (!Number.isInteger(expVer) || expVer < 1) return res.status(400).json({ error: 'expectedVersion wajib diisi untuk pembayaran nota tempo.' });
 
       const updated = await distributorInvoiceRepository.addPayment(id, paymentData, expVer);
       if (!updated) {

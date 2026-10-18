@@ -67,6 +67,7 @@ export class ServiceController {
       if (!(await canAccessService(req, req.params.id))) return res.status(403).json({ error: 'Transaksi ini bukan milik akun Anda.' });
       const { version, expectedVersion } = req.body;
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      if (!Number.isInteger(expVer) || expVer < 1) return res.status(400).json({ error: 'expectedVersion wajib diisi untuk memperbarui transaksi.' });
       const before = await workshopService.getServiceById(req.params.id);
       const updated = await workshopService.updateService(req.params.id, req.body, expVer);
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
@@ -87,6 +88,7 @@ export class ServiceController {
         return res.status(400).json({ error: 'Status pengerjaan servis wajib diisi.' });
       }
       const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
+      if (!Number.isInteger(expVer) || expVer < 1) return res.status(400).json({ error: 'expectedVersion wajib diisi untuk mengubah status transaksi.' });
       const before = await workshopService.getServiceById(req.params.id);
       const updated = await (workshopService as any).serviceRepo.updateStatus(req.params.id, status, expVer);
       if (!updated) {
@@ -100,32 +102,18 @@ export class ServiceController {
     }
   }
 
-  async markPaid(req: Request, res: Response) {
-    try {
-      if (!(await canAccessService(req, req.params.id))) return res.status(403).json({ error: 'Transaksi ini bukan milik akun Anda.' });
-      const { version, expectedVersion } = req.body;
-      const expVer = expectedVersion !== undefined ? Number(expectedVersion) : (version !== undefined ? Number(version) : undefined);
-      const before = await workshopService.getServiceById(req.params.id);
-      const updated = await (workshopService as any).serviceRepo.markPaid(req.params.id, expVer);
-      if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan' });
-      await recordAudit(req, { action: 'Melunasi transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran transaksi ${updated.invoiceNumber || updated.id} ditandai lunas.` });
-      res.json(isOwner(req) ? updated : cashierService(updated));
-    } catch (err: any) {
-      const isConflict = String(err.message).includes('telah diubah oleh kasir');
-      res.status(isConflict ? 409 : 500).json({ error: err.message || 'Gagal memperbarui status pembayaran servis' });
-    }
-  }
-
   async addPayment(req: Request, res: Response) {
     try {
       if (!(await canAccessService(req, req.params.id))) return res.status(403).json({ error: 'Transaksi ini bukan milik akun Anda.' });
+      const expVer = Number(req.body.expectedVersion ?? req.body.version);
+      if (!Number.isInteger(expVer) || expVer < 1) return res.status(400).json({ error: 'expectedVersion wajib diisi untuk mencatat pembayaran.' });
       const before = await workshopService.getServiceById(req.params.id);
-      const updated = await workshopService.addPayment(req.params.id, req.body);
+      const updated = await workshopService.addPayment(req.params.id, { ...req.body, expectedVersion: expVer });
       if (!updated) return res.status(404).json({ error: 'Order servis tidak ditemukan.' });
       await recordAudit(req, { action: 'Mencatat pembayaran transaksi', entity: 'WorkshopService', entityId: updated.id, before, after: updated, description: `Pembayaran ${req.body.paymentMethod} sebesar ${Number(req.body.amount).toLocaleString('id-ID')} dicatat untuk transaksi ${updated.invoiceNumber || updated.id}.` });
       res.status(201).json(isOwner(req) ? updated : cashierService(updated));
     } catch (err: any) {
-      res.status(/nominal|metode|tanggal|melebihi/.test(String(err.message)) ? 400 : 500).json({ error: err.message || 'Gagal mencatat pembayaran transaksi.' });
+      res.status(/telah diubah|versi/.test(String(err.message)) ? 409 : /nominal|metode|tanggal|melebihi/.test(String(err.message)) ? 400 : 500).json({ error: err.message || 'Gagal mencatat pembayaran transaksi.' });
     }
   }
 
