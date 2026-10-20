@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: enhance completed transactions report with improved filter layout and styling">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: implement manual guide generator with CLI and document export functionality">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ActivityLogView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ActivityLogView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/HistoryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/HistoryView.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/SettingsView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SettingsView.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -232,7 +230,7 @@
       <workItem from="1792259971207" duration="9481000" />
       <workItem from="1792299492706" duration="10866000" />
       <workItem from="1792466943122" duration="876000" />
-      <workItem from="1792476925650" duration="4321000" />
+      <workItem from="1792476925650" duration="6251000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -346,7 +344,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792312663535</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="feat: implement manual guide generator with CLI and document export functionality">
+      <option name="closed" value="true" />
+      <created>1792481903696</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1792481903696</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -376,6 +382,7 @@
     <MESSAGE value="feat: enhance payment processing with cash received and change amount tracking" />
     <MESSAGE value="feat: add nullable cashReceived and changeAmount columns to ServicePayment table" />
     <MESSAGE value="feat: enhance completed transactions report with improved filter layout and styling" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: enhance completed transactions report with improved filter layout and styling" />
+    <MESSAGE value="feat: implement manual guide generator with CLI and document export functionality" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: implement manual guide generator with CLI and document export functionality" />
   </component>
 </project>

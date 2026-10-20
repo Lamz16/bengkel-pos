@@ -1121,9 +1121,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               {/* Footer Note */}
               <div className="text-center space-y-1 pt-2">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-700">
-                  {formData.name || 'BENGKEL KITA'} • TERIMA KASIH
-                </p>
                 <p className="text-[9px] text-slate-400 font-medium leading-normal max-w-[280px] mx-auto italic">
                   "{formData.footerNote}"
                 </p>
