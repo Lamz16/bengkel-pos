@@ -33,7 +33,7 @@ export const MechanicForm: React.FC<MechanicFormProps> = ({ mechanic, onSave, on
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="p-3 bg-blue-50 border border-blue-100 rounded-2xl text-[11px] text-blue-700 font-medium">
-        ℹ️ <strong>Mekanik Tanpa Akses Login:</strong> Data ini digunakan oleh Kasir / PIC saat mencatat servis motor. Mekanik tidak memerlukan akun login ke aplikasi.
+        ℹ️ <strong>Data Mekanik:</strong> Gunakan data ini saat mencatat servis, absensi, bonus, dan penggajian mekanik.
       </div>
 
       <div className="space-y-1.5">
@@ -44,7 +44,7 @@ export const MechanicForm: React.FC<MechanicFormProps> = ({ mechanic, onSave, on
           value={formData.name}
           onChange={e => setFormData({ ...formData, name: e.target.value })}
           className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold focus:border-blue-500"
-          placeholder="e.g. Bambang Sudirgo"
+          placeholder="Contoh: Bambang Sudirgo"
         />
       </div>
 
@@ -67,7 +67,7 @@ export const MechanicForm: React.FC<MechanicFormProps> = ({ mechanic, onSave, on
             value={formData.specialty}
             onChange={e => setFormData({ ...formData, specialty: e.target.value })}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold focus:border-blue-500"
-            placeholder="e.g. Mesin & CVT Matic, Kelistrikan"
+            placeholder="Contoh: Mesin & CVT Matic, Kelistrikan"
           />
         </div>
       </div>

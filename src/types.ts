@@ -52,6 +52,12 @@ export interface CompanySettings {
   defaultAbsencePenalty: number; // denda mangkir H+1, e.g. 50000
   defaultWarrantyPenalty: number; // denda komplain garansi, e.g. 75000
   allowCustomBonusPerTransaction: boolean; // izinkan PIC ubah % bonus per transaksi
+  payrollPresentFactor?: number;
+  payrollSickFactor?: number;
+  payrollLeaveFactor?: number;
+  payrollOwnerLeaveFactor?: number;
+  payrollAutoAbsencePenalty?: boolean;
+  payrollAbsencePenaltyAmount?: number;
 
   // Pengaturan Isi Nota / Struk
   receiptHeader?: string; // Legacy header; fallback untuk data lama
@@ -131,9 +137,45 @@ export interface MechanicAttendance {
   id: string;
   mechanicId: string;
   date: string; // YYYY-MM-DD
-  status: 'Present' | 'Absent' | 'Sick' | 'Leave';
+  status: 'Present' | 'Absent' | 'Sick' | 'Leave' | 'OwnerLeave';
   notes?: string;
   version?: number;
+}
+
+export type PayrollAttendanceStatus = MechanicAttendance['status'] | 'NotEntered';
+export interface PayrollAttendanceDetail {
+  date: string;
+  status: PayrollAttendanceStatus;
+  paidDayFactor: number;
+  dailyRate: number;
+  dailySalary: number;
+  notes?: string;
+}
+export interface MechanicPayrollRow {
+  mechanicId: string;
+  mechanicName: string;
+  dailyRate: number;
+  attendance: Record<'Present' | 'Sick' | 'Leave' | 'Absent' | 'OwnerLeave' | 'NotEntered', number>;
+  paidDays: number;
+  baseSalary: number;
+  serviceBonus: number;
+  manualDeductions: number;
+  absenceDeductions: number;
+  totalDeductions: number;
+  netSalary: number;
+  details: PayrollAttendanceDetail[];
+  finalPayrollId?: string;
+  isFinalized: boolean;
+}
+export interface PayrollReport {
+  from: string;
+  to: string;
+  policy: {
+    Present: number; Sick: number; Leave: number; OwnerLeave: number;
+    autoAbsencePenalty: boolean; absencePenaltyAmount: number;
+  };
+  rows: MechanicPayrollRow[];
+  totals: { baseSalary: number; serviceBonus: number; totalDeductions: number; netSalary: number; notEntered: number };
 }
 
 export type CustomerTier = string;

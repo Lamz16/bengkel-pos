@@ -29,7 +29,7 @@ $title.Location = New-Object System.Drawing.Point(28, 24)
 $form.Controls.Add($title)
 
 $description = New-Object System.Windows.Forms.Label
-$description.Text = 'Jalankan, perbarui, migrasikan, dan deploy aplikasi lokal.'
+$description.Text = 'Perbarui, migrasikan, dan deploy aplikasi lokal.'
 $description.AutoSize = $true
 $description.Location = New-Object System.Drawing.Point(31, 61)
 $form.Controls.Add($description)
@@ -41,39 +41,10 @@ $status.ForeColor = [System.Drawing.Color]::FromArgb(71, 85, 105)
 $status.Location = New-Object System.Drawing.Point(31, 95)
 $form.Controls.Add($status)
 
-$start = New-Object System.Windows.Forms.Button
-$start.Text = 'Jalankan Development'
-$start.Size = New-Object System.Drawing.Size(190, 44)
-$start.Location = New-Object System.Drawing.Point(30, 130)
-$start.BackColor = [System.Drawing.Color]::FromArgb(37, 99, 235)
-$start.ForeColor = [System.Drawing.Color]::White
-$start.FlatStyle = 'Flat'
-$start.FlatAppearance.BorderSize = 0
-$start.Add_Click({
-    if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) {
-        [System.Windows.Forms.MessageBox]::Show('npm tidak ditemukan. Instal Node.js LTS terlebih dahulu.', 'BengkelPro Launcher', 'OK', 'Error')
-        return
-    }
-
-    $busyPorts = Get-BusyPorts @(3000, 24678)
-    if ($busyPorts.Count -gt 0) {
-        $ports = $busyPorts -join ', '
-        $status.Text = "Status: server development sudah aktif (port $ports sedang digunakan)."
-        $status.ForeColor = [System.Drawing.Color]::FromArgb(217, 119, 6)
-        [System.Windows.Forms.MessageBox]::Show("Server sudah berjalan pada port $ports. Gunakan tombol Buka Aplikasi atau tutup terminal server lama sebelum menjalankan ulang.", 'BengkelPro Launcher', 'OK', 'Information')
-        return
-    }
-
-    Start-TaskTerminal 'BengkelPro Development' 'npm run dev'
-    $status.Text = 'Status: terminal development sudah dibuka. Tunggu hingga server siap.'
-    $status.ForeColor = [System.Drawing.Color]::FromArgb(5, 150, 105)
-})
-$form.Controls.Add($start)
-
 $openApp = New-Object System.Windows.Forms.Button
 $openApp.Text = 'Buka Aplikasi'
-$openApp.Size = New-Object System.Drawing.Size(160, 44)
-$openApp.Location = New-Object System.Drawing.Point(240, 130)
+$openApp.Size = New-Object System.Drawing.Size(190, 44)
+$openApp.Location = New-Object System.Drawing.Point(30, 130)
 $openApp.FlatStyle = 'Flat'
 $openApp.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(203, 213, 225)
 $openApp.Add_Click({ Start-Process 'http://localhost:3000' })

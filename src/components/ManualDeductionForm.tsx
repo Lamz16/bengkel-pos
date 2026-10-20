@@ -128,7 +128,7 @@ export const ManualDeductionForm: React.FC<ManualDeductionFormProps> = ({
             type="text"
             value={vehiclePlate}
             onChange={e => setVehiclePlate(e.target.value)}
-            placeholder="e.g. B 1234 ABC"
+            placeholder="Contoh: B 1234 ABC"
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs font-bold uppercase"
           />
         </div>

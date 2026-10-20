@@ -810,6 +810,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5">
+              <h4 className="text-xs font-black uppercase tracking-wider text-indigo-950">Kebijakan Gaji Berbasis Absensi</h4>
+              <p className="mt-1 text-[11px] text-indigo-800">Faktor adalah unit hari yang dibayar. Nilai 1 = penuh, 0,5 = setengah hari, 0 = tidak dibayar. Absensi kosong tidak pernah dianggap alpa.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                {([
+                  ['Hadir', 'payrollPresentFactor', 1], ['Sakit', 'payrollSickFactor', 0], ['Izin', 'payrollLeaveFactor', 0], ['Libur Pemilik/Bengkel Sepi', 'payrollOwnerLeaveFactor', 0],
+                ] as const).map(([label, key, fallback]) => <label key={key} className="text-[10px] font-black uppercase text-indigo-800">{label}<input type="number" min="0" max="1" step="0.5" value={(formData[key] ?? fallback) as number} onChange={e => setFormData({ ...formData, [key]: Number(e.target.value) })} className="mt-1 block w-full rounded-xl border border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-slate-900" /></label>)}
+              </div>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"><label className="flex items-center gap-2 text-xs font-bold text-indigo-950"><input type="checkbox" checked={formData.payrollAutoAbsencePenalty ?? false} onChange={e => setFormData({ ...formData, payrollAutoAbsencePenalty: e.target.checked })} /> Terapkan potongan otomatis untuk status Alpa</label><label className="text-[10px] font-black uppercase text-indigo-800">Nominal potongan alpa<CurrencyInput value={formData.payrollAbsencePenaltyAmount ?? 0} onValueChange={value => setFormData({ ...formData, payrollAbsencePenaltyAmount: value })} className="mt-1 block w-full rounded-xl border border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-slate-900" /></label></div>
+            </div>
+
             {/* Live Interactive Bonus Simulation */}
             <div className="p-6 bg-slate-900 text-white rounded-2xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">

@@ -23,6 +23,7 @@ import { activityLogger } from '../middleware/activityLogger';
 import { activityLogRouter } from './activityLogRoutes';
 import { serviceQueueRouter } from './serviceQueueRoutes';
 import { transactionReportRouter } from './transactionReportRoutes';
+import { payrollRouter } from './payrollRoutes';
 
 export const apiRouter = Router();
 
@@ -64,6 +65,7 @@ apiRouter.use('/service-queues', serviceQueueRouter);
 apiRouter.use('/mechanics', mechanicRouter);
 apiRouter.use('/deductions', deductionRouter);
 apiRouter.use('/attendances', attendanceRouter);
+apiRouter.use('/payroll', payrollRouter);
 apiRouter.use('/suppliers', supplierRouter);
 apiRouter.use('/expenses', expenseRouter);
 apiRouter.use('/purchases', purchaseRouter);

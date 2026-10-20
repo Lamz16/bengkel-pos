@@ -634,11 +634,14 @@ export default function AppLayout() {
   };
 
   const handleDeleteMechanic = async (id: string) => {
+    const previous = mechanics;
     setMechanics(prev => prev.filter(m => m.id !== id));
     try {
       await api.deleteMechanic(id);
     } catch (err) {
       console.error('Failed to delete mechanic:', err);
+      setMechanics(previous);
+      alert('Data mekanik belum dapat dihapus. Silakan coba kembali.');
     }
   };
 
@@ -650,6 +653,8 @@ export default function AppLayout() {
         setMechanics(prev => prev.map(item => item.id === m.id ? updated : item));
       } catch (err) {
         console.error('Failed to update mechanic:', err);
+        alert('Data mekanik belum dapat diperbarui. Silakan coba kembali.');
+        return;
       }
     } else {
       try {
@@ -657,7 +662,8 @@ export default function AppLayout() {
         setMechanics(prev => [...prev, created]);
       } catch (err) {
         console.error('Failed to create mechanic:', err);
-        setMechanics(prev => [...prev, m]);
+        alert('Data mekanik belum dapat disimpan. Silakan coba kembali.');
+        return;
       }
     }
     setShowMechanicModal(false);
@@ -665,11 +671,14 @@ export default function AppLayout() {
   };
 
   const handleDeleteDeduction = async (id: string) => {
+    const previous = deductions;
     setDeductions(prev => prev.filter(d => d.id !== id));
     try {
       await api.deleteDeduction(id);
     } catch (err) {
       console.error('Failed to delete deduction:', err);
+      setDeductions(previous);
+      alert('Data potongan belum dapat dihapus. Silakan coba kembali.');
     }
   };
 
@@ -682,7 +691,7 @@ export default function AppLayout() {
       setManualDeductionMechanic(null);
     } catch (err) {
       console.error('Failed to save deduction to backend:', err);
-      alert(err instanceof Error ? err.message : 'Potongan gagal disimpan.');
+      alert('Potongan belum dapat disimpan. Silakan coba kembali.');
     }
   };
 
@@ -697,7 +706,7 @@ export default function AppLayout() {
       });
     } catch (err) {
       console.error('Failed to save attendance:', err);
-      alert(err instanceof Error ? err.message : 'Absensi gagal disimpan.');
+      alert('Absensi belum dapat disimpan. Silakan coba kembali.');
     }
   };
 
@@ -934,6 +943,7 @@ export default function AppLayout() {
                   services={services}
                   deductions={deductions}
                   attendances={attendances}
+                  companySettings={companySettings}
                   onAddMechanic={() => { setEditingMechanic(null); setShowMechanicModal(true); }}
                   onEditMechanic={(m) => { setEditingMechanic(m); setShowMechanicModal(true); }}
                   onDeleteMechanic={handleDeleteMechanic}

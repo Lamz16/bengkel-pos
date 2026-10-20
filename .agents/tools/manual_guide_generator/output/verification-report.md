@@ -12,7 +12,7 @@
 - Tidak ada.
 
 ### File route yang belum dikaitkan ke feature evidence
-- Tidak ada.
+- src/server/routes/payrollRoutes.ts
 
 ### Model bisnis utama tanpa evidence
 - Tidak ada.

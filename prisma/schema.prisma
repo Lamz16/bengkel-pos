@@ -24,6 +24,13 @@ model CompanySettings {
   defaultAbsencePenalty          Decimal  @default(50000) @db.Decimal(18, 2)
   defaultWarrantyPenalty         Decimal  @default(75000) @db.Decimal(18, 2)
   allowCustomBonusPerTransaction Boolean  @default(true)
+  // Payroll attendance policy. Factors are paid-day units, e.g. 1, 0.5, or 0.
+  payrollPresentFactor           Decimal  @default(1) @db.Decimal(5, 2)
+  payrollSickFactor              Decimal  @default(0) @db.Decimal(5, 2)
+  payrollLeaveFactor             Decimal  @default(0) @db.Decimal(5, 2)
+  payrollOwnerLeaveFactor        Decimal  @default(0) @db.Decimal(5, 2)
+  payrollAutoAbsencePenalty      Boolean  @default(false)
+  payrollAbsencePenaltyAmount    Decimal  @default(0) @db.Decimal(18, 2)
   receiptHeader                  String?  @default("NOTA RESMI & RINCIAN SERVIS")
   serviceReceiptHeader           String   @default("NOTA TRANSAKSI SERVIS")
   saleReceiptHeader              String   @default("NOTA PEMBELIAN BARANG")
@@ -434,6 +441,7 @@ model Mechanic {
   updatedAt             DateTime             @updatedAt
   deductions            MechanicDeduction[]
   attendances           MechanicAttendance[]
+  payrolls              PayrollPeriod[]
   services              WorkshopService[]
   serviceQueues         ServiceQueue[]
 }
@@ -450,6 +458,8 @@ model MechanicDeduction {
   amount          Decimal  @db.Decimal(18, 2)
   isAbsentNextDay Boolean  @default(false)
   mechanic        Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+
+  @@index([mechanicId, date])
 }
 
 model MechanicAttendance {
@@ -462,6 +472,55 @@ model MechanicAttendance {
 
   @@unique([mechanicId, date])
   @@index([date])
+  @@index([date, mechanicId])
+}
+
+// One immutable payroll snapshot per mechanic and exact reporting period. A
+// reopened record deliberately retains its audit trail and can be finalised
+// again by an Owner without creating a duplicate period.
+model PayrollPeriod {
+  id                 String          @id @default(uuid())
+  mechanicId         String
+  mechanicName       String
+  fromDate           String
+  toDate             String
+  status             String          @default("Finalized") // Finalized | Reopened
+  dailyRateSnapshot  Decimal         @db.Decimal(18, 2)
+  paidDays           Decimal         @db.Decimal(8, 2)
+  baseSalary         Decimal         @db.Decimal(18, 2)
+  serviceBonus       Decimal         @db.Decimal(18, 2)
+  manualDeductions   Decimal         @db.Decimal(18, 2)
+  absenceDeductions  Decimal         @default(0) @db.Decimal(18, 2)
+  totalDeductions    Decimal         @db.Decimal(18, 2)
+  netSalary          Decimal         @db.Decimal(18, 2)
+  policySnapshot     Json
+  finalizedAt        DateTime        @default(now())
+  finalizedById      String
+  finalizedByName    String
+  reopenedAt         DateTime?
+  reopenedById       String?
+  reopenedByName     String?
+  reopenReason       String?
+  mechanic           Mechanic        @relation(fields: [mechanicId], references: [id], onDelete: Restrict)
+  details            PayrollAttendanceDetail[]
+
+  @@unique([mechanicId, fromDate, toDate])
+  @@index([fromDate, toDate, status])
+}
+
+model PayrollAttendanceDetail {
+  id             String        @id @default(uuid())
+  payrollId      String
+  date           String
+  status         String        // Present | Absent | Sick | Leave | OwnerLeave | NotEntered
+  paidDayFactor  Decimal       @db.Decimal(5, 2)
+  dailyRate      Decimal       @db.Decimal(18, 2)
+  dailySalary    Decimal       @db.Decimal(18, 2)
+  notes          String?
+  payroll        PayrollPeriod @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@unique([payrollId, date])
+  @@index([payrollId, date])
 }
 
 model Supplier {

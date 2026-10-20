@@ -8,6 +8,7 @@ import {
   Mechanic,
   MechanicDeduction,
   MechanicAttendance,
+  PayrollReport,
   Supplier,
   PurchaseRecord,
   Expense,
@@ -544,6 +545,19 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+  },
+
+  // Attendance-based payroll. All monetary calculations remain on the server.
+  async getPayroll(from: string, to: string, mechanicId?: string): Promise<PayrollReport> {
+    const query = new URLSearchParams({ from, to });
+    if (mechanicId) query.set('mechanicId', mechanicId);
+    return request<PayrollReport>(`/api/payroll?${query}`);
+  },
+  async finalizePayroll(data: { from: string; to: string; mechanicId?: string }): Promise<PayrollReport> {
+    return request<PayrollReport>('/api/payroll/finalize', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async reopenPayroll(id: string, reason: string): Promise<void> {
+    await request(`/api/payroll/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) });
   },
 
   // Suppliers

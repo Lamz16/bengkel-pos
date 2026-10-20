@@ -14,6 +14,8 @@ import { WorkshopServiceLayer } from './services/workshopService';
 import { TransactionReportRepository } from './repositories/transactionReportRepository';
 import { TransactionReportService } from './services/transactionReportService';
 import { MechanicService } from './services/mechanicService';
+import { PayrollRepository } from './repositories/payrollRepository';
+import { PayrollService } from './services/payrollService';
 import { SupplierService } from './services/supplierService';
 import { FinanceService } from './services/financeService';
 import { SettingsService } from './services/settingsService';
@@ -45,6 +47,7 @@ export const workshopService = new WorkshopServiceLayer(
 );
 export const transactionReportService = new TransactionReportService(new TransactionReportRepository());
 export const mechanicService = new MechanicService(mechanicRepository, deductionRepository, attendanceRepository);
+export const payrollService = new PayrollService(new PayrollRepository());
 export const supplierService = new SupplierService(supplierRepository);
 export const financeService = new FinanceService(financeRepository);
 export const settingsService = new SettingsService(settingsRepository, staffRepository);

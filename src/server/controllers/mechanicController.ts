@@ -7,7 +7,7 @@ export class MechanicController {
       const mechanics = await mechanicService.getMechanics();
       res.json(mechanics);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal memuat daftar mekanik' });
+      console.error('[Mechanic] Gagal memuat daftar:', err); res.status(500).json({ error: 'Data mekanik belum dapat dimuat. Silakan coba kembali.' });
     }
   }
 
@@ -20,7 +20,7 @@ export class MechanicController {
       const mechanic = await mechanicService.createMechanic(req.body);
       res.status(201).json(mechanic);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal menambahkan data mekanik' });
+      console.error('[Mechanic] Gagal menambah:', err); res.status(500).json({ error: 'Data mekanik belum dapat disimpan. Silakan coba kembali.' });
     }
   }
 
@@ -32,7 +32,7 @@ export class MechanicController {
       }
       res.json(updated);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal memperbarui data mekanik' });
+      console.error('[Mechanic] Gagal memperbarui:', err); res.status(500).json({ error: 'Data mekanik belum dapat diperbarui. Silakan coba kembali.' });
     }
   }
 
@@ -41,7 +41,7 @@ export class MechanicController {
       await mechanicService.deleteMechanic(req.params.id);
       res.json({ success: true, message: 'Data mekanik berhasil dihapus' });
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal menghapus data mekanik' });
+      console.error('[Mechanic] Gagal menghapus:', err); res.status(500).json({ error: 'Data mekanik belum dapat dihapus. Silakan coba kembali.' });
     }
   }
 
@@ -50,7 +50,7 @@ export class MechanicController {
       const deductions = await mechanicService.getDeductions();
       res.json(deductions);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal memuat data potongan/denda mekanik' });
+      console.error('[Mechanic] Gagal memuat potongan:', err); res.status(500).json({ error: 'Data potongan belum dapat dimuat. Silakan coba kembali.' });
     }
   }
 
@@ -63,7 +63,7 @@ export class MechanicController {
       const deduction = await mechanicService.createDeduction(req.body);
       res.status(201).json(deduction);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal menambahkan potongan mekanik' });
+      console.error('[Mechanic] Gagal menambah potongan:', err); res.status(500).json({ error: 'Potongan belum dapat disimpan. Silakan coba kembali.' });
     }
   }
 
@@ -72,7 +72,7 @@ export class MechanicController {
       await mechanicService.deleteDeduction(req.params.id);
       res.json({ success: true, message: 'Catatan potongan mekanik berhasil dihapus' });
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal menghapus potongan mekanik' });
+      console.error('[Mechanic] Gagal menghapus potongan:', err); res.status(500).json({ error: 'Potongan belum dapat dihapus. Silakan coba kembali.' });
     }
   }
 
@@ -81,20 +81,20 @@ export class MechanicController {
       const attendances = await mechanicService.getAttendances();
       res.json(attendances);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal memuat absensi mekanik' });
+      console.error('[Mechanic] Gagal memuat absensi:', err); res.status(500).json({ error: 'Data absensi belum dapat dimuat. Silakan coba kembali.' });
     }
   }
 
   async saveAttendance(req: Request, res: Response) {
     try {
       const { mechanicId, date, status } = req.body;
-      if (!mechanicId || !date || !['Present', 'Absent', 'Sick', 'Leave'].includes(status)) {
+      if (!mechanicId || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !['Present', 'Absent', 'Sick', 'Leave', 'OwnerLeave'].includes(status)) {
         return res.status(400).json({ error: 'Mekanik, tanggal, dan status absensi wajib diisi dengan benar.' });
       }
       const attendance = await mechanicService.saveAttendance(req.body);
       res.json(attendance);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal menyimpan absensi mekanik' });
+      console.error('[Mechanic] Gagal menyimpan absensi:', err); res.status(500).json({ error: 'Absensi belum dapat disimpan. Silakan coba kembali.' });
     }
   }
 }
