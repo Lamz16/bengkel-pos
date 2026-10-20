@@ -1,0 +1,36 @@
+from .models import Feature
+
+def f(i,m,n,r,e,p,impact,*terms, important=True): return Feature(i,m,n,r,e,p,impact,terms,important)
+
+FEATURES = (
+ f("AUTH-01","Akses","Login, logout, dan masa sesi","Semua pengguna","Halaman login","Akun aktif","Melindungi akses data","AuthView","login","clearAuthToken"),
+ f("AUTH-02","Akses","Role dan pembatasan menu","Owner, Admin, Kasir, Staf","Sidebar","Login","Menu dan data dibatasi per role","filteredNavItems","cashierBootstrap","role"),
+ f("DASH-01","Dashboard","Ringkasan operasional","Owner","Dashboard","Login Owner","Memantau indikator usaha","DashboardView","dashboard"),
+ f("POS-01","Transaksi","POS servis dan penjualan sparepart","Owner, Admin, Kasir, Staf","Transaksi","Pelanggan/produk tersedia","Mencatat omzet dan transaksi","POSForm","createService","partsUsed","WorkshopService"),
+ f("POS-02","Transaksi","Jasa, sparepart, dan diskon","Owner, Admin, Kasir, Staf","Form POS","Transaksi baru","Mengubah total transaksi dan stok","laborItems","discount","partsUsed"),
+ f("PAY-01","Pembayaran","Tunai dan non-tunai","Owner, Admin, Kasir, Staf","Pembayaran POS","Total transaksi","Merekam pelunasan","paymentMethod","cashTendered","payment"),
+ f("PAY-02","Pembayaran","Pembayaran parsial, piutang, dan jatuh tempo","Owner, Admin, Kasir, Staf","POS / Piutang","Transaksi belum lunas","Membentuk saldo piutang","dueDate","partial","receivable"),
+ f("RCPT-01","Nota","Struk/nota thermal dan template","Owner, Admin, Kasir, Staf","InvoiceModal","Transaksi tersimpan","Bukti transaksi untuk pelanggan","InvoiceModal","receipt","thermal"),
+ f("TXN-01","Transaksi","Status transaksi dan penyelesaian","Owner, Admin, Kasir, Staf","Riwayat/Detail servis","Transaksi dibuat","Menentukan transaksi selesai dan laporan","ServiceStatus","completedAt","status"),
+ f("RET-01","Transaksi","Retur penjualan","Owner, Admin, Kasir, Staf","Detail transaksi","Transaksi dengan barang","Mengembalikan stok dan menyesuaikan transaksi","processReturn","SalesReturn","return"),
+ f("CUS-01","Pelanggan","Pelanggan dan kendaraan","Owner","Pelanggan","Data identitas","Riwayat pelanggan dan kendaraan","CustomersView","Vehicle","Customer"),
+ f("LOY-01","Pelanggan","Loyalitas dan diskon tier","Owner, Admin, Kasir, Staf","POS/Pelanggan","Pelanggan terdaftar","Diskon dan akumulasi belanja","loyalty","Tier","totalSpent"),
+ f("QUEUE-01","Servis","Antrean hingga konversi transaksi","Owner, Admin, Kasir, Staf","Antrean Servis","Pelanggan/kendaraan","Membuat urutan kerja dan transaksi","ServiceQueueView","ServiceQueue","originQueueId"),
+ f("WARR-01","Garansi","Garansi jasa dan produk","Owner, Admin, Kasir, Staf","Detail servis","Transaksi selesai","Menyimpan hak garansi","warranty","Warranty"),
+ f("WARR-02","Garansi","Klaim garansi dan potongan mekanik","Owner","Klaim garansi","Garansi aktif","Mencatat klaim dan potongan","WarrantyClaimModal","applyWarrantyClaim","warrantyDeduction"),
+ f("MECH-01","Mekanik","Mekanik dan komisi","Owner","Mekanik & Gaji","Data mekanik","Menghitung bonus jasa","MechanicsView","Mechanic","commission"),
+ f("MECH-02","Mekanik","Absensi, gaji, dan potongan","Owner","Mekanik & Gaji","Mekanik terdaftar","Rekap penghasilan mekanik","attendance","deduction","salary"),
+ f("INV-01","Persediaan","Produk, varian, SKU, harga grosir dan kategori","Owner, Admin, Kasir, Staf","Stok Barang","Master produk","Ketersediaan dan harga jual","InventoryView","sku","wholesale","variant","SparePart","masterData"),
+ f("INV-02","Persediaan","Stok minimum dan histori stok","Owner, Admin, Kasir, Staf","Stok Barang","Produk tersedia","Peringatan stok dan audit mutasi","LowStockModal","StockHistory","minStock"),
+ f("INV-03","Persediaan","Lokasi gudang: zona, rak, level, slot","Owner, Admin, Kasir, Staf","Stok Barang/Lokasi","Gudang dikonfigurasi","Memudahkan pengambilan barang","StorageLocation","WarehouseZone","RackLevel"),
+ f("SUP-01","Pemasok","Pemasok dan pembelian","Owner","Pemasok","Supplier tersedia","Mencatat sumber pengadaan","SupplierView","PurchaseRecord","Supplier"),
+ f("TEMPO-01","Pembelian","Nota tempo distributor dan cicilan","Owner","Nota Tempo","Pemasok dan item tersedia","Menambah stok dan kewajiban usaha","DistributorInvoice","DistributorPayment","remainingAmount"),
+ f("EXP-01","Keuangan","Pengeluaran dan kategori pengeluaran","Owner","Pengeluaran","Kategori opsional","Mengurangi laba bersih","ExpenseView","ExpenseCategory","Expense"),
+ f("RPT-01","Laporan","Laporan keuangan","Owner","Laporan","Data transaksi/pengeluaran","Rekap omzet, biaya, laba","ReportsView","finance","profit"),
+ f("RPT-02","Laporan","Laporan transaksi selesai","Owner","Laporan Transaksi Selesai","Transaksi selesai","Audit hasil kerja","CompletedTransactionsReportView","transactionReport"),
+ f("AI-01","Diagnosa","Diagnosa AI","Pengguna yang diizinkan route","Form/route diagnosa","Keluhan dan konfigurasi AI","Rekomendasi penanganan","aiDiagnosis","Gemini","diagnosis","aiRoutes", important=False),
+ f("USER-01","Administrasi","Manajemen pengguna/staf","Owner","Pengguna","Owner login","Akun dan role staf","StaffView","StaffForm","User"),
+ f("AUDIT-01","Administrasi","Log aktivitas/audit","Owner","Log Sistem","Aktivitas tercatat","Audit perubahan dan akses","ActivityLogView","ActivityLog","activityLogger"),
+ f("SET-01","Pengaturan","Profil perusahaan, branding, dan template nota","Owner","Pengaturan","Owner login","Identitas dan tampilan dokumen","SettingsView","CompanySettings","receiptTemplate"),
+ f("SET-02","Pengaturan","Backup database dan monitoring","Owner","Pengaturan","Database tersedia","Pemulihan dan observabilitas","DatabaseBackupPanel","backup","monitoring"),
+)

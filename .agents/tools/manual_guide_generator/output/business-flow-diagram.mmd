@@ -1,0 +1,9 @@
+flowchart LR
+  MD[Master data: pelanggan, kendaraan, produk, pemasok] --> ST[Stok dan lokasi gudang]
+  ST --> TX[POS: jasa dan sparepart]
+  C[Pelanggan] --> LOY[Loyalitas dan diskon] --> TX
+  Q[Antrean servis] --> TX
+  TX --> PAY[Pembayaran: lunas atau piutang] --> RCPT[Struk thermal] --> RPT[Laporan]
+  SUP[Pemasok] --> TEMPO[Nota tempo] --> DP[Pembayaran cicilan] --> RPT
+  TX --> WAR[Garansi] --> CLAIM[Klaim] --> DED[Potongan mekanik]
+  TX --> COMM[Komisi dan rekap gaji mekanik]

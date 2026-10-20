@@ -303,6 +303,7 @@ export class ServiceRepository implements IServiceRepository {
             serviceWarrantyTermsSnapshot: s.serviceWarrantyTermsSnapshot || undefined,
             serviceWarrantyStartedAt: s.serviceWarrantyStartedAt?.toISOString(),
             serviceWarrantyExpiresAt: s.serviceWarrantyExpiresAt?.toISOString(),
+            version: s.version || 1,
             originQueueId: s.originQueueId || undefined,
           };
         }

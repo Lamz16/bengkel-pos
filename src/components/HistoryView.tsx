@@ -113,9 +113,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               <p className="text-[10px] text-slate-400 mt-1 font-bold">Rp {(service.totalAmount || 0).toLocaleString()}</p>
             </div>
             <button 
+              type="button"
               onClick={(e) => { e.stopPropagation(); onPrint(service.id); }}
               aria-label="Cetak Nota"
-              className="ml-4 p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-100"
+              className="ml-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-400 transition-all hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               <Printer className="w-4 h-4" />
             </button>

@@ -13,6 +13,24 @@ interface InvoiceModalProps {
 }
 
 const rupiah = (amount: number) => `Rp ${(amount || 0).toLocaleString('id-ID')}`;
+
+const toWhatsAppNumber = (phone?: string) => {
+  const digits = phone?.replace(/\D/g, '') || '';
+  if (!digits) return undefined;
+
+  const international = digits.startsWith('62')
+    ? digits
+    : digits.startsWith('0')
+      ? `62${digits.slice(1)}`
+      : digits.startsWith('8')
+        ? `62${digits}`
+        : undefined;
+
+  return international && international.length >= 10 && international.length <= 15
+    ? international
+    : undefined;
+};
+
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, onClose }) => {
   const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('80mm');
   const [isPrinting, setIsPrinting] = useState(false);
@@ -157,17 +175,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
       // Download happens first on every platform; browsers cannot silently attach
       // a local file into WhatsApp Web for security reasons.
       downloadFile(file);
-      const shareData = {
-        title: `Nota ${settings.name}`,
-        text: `Nota ${invoiceNumber} • Total ${rupiah(service.totalAmount)}`,
-        files: [file]
-      };
-
-      if (navigator.canShare?.({ files: [file] }) && navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        window.open(`https://wa.me/?text=${encodeURIComponent(`Nota ${invoiceNumber} • Total ${rupiah(service.totalAmount)}. PDF nota telah diunduh, silakan lampirkan ke WhatsApp.`)}`, '_blank', 'noopener,noreferrer');
+      const customerNumber = toWhatsAppNumber(service.customerPhone);
+      if (!customerNumber) {
+        alert('PDF nota telah diunduh, tetapi nomor WhatsApp pelanggan belum tersedia atau tidak valid.');
+        return;
       }
+
+      const customerName = service.customerName?.trim() || 'Pelanggan';
+      const greeting = [
+        `Halo ${customerName},`,
+        `Terima kasih sudah mempercayakan ${isSale ? 'pembelian' : 'servis kendaraan'} Anda di ${companyName || settings.name}.`,
+        `Berikut nota transaksi ${invoiceNumber} dengan total ${rupiah(service.totalAmount)}.`,
+        'Terima kasih. 🙏🏻',
+      ].join('\n\n');
+      const chat = window.open(`https://wa.me/${customerNumber}?text=${encodeURIComponent(greeting)}`, '_blank', 'noopener,noreferrer');
+      if (!chat) alert('PDF nota telah diunduh. Izinkan pop-up browser untuk membuka chat WhatsApp pelanggan.');
     } catch (error) {
       console.error(error);
       alert('PDF nota belum dapat dibuat. Coba ulangi dari browser Chrome/Edge versi terbaru.');
@@ -253,7 +275,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ service, settings, o
           </div>
           <button onClick={handleDownloadPdf} className="h-14 bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 border border-slate-100"><Download className="w-4 h-4" /> Download PDF</button>
           <button onClick={handleShareWhatsApp} disabled={isSharing} className="h-14 bg-slate-50 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors border border-slate-100 disabled:opacity-60">
-            <Share2 className="w-4 h-4" /> {isSharing ? 'Menyiapkan…' : 'Share WA Berwarna'}
+            <Share2 className="w-4 h-4" /> {isSharing ? 'Menyiapkan…' : 'Chat WA + PDF'}
           </button>
           <button onClick={handlePrint} disabled={isPrinting} className="h-14 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-blue-100 hover:bg-blue-700 transition-colors">
             <Printer className="w-4 h-4" /> {isPrinting ? 'Menyiapkan Cetak…' : 'Cetak Nota B/W'}

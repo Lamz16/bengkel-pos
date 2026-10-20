@@ -4,16 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: add optimistic concurrency control with expectedVersion for service queue and payment updates">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: enhance completed transactions report with improved filter layout and styling">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ActivityLogView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ActivityLogView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/HistoryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/HistoryView.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/serviceController.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/serviceRepository.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/repositories/transactionReportRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/transactionReportRepository.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/services/workshopService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/services/workshopService.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -234,7 +230,9 @@
       <workItem from="1791340723248" duration="5681000" />
       <workItem from="1792258298516" duration="1580000" />
       <workItem from="1792259971207" duration="9481000" />
-      <workItem from="1792299492706" duration="9979000" />
+      <workItem from="1792299492706" duration="10866000" />
+      <workItem from="1792466943122" duration="876000" />
+      <workItem from="1792476925650" duration="4321000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -324,7 +322,31 @@
       <option name="project" value="LOCAL" />
       <updated>1792309770562</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="feat: enhance payment processing with cash received and change amount tracking">
+      <option name="closed" value="true" />
+      <created>1792312207926</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1792312207926</updated>
+    </task>
+    <task id="LOCAL-00013" summary="feat: add nullable cashReceived and changeAmount columns to ServicePayment table">
+      <option name="closed" value="true" />
+      <created>1792312242207</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1792312242207</updated>
+    </task>
+    <task id="LOCAL-00014" summary="feat: enhance completed transactions report with improved filter layout and styling">
+      <option name="closed" value="true" />
+      <created>1792312663535</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1792312663535</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -351,6 +373,9 @@
     <MESSAGE value="feat: enhance service queue with creator information and transaction reporting" />
     <MESSAGE value="feat: implement owner-only access control for various routes and enhance role management" />
     <MESSAGE value="feat: add optimistic concurrency control with expectedVersion for service queue and payment updates" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: add optimistic concurrency control with expectedVersion for service queue and payment updates" />
+    <MESSAGE value="feat: enhance payment processing with cash received and change amount tracking" />
+    <MESSAGE value="feat: add nullable cashReceived and changeAmount columns to ServicePayment table" />
+    <MESSAGE value="feat: enhance completed transactions report with improved filter layout and styling" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: enhance completed transactions report with improved filter layout and styling" />
   </component>
 </project>
