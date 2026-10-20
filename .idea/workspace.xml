@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: refactor InvoiceModal for improved readability and maintainability">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: refactor InvoiceModal for improved styling and readability">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -229,7 +228,7 @@
       <workItem from="1792259971207" duration="9481000" />
       <workItem from="1792299492706" duration="10866000" />
       <workItem from="1792466943122" duration="876000" />
-      <workItem from="1792476925650" duration="6948000" />
+      <workItem from="1792476925650" duration="8607000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -359,7 +358,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792484929845</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="feat: refactor InvoiceModal for improved styling and readability">
+      <option name="closed" value="true" />
+      <created>1792485494071</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1792485494071</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -391,6 +398,7 @@
     <MESSAGE value="feat: enhance completed transactions report with improved filter layout and styling" />
     <MESSAGE value="feat: implement manual guide generator with CLI and document export functionality" />
     <MESSAGE value="feat: refactor InvoiceModal for improved readability and maintainability" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: refactor InvoiceModal for improved readability and maintainability" />
+    <MESSAGE value="feat: refactor InvoiceModal for improved styling and readability" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: refactor InvoiceModal for improved styling and readability" />
   </component>
 </project>
