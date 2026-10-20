@@ -282,13 +282,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({service, settings, on
                                     className="text-[9px] text-slate-400">{item.quantity || 1} pcs
                                     x {rupiah(item.priceAtTime || 0)}</p></div>
                                 <span
-                                    className="font-bold text-slate-800">{rupiah((item.quantity || 1) * (item.priceAtTime || 0))}</span>
+                                    className="font-mono font-black text-slate-900">{rupiah((item.quantity || 1) * (item.priceAtTime || 0))}</span>
                             </div>)}
                             {(service.discountAmount || 0) > 0 &&
                                 <div className="flex justify-between items-start pt-2 text-emerald-700">
                                     <div><p className="font-bold">{service.discountReason || 'Diskon Transaksi'}</p><p
                                         className="text-[9px]">Potongan harga</p></div>
-                                    <span className="font-bold">- {rupiah(service.discountAmount)}</span></div>}
+                                    <span className="font-mono font-black">- {rupiah(service.discountAmount)}</span></div>}
                         </div>
 
                         <div className="receipt-total py-2 flex justify-between items-center">
@@ -302,13 +302,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({service, settings, on
                         {cashPayments.map(payment => <div key={payment.id}
                                                           className="space-y-1 border-b border-dashed border-slate-200 py-2 text-[10px]">
                             <div className="flex justify-between">
-                                <span>Total Tagihan</span><b>{rupiah(service.totalAmount)}</b></div>
+                                <span>Total Tagihan</span><b className="font-mono font-black">{rupiah(service.totalAmount)}</b></div>
                             <div className="flex justify-between">
-                                <span>Uang Diterima</span><b>{rupiah(payment.cashReceived ?? payment.amount)}</b></div>
+                                <span>Uang Diterima</span><b className="font-mono font-black">{rupiah(payment.cashReceived ?? payment.amount)}</b></div>
                             <div className="flex justify-between">
-                                <span>Pembayaran Tercatat</span><b>{rupiah(payment.amount)}</b></div>
+                                <span>Pembayaran Tercatat</span><b className="font-mono font-black">{rupiah(payment.amount)}</b></div>
                             {(payment.changeAmount || 0) > 0 && <div className="flex justify-between text-emerald-700">
-                                <span>Kembalian</span><b>{rupiah(payment.changeAmount || 0)}</b></div>}
+                                <span>Kembalian</span><b className="font-mono font-black">{rupiah(payment.changeAmount || 0)}</b></div>}
                         </div>)}
 
                         {settings.showWarrantyOnReceipt && !isSale && hasServiceWarranty && serviceWarrantyDays > 0 &&
