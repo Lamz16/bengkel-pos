@@ -5,6 +5,9 @@ import html2canvas from 'html2canvas-pro';
 import {jsPDF} from 'jspdf';
 import {Download, FileText, X, ShieldCheck, Share2, Printer} from 'lucide-react';
 import {WorkshopService, CompanySettings} from '../types';
+import {activeProfile, loadPreferences, savePreferences, defaults} from '../printing/profiles';
+import {PrintProfileSettings} from '../printing/PrintProfileSettings';
+import {calibratedPdf} from '../printing/layout';
 
 interface InvoiceModalProps {
     service: WorkshopService | undefined;
@@ -32,6 +35,8 @@ const toWhatsAppNumber = (phone?: string) => {
 };
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({service, settings, onClose}) => {
+    const [printPreferences, setPrintPreferences] = useState(loadPreferences);
+    const profile = activeProfile(printPreferences);
     const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('80mm');
     const [isPrinting, setIsPrinting] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
@@ -75,7 +80,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({service, settings, on
 
         try {
             const canvas = await captureReceipt(thermalReceiptRef.current);
-            const file = createPdfFile(canvas, 'Struk');
+            const file = profile ? calibratedPdf(canvas, profile) : createPdfFile(canvas, 'Struk');
             const url = URL.createObjectURL(file);
             const printWindow = window.open(url, '_blank');
 
@@ -349,6 +354,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({service, settings, on
                     </div>
                 </div>
 
+                <div className="px-6 py-2 text-xs"><label>Mode cetak B/W <select aria-label="Mode cetak B/W" value={printPreferences.mode} onChange={e => {
+                    const next = {...printPreferences, mode: e.target.value as 'thermal' | 'pdf'};
+                    setPrintPreferences(savePreferences(next) ? next : defaults());
+                }}><option value="thermal">Printer thermal</option><option value="pdf">Browser / Save as PDF (bawaan)</option></select></label></div>
+                <PrintProfileSettings value={printPreferences} onChange={setPrintPreferences}/>
                 <div className="p-6 border-t border-slate-100 bg-white grid grid-cols-1 sm:grid-cols-4 gap-4 no-print">
                     <div className="space-y-2">
                         <select value={paperWidth} onChange={e => setPaperWidth(e.target.value as '58mm' | '80mm')}
@@ -375,8 +385,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({service, settings, on
                 </div>
             </motion.div>
             <div aria-hidden="true" style={{position: 'fixed', left: '-10000px', top: 0, width: receiptWidth}}>
-                <div ref={thermalReceiptRef} className="bg-white p-3 font-mono text-[10px] leading-snug text-black"
-                     style={{width: receiptWidth}}>
+                <div ref={thermalReceiptRef} className={`bg-white p-3 font-mono text-[10px] leading-snug text-black ${profile ? 'bw-calibrated' : ''}`}
+                     style={profile ? {width: `${profile.contentMm}mm`, padding: 0, fontSize: `${10 * profile.fontScale}px`, overflowWrap: 'anywhere'} : {width: receiptWidth, overflowWrap: 'anywhere'}}>
+                    {profile && <style>{`.bw-calibrated .text-xs {font-size: ${12 * profile.fontScale}px} .bw-calibrated .flex {flex-wrap: wrap; column-gap: 4px} .bw-calibrated .flex > * {max-width: 100%; overflow-wrap: anywhere}`}</style>}
                     <div className="border-b border-dashed border-black pb-2 text-center">{companyName &&
                         <b className="block text-xs uppercase">{companyName}</b>}{companyAddress &&
                         <span className="block">{companyAddress}</span>}{companyPhone &&

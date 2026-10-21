@@ -4,26 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: implement payroll management system with attendance and reporting features">
-      <change beforePath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/Panduan Penggunaan BengkelPro POS.docx" beforeDir="false" afterPath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/Panduan Penggunaan BengkelPro POS.docx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/business-flow-catalog.md" beforeDir="false" afterPath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/business-flow-catalog.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/feature-coverage-matrix.csv" beforeDir="false" afterPath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/feature-coverage-matrix.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/verification-report.md" beforeDir="false" afterPath="$PROJECT_DIR$/.agents/tools/manual_guide_generator/output/verification-report.md" afterDir="false" />
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: add payroll management functionality and improve error handling messages">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ManualDeductionForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ManualDeductionForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/MechanicForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/MechanicForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/MechanicsView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/MechanicsView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SettingsView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SettingsView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/container.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/container.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controllers/mechanicController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/mechanicController.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/repositories/settingsRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/settingsRepository.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/BengkelProLauncher.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/tools/BengkelProLauncher.ps1" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -248,6 +230,7 @@
       <workItem from="1792466943122" duration="876000" />
       <workItem from="1792476925650" duration="9069000" />
       <workItem from="1792499333851" duration="4280000" />
+      <workItem from="1792510649830" duration="3663000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -401,7 +384,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792487270261</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="feat: add payroll management functionality and improve error handling messages">
+      <option name="closed" value="true" />
+      <created>1792510683705</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1792510683705</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -436,6 +427,7 @@
     <MESSAGE value="feat: refactor InvoiceModal for improved styling and readability" />
     <MESSAGE value="feat: add launcher scripts for development and production management" />
     <MESSAGE value="feat: update workspace configuration for launcher scripts management" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: update workspace configuration for launcher scripts management" />
+    <MESSAGE value="feat: add payroll management functionality and improve error handling messages" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: add payroll management functionality and improve error handling messages" />
   </component>
 </project>

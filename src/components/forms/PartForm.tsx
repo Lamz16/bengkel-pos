@@ -280,7 +280,7 @@ export const PartForm: React.FC<PartFormProps> = ({
           <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Jenis Variasi</label>
           <input
             placeholder="Contoh: Ukuran, Tipe, Warna"
-            value={formData.variantName || 'Ukuran'}
+            value={formData.variantName ?? 'Ukuran'}
             onChange={e => setFormData({ ...formData, variantName: e.target.value })}
             className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-slate-900"
           />

@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Windows.Forms
+﻿Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -15,7 +15,7 @@ function Get-BusyPorts([int[]]$ports) {
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'BengkelPro Launcher'
-$form.Size = New-Object System.Drawing.Size(560, 520)
+$form.Size = New-Object System.Drawing.Size(560, 710)
 $form.StartPosition = 'CenterScreen'
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
@@ -47,7 +47,10 @@ $openApp.Size = New-Object System.Drawing.Size(190, 44)
 $openApp.Location = New-Object System.Drawing.Point(30, 130)
 $openApp.FlatStyle = 'Flat'
 $openApp.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(203, 213, 225)
-$openApp.Add_Click({ Start-Process 'http://localhost:3000' })
+$openApp.Add_Click({
+    if ($autoCompanion.Checked) { Start-PrintCompanion }
+    Start-Process 'http://localhost:3000'
+})
 $form.Controls.Add($openApp)
 
 $maintenanceTitle = New-Object System.Windows.Forms.Label
@@ -103,8 +106,8 @@ $migrate.Add_Click({
 $form.Controls.Add($migrate)
 
 $deploy = New-Object System.Windows.Forms.Button
-$deploy.Text = 'Build & Jalankan Production'
-$deploy.Size = New-Object System.Drawing.Size(315, 44)
+$deploy.Text = 'Build Aplikasi'
+$deploy.Size = New-Object System.Drawing.Size(230, 44)
 $deploy.Location = New-Object System.Drawing.Point(30, 290)
 $deploy.BackColor = [System.Drawing.Color]::FromArgb(5, 150, 105)
 $deploy.ForeColor = [System.Drawing.Color]::White
@@ -113,19 +116,40 @@ $deploy.FlatAppearance.BorderSize = 0
 $deploy.Add_Click({
     $busyPorts = Get-BusyPorts @(3000)
     if ($busyPorts.Count -gt 0) {
-        [System.Windows.Forms.MessageBox]::Show('Port 3000 masih dipakai. Tutup server development/production lama terlebih dahulu, lalu deploy ulang.', 'BengkelPro Launcher', 'OK', 'Warning')
+        [System.Windows.Forms.MessageBox]::Show('Port 3000 masih dipakai. Tutup server development/production lama terlebih dahulu, lalu build ulang.', 'BengkelPro Launcher', 'OK', 'Warning')
         return
     }
-    $answer = [System.Windows.Forms.MessageBox]::Show('Build aplikasi lalu jalankan server production lokal pada port 3000?', 'Konfirmasi Deploy Lokal', 'YesNo', 'Question')
-    if ($answer -ne 'Yes') { return }
-    Start-TaskTerminal 'BengkelPro Production' 'npm run build && npm start'
-    $status.Text = 'Status: build dan server production berjalan di terminal.'
+    Start-TaskTerminal 'BengkelPro Build' 'npm run build'
+    $status.Text = 'Status: build berjalan di terminal. Setelah berhasil, klik Start.'
     $status.ForeColor = [System.Drawing.Color]::FromArgb(5, 150, 105)
 })
 $form.Controls.Add($deploy)
 
+$start = New-Object System.Windows.Forms.Button
+$start.Text = 'Start Production'
+$start.Size = New-Object System.Drawing.Size(235, 44)
+$start.Location = New-Object System.Drawing.Point(275, 290)
+$start.Add_Click({
+    $busyPorts = Get-BusyPorts @(3000)
+    if ($busyPorts.Count -gt 0) {
+        if ($autoCompanion.Checked) { Start-PrintCompanion }
+        [System.Windows.Forms.MessageBox]::Show('Port 3000 masih dipakai. Jika aplikasi sudah berjalan, klik Buka Aplikasi. Untuk menjalankan ulang, tutup terminal server lama terlebih dahulu.', 'BengkelPro Launcher', 'OK', 'Warning')
+        return
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'dist/server.cjs') -PathType Leaf) -or
+        -not (Test-Path -LiteralPath (Join-Path $projectRoot 'dist/index.html') -PathType Leaf)) {
+        [System.Windows.Forms.MessageBox]::Show('Hasil build belum tersedia. Klik Build Aplikasi dan tunggu hingga berhasil, lalu klik Start Production.', 'BengkelPro Launcher', 'OK', 'Warning')
+        return
+    }
+    if ($autoCompanion.Checked) { Start-PrintCompanion }
+    Start-TaskTerminal 'BengkelPro Production' 'npm start'
+    $status.Text = 'Status: terminal server production sudah dibuka.'
+    $status.ForeColor = [System.Drawing.Color]::FromArgb(5, 150, 105)
+})
+$form.Controls.Add($start)
+
 $deployInfo = New-Object System.Windows.Forms.Label
-$deployInfo.Text = 'Urutan update: Update Git -> Generate Prisma -> Terapkan Migration -> Build dan Jalankan Production.'
+$deployInfo.Text = 'Setelah restart laptop: Start Production -> Buka Aplikasi. Setelah update: jalankan langkah pemeliharaan yang diperlukan -> Build -> Start.'
 $deployInfo.Size = New-Object System.Drawing.Size(470, 34)
 $deployInfo.ForeColor = [System.Drawing.Color]::FromArgb(100, 116, 139)
 $deployInfo.Location = New-Object System.Drawing.Point(31, 345)
@@ -138,4 +162,126 @@ $hint.ForeColor = [System.Drawing.Color]::FromArgb(100, 116, 139)
 $hint.Location = New-Object System.Drawing.Point(31, 385)
 $form.Controls.Add($hint)
 
+# The launcher owns only the child process it starts. Never terminate an unrelated port owner.
+$script:printCompanionProcess = $null
+$script:companionLog = $null
+
+function Stop-PrintCompanion {
+    if ($script:printCompanionProcess) {
+        try {
+            if (-not $script:printCompanionProcess.HasExited) { $script:printCompanionProcess.Kill() }
+            $script:printCompanionProcess.Dispose()
+        } catch { }
+        $script:printCompanionProcess = $null
+    }
+    $printerStatus.Text = 'Pendamping dihentikan. Cetak browser tetap tersedia.'
+    $startPrinter.Enabled = $true
+    $stopPrinter.Enabled = $false
+}
+
+function Get-CompanionLogDirectory {
+    return Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'BengkelPro\PrintCompanion'
+}
+
+function Start-PrintCompanion {
+    if ($script:printCompanionProcess -and -not $script:printCompanionProcess.HasExited) { return }
+    if ($script:printCompanionProcess) {
+        $script:printCompanionProcess.Dispose()
+        $script:printCompanionProcess = $null
+    }
+    if ((Get-BusyPorts @(17843)).Count -gt 0) {
+        $printerStatus.Text = 'Port pendamping dipakai. Coba Deteksi ulang di nota; browser tetap tersedia.'
+        return
+    }
+    try {
+        $companionPath = Join-Path $projectRoot 'tools\print-companion\BengkelProPrintCompanion.ps1'
+        if (-not (Test-Path -LiteralPath $companionPath -PathType Leaf)) { throw 'File pendamping tidak ditemukan.' }
+        $logDirectory = Get-CompanionLogDirectory
+        [void](New-Item -ItemType Directory -Path $logDirectory -Force -ErrorAction Stop)
+        $logId = [Guid]::NewGuid().ToString('N')
+        $script:companionLog = Join-Path $logDirectory "companion-$logId.error.log"
+        $outputLog = Join-Path $logDirectory "companion-$logId.log"
+        $script:printCompanionProcess = Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -PassThru -ErrorAction Stop `
+            -ArgumentList @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', "`"$companionPath`"", '-AllowedOrigins', 'http://localhost:3000') `
+            -WorkingDirectory $projectRoot -RedirectStandardError $script:companionLog -RedirectStandardOutput $outputLog
+        $printerStatus.Text = 'Pendamping sedang dimulai. Cetak browser tetap tersedia.'
+        $startPrinter.Enabled = $false
+        $stopPrinter.Enabled = $true
+    } catch {
+        $printerStatus.Text = 'Pendamping gagal dimulai. Cetak browser tetap tersedia.'
+        $startPrinter.Enabled = $true
+        $stopPrinter.Enabled = $false
+    }
+}
+
+$printerTitle = New-Object System.Windows.Forms.Label
+$printerTitle.Text = 'Pendamping Printer Nota B/W'
+$printerTitle.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 11)
+$printerTitle.AutoSize = $true
+$printerTitle.Location = New-Object System.Drawing.Point(31, 445)
+$form.Controls.Add($printerTitle)
+
+$autoCompanion = New-Object System.Windows.Forms.CheckBox
+$autoCompanion.Text = 'Otomatis saat Start Production / Buka Aplikasi'
+$autoCompanion.Checked = $true
+$autoCompanion.AutoSize = $true
+$autoCompanion.Location = New-Object System.Drawing.Point(31, 477)
+$form.Controls.Add($autoCompanion)
+
+$startPrinter = New-Object System.Windows.Forms.Button
+$startPrinter.Text = 'Mulai pendamping'
+$startPrinter.Size = New-Object System.Drawing.Size(150, 34)
+$startPrinter.Location = New-Object System.Drawing.Point(30, 505)
+$startPrinter.Add_Click({ Start-PrintCompanion })
+$form.Controls.Add($startPrinter)
+
+$stopPrinter = New-Object System.Windows.Forms.Button
+$stopPrinter.Text = 'Hentikan pendamping'
+$stopPrinter.Size = New-Object System.Drawing.Size(160, 34)
+$stopPrinter.Location = New-Object System.Drawing.Point(190, 505)
+$stopPrinter.Enabled = $false
+$stopPrinter.Add_Click({ Stop-PrintCompanion })
+$form.Controls.Add($stopPrinter)
+
+$printerLog = New-Object System.Windows.Forms.Button
+$printerLog.Text = 'Buka log'
+$printerLog.Size = New-Object System.Drawing.Size(150, 34)
+$printerLog.Location = New-Object System.Drawing.Point(360, 505)
+$printerLog.Add_Click({
+    if ($script:companionLog -and (Test-Path -LiteralPath $script:companionLog)) {
+        Start-Process -FilePath 'notepad.exe' -ArgumentList "`"$script:companionLog`""
+    }
+})
+$form.Controls.Add($printerLog)
+
+$printerStatus = New-Object System.Windows.Forms.Label
+$printerStatus.Text = 'Pendamping belum dijalankan.'
+$printerStatus.Size = New-Object System.Drawing.Size(480, 36)
+$printerStatus.Location = New-Object System.Drawing.Point(31, 548)
+$form.Controls.Add($printerStatus)
+
+$printerHint = New-Object System.Windows.Forms.Label
+$printerHint.Text = 'Biarkan launcher terbuka selama deteksi printer. Di nota: Pengaturan lanjutan > Deteksi ulang > Cetak uji > Simpan profil. Profil tersimpan tetap bisa dipakai setelah pendamping dihentikan.'
+$printerHint.Size = New-Object System.Drawing.Size(480, 54)
+$printerHint.Location = New-Object System.Drawing.Point(31, 588)
+$printerHint.ForeColor = [System.Drawing.Color]::FromArgb(100, 116, 139)
+$form.Controls.Add($printerHint)
+
+$printerTimer = New-Object System.Windows.Forms.Timer
+$printerTimer.Interval = 1500
+$printerTimer.Add_Tick({
+    if ($script:printCompanionProcess) {
+        if ($script:printCompanionProcess.HasExited) {
+            $script:printCompanionProcess.Dispose()
+            $script:printCompanionProcess = $null
+            $printerStatus.Text = 'Pendamping berhenti / gagal dimulai. Buka log; cetak browser tetap tersedia.'
+            $startPrinter.Enabled = $true
+            $stopPrinter.Enabled = $false
+        } else {
+            $printerStatus.Text = 'Proses pendamping berjalan. Periksa koneksi lewat Deteksi ulang di nota.'
+        }
+    }
+})
+$printerTimer.Start()
+$form.Add_FormClosed({ $printerTimer.Stop(); Stop-PrintCompanion; $printerTimer.Dispose() })
 [void]$form.ShowDialog()
