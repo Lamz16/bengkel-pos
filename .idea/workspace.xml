@@ -4,8 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: add payroll management functionality and improve error handling messages">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: enhance print companion functionality and add print profile settings">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BengkelPro Launcher.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/BengkelPro Launcher.cmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/BengkelProLauncher.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/tools/BengkelProLauncher.ps1" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -231,6 +234,8 @@
       <workItem from="1792476925650" duration="9069000" />
       <workItem from="1792499333851" duration="4280000" />
       <workItem from="1792510649830" duration="3663000" />
+      <workItem from="1792557116785" duration="1593000" />
+      <workItem from="1792566077082" duration="408000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -392,7 +397,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792510683705</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="feat: enhance print companion functionality and add print profile settings">
+      <option name="closed" value="true" />
+      <created>1792563436303</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1792563436303</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -428,6 +441,7 @@
     <MESSAGE value="feat: add launcher scripts for development and production management" />
     <MESSAGE value="feat: update workspace configuration for launcher scripts management" />
     <MESSAGE value="feat: add payroll management functionality and improve error handling messages" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: add payroll management functionality and improve error handling messages" />
+    <MESSAGE value="feat: enhance print companion functionality and add print profile settings" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: enhance print companion functionality and add print profile settings" />
   </component>
 </project>
