@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: enhance print companion functionality and add print profile settings">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BengkelPro Launcher.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/BengkelPro Launcher.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InvoiceModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/BengkelProLauncher.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/tools/BengkelProLauncher.ps1" afterDir="false" />
-    </list>
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: implement new launcher functionality with improved logging and server management" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -235,7 +230,7 @@
       <workItem from="1792499333851" duration="4280000" />
       <workItem from="1792510649830" duration="3663000" />
       <workItem from="1792557116785" duration="1593000" />
-      <workItem from="1792566077082" duration="408000" />
+      <workItem from="1792566077082" duration="828000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -405,7 +400,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792563436303</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="feat: implement new launcher functionality with improved logging and server management">
+      <option name="closed" value="true" />
+      <created>1792566683181</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1792566683182</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -442,6 +445,7 @@
     <MESSAGE value="feat: update workspace configuration for launcher scripts management" />
     <MESSAGE value="feat: add payroll management functionality and improve error handling messages" />
     <MESSAGE value="feat: enhance print companion functionality and add print profile settings" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: enhance print companion functionality and add print profile settings" />
+    <MESSAGE value="feat: implement new launcher functionality with improved logging and server management" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: implement new launcher functionality with improved logging and server management" />
   </component>
 </project>
