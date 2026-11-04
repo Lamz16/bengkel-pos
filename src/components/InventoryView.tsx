@@ -45,7 +45,7 @@ interface InventoryViewProps {
   onAdd: () => void;
   onAddStock: (partId?: string) => void;
   onEdit: (p: SparePart) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
   initialShowLowStockModal?: boolean;
   onOpenLowStockModal?: () => void;
   onOpenMasterDataModal?: () => void;
@@ -70,6 +70,26 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onCheckoutCart,
   canManageInventory = false,
 }) => {
+  const [deleteTarget, setDeleteTarget] = useState<SparePart | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const deleteInFlight = useRef(false);
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleteInFlight.current) return;
+    deleteInFlight.current = true;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await onDelete(deleteTarget.id);
+      setSaleCart(current => current.filter(item => item.partId !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Barang gagal dihapus. Silakan coba kembali.');
+    } finally {
+      deleteInFlight.current = false;
+      setIsDeleting(false);
+    }
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'stock' | 'rack_locator' | 'purchases'>('stock');
   const [selectedRackFilter, setSelectedRackFilter] = useState<string>('all');
@@ -808,7 +828,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => onDelete(part.id)} 
+                        onClick={() => { setDeleteError(''); setDeleteTarget(part); }}
                         aria-label="Hapus Sparepart"
                         title="Hapus Part"
                         className="p-2 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 rounded-xl transition-colors"
@@ -1250,6 +1270,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           }}
         />
       )}
+      {deleteTarget && <Modal title="Konfirmasi Hapus Barang" maxWidth="sm" onClose={() => { if (!deleteInFlight.current) setDeleteTarget(null); }}>
+        <div role="alertdialog" aria-modal="true" aria-label="Konfirmasi Hapus Barang" aria-describedby="delete-part-description" className="space-y-4">
+          <p id="delete-part-description" className="text-sm text-slate-700">Hapus barang <strong>{deleteTarget.name}</strong>{deleteTarget.sku ? ' (' + deleteTarget.sku + ')' : ''}? Tindakan ini tidak dapat dibatalkan. Catatan pembelian dan riwayat stok awal ikut dihapus. Penghapusan hanya diizinkan jika belum ada transaksi atau pergerakan stok lanjutan.</p>
+          {deleteError && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{deleteError}</p>}
+          <div className="flex justify-end gap-2">
+            <button type="button" autoFocus disabled={isDeleting} onClick={() => setDeleteTarget(null)} className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold disabled:opacity-50">Batal</button>
+            <button type="button" disabled={isDeleting} onClick={confirmDelete} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{isDeleting ? 'Menghapus...' : 'Hapus Barang'}</button>
+          </div>
+        </div>
+      </Modal>}
     </div>
   );
 };

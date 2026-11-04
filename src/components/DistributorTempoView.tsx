@@ -235,6 +235,7 @@ export const DistributorTempoView: React.FC<DistributorTempoViewProps> = ({
   };
 
   const handleRemoveItemRow = (idx: number) => {
+    if (!window.confirm('Hapus item ini dari nota tempo?')) return;
     setFormData(prev => ({
       ...prev,
       items: prev.items.filter((_, i) => i !== idx)

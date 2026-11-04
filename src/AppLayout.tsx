@@ -511,11 +511,13 @@ export default function AppLayout() {
   };
 
   const handleDeletePart = async (id: string) => {
-    setParts(prev => prev.filter(x => x.id !== id));
     try {
       await api.deletePart(id);
+      setPurchases(prev => prev.filter(p => p.partId !== id));
+      setParts(prev => prev.filter(x => x.id !== id));
     } catch (err) {
       console.error('Failed to delete part:', err);
+      throw err;
     }
   };
 
@@ -545,11 +547,13 @@ export default function AppLayout() {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    setCustomers(prev => prev.filter(x => x.id !== id));
+    if (!window.confirm('Hapus data pelanggan ini? Tindakan ini tidak dapat dibatalkan.')) return;
     try {
       await api.deleteCustomer(id);
+      setCustomers(prev => prev.filter(x => x.id !== id));
     } catch (err) {
       console.error('Failed to delete customer:', err);
+      alert(err instanceof Error ? err.message : 'Data pelanggan gagal dihapus.');
     }
   };
 
@@ -584,11 +588,13 @@ export default function AppLayout() {
   };
 
   const handleDeleteExpense = async (id: string) => {
-    setExpenses(prev => prev.filter(x => x.id !== id));
+    if (!window.confirm('Hapus data pengeluaran ini? Tindakan ini tidak dapat dibatalkan.')) return;
     try {
       await api.deleteExpense(id);
+      setExpenses(prev => prev.filter(x => x.id !== id));
     } catch (err) {
       console.error('Failed to delete expense:', err);
+      alert(err instanceof Error ? err.message : 'Data pengeluaran gagal dihapus.');
     }
   };
 
@@ -604,11 +610,13 @@ export default function AppLayout() {
   };
 
   const handleDeleteSupplier = async (id: string) => {
-    setSuppliers(prev => prev.filter(x => x.id !== id));
+    if (!window.confirm('Hapus data pemasok ini? Tindakan ini tidak dapat dibatalkan.')) return;
     try {
       await api.deleteSupplier(id);
+      setSuppliers(prev => prev.filter(x => x.id !== id));
     } catch (err) {
       console.error('Failed to delete supplier:', err);
+      alert(err instanceof Error ? err.message : 'Data pemasok gagal dihapus.');
     }
   };
 
@@ -671,6 +679,7 @@ export default function AppLayout() {
   };
 
   const handleDeleteDeduction = async (id: string) => {
+    if (!window.confirm('Hapus data potongan ini? Tindakan ini tidak dapat dibatalkan.')) return;
     const previous = deductions;
     setDeductions(prev => prev.filter(d => d.id !== id));
     try {

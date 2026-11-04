@@ -153,6 +153,7 @@ export const PartForm: React.FC<PartFormProps> = ({
             <button
               type="button"
               onClick={() => {
+                if (!window.confirm('Hapus foto barang ini?')) return;
                 setFormData(prev => ({ ...prev, imageUrl: '' }));
                 setCompressionMeta(null);
               }}

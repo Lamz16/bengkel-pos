@@ -1,3 +1,4 @@
+import { deleteUnusedPart } from './deleteUnusedPart';
 import { IPartRepository, PaginationParams } from './interfaces';
 import { SparePart, PaginatedResult, StockHistory } from '../../types';
 import { prisma, isDbConnected } from '../db/connection';
@@ -242,7 +243,9 @@ export class PartRepository implements IPartRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    if (isDbConnected()) await prisma.sparePart.delete({ where: { id } });
+    if (!isDbConnected()) throw new Error('Database tidak tersedia.');
+    await prisma.$transaction(tx => deleteUnusedPart(tx, id), { isolationLevel: 'Serializable' });
+    memoryStore.purchases = memoryStore.purchases.filter(p => p.partId !== id);
     memoryStore.parts = memoryStore.parts.filter(p => p.id !== id);
     return true;
   }

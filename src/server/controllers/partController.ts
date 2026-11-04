@@ -1,3 +1,4 @@
+import { PartInUseError } from '../repositories/deleteUnusedPart';
 import { Request, Response } from 'express';
 import { inventoryService } from '../container';
 import { recordAudit } from '../services/auditLogService';
@@ -71,11 +72,19 @@ export class PartController {
   async deletePart(req: Request, res: Response) {
     try {
       const before = await inventoryService.getPart(req.params.id);
+      if (!before) return res.status(404).json({ error: 'Barang tidak ditemukan.' });
       await inventoryService.deletePart(req.params.id);
       if (before) await recordAudit(req, { action: 'Menghapus sparepart', entity: 'SparePart', entityId: req.params.id, before, description: `Sparepart ${before.name} dihapus.` });
       res.json({ success: true, message: 'Suku cadang berhasil dihapus' });
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Gagal menghapus suku cadang' });
+      if (err instanceof PartInUseError) return res.status(409).json({ error: err.message });
+      if (err?.code === 'P2034') return res.status(409).json({ error: 'Data barang berubah saat penghapusan. Muat ulang lalu coba kembali.' });
+      if (err?.code === 'P2003') {
+        return res.status(409).json({ error: 'Barang tidak dapat dihapus karena masih terkait riwayat stok, pembelian, transaksi, retur, atau lokasi stok. Data barang dan riwayatnya tetap disimpan.' });
+      }
+      if (err?.code === 'P2025') return res.status(404).json({ error: 'Barang tidak ditemukan atau sudah dihapus.' });
+      console.error('Failed to delete part:', err);
+      res.status(500).json({ error: 'Barang gagal dihapus. Silakan coba kembali.' });
     }
   }
 

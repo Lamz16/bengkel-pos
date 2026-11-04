@@ -314,7 +314,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     {formData.logoUrl && (
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, logoUrl: undefined })}
+                        onClick={() => { if (window.confirm('Hapus logo ini?')) setFormData({ ...formData, logoUrl: undefined }); }}
                         className="px-3.5 h-12 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0"
                         title="Hapus Logo Custom"
                       >
@@ -362,7 +362,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <span>{formData.faviconUrl ? 'Ganti Favicon' : 'Upload Favicon'}</span>
                       <input type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml,image/webp" onChange={handleFaviconFileUpload} className="hidden" />
                     </label>
-                    {formData.faviconUrl && <button type="button" onClick={() => setFormData({ ...formData, faviconUrl: undefined })} className="px-3.5 h-12 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl"><Trash2 className="w-4 h-4" /></button>}
+                    {formData.faviconUrl && <button type="button" onClick={() => { if (window.confirm('Hapus favicon ini?')) setFormData({ ...formData, faviconUrl: undefined }); }} className="px-3.5 h-12 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl"><Trash2 className="w-4 h-4" /></button>}
                   </div>
                   <div className="flex items-center gap-2">
                     {formData.faviconUrl && <img src={formData.faviconUrl} alt="Preview favicon" className="w-6 h-6 rounded border border-slate-200 object-contain bg-white" />}
