@@ -1060,6 +1060,7 @@ export default function AppLayout() {
                     setPosInitialPromoPercent(null);
                   }} 
                   parts={parts} 
+                  suppliers={suppliers}
                   customers={customers}
                   vehicles={vehicles}
                   mechanics={mechanics}

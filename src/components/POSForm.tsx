@@ -18,9 +18,10 @@ import {
     Hash,
     FileClock,
     Clock,
-    CheckCircle2
+    CheckCircle2,
+    Truck
 } from 'lucide-react';
-import {WorkshopService, SparePart, Customer, Vehicle, Mechanic, CompanySettings, TransactionDraft} from '../types';
+import {WorkshopService, SparePart, Customer, Vehicle, Mechanic, CompanySettings, TransactionDraft, Supplier} from '../types';
 import {CurrencyInput} from './CurrencyInput';
 import {getAIDiagnosis} from '../services/geminiService';
 import {getCustomerLoyaltyStats, getActiveLoyaltyTiers} from '../utils/loyalty';
@@ -31,6 +32,7 @@ import {cn} from '../lib/utils';
 interface POSFormProps {
     onSave: (s: WorkshopService) => void;
     parts: SparePart[];
+    suppliers?: Supplier[];
     customers: Customer[];
     vehicles: Vehicle[];
     mechanics: Mechanic[];
@@ -53,6 +55,7 @@ interface POSFormProps {
 export const POSForm: React.FC<POSFormProps> = ({
                                                     onSave,
                                                     parts,
+                                                    suppliers = [],
                                                     customers,
                                                     vehicles,
                                                     mechanics,
@@ -379,15 +382,19 @@ export const POSForm: React.FC<POSFormProps> = ({
     const filteredPickerParts = useMemo(() => {
         if (!partSearchQuery.trim()) return parts;
         const q = partSearchQuery.toLowerCase();
-        return parts.filter(p =>
-            p.name.toLowerCase().includes(q) ||
-            (p.sku && p.sku.toLowerCase().includes(q)) ||
-            (p.rackCode && p.rackCode.toLowerCase().includes(q)) ||
-            (p.shelfLevel && p.shelfLevel.toLowerCase().includes(q)) ||
-            (p.binNumber && p.binNumber.toLowerCase().includes(q)) ||
-            p.category.toLowerCase().includes(q)
-        );
-    }, [parts, partSearchQuery]);
+        return parts.filter(p => {
+            const supplier = suppliers.find(s => s.id === p.supplierId);
+            return (
+                p.name.toLowerCase().includes(q) ||
+                (p.sku && p.sku.toLowerCase().includes(q)) ||
+                (p.rackCode && p.rackCode.toLowerCase().includes(q)) ||
+                (p.shelfLevel && p.shelfLevel.toLowerCase().includes(q)) ||
+                (p.binNumber && p.binNumber.toLowerCase().includes(q)) ||
+                p.category.toLowerCase().includes(q) ||
+                (supplier && supplier.name.toLowerCase().includes(q))
+            );
+        });
+    }, [parts, suppliers, partSearchQuery]);
 
     const changePartQuantity = (partId: string, nextQuantity: number) => {
         const available = parts.find(part => part.id === partId)?.stock || 0;
@@ -1137,6 +1144,17 @@ export const POSForm: React.FC<POSFormProps> = ({
                                                         {partObj.rackCode} {partObj.shelfLevel ? `• ${partObj.shelfLevel}` : ''} {partObj.binNumber ? `(${partObj.binNumber})` : ''}
                           </span>
                                                 )}
+                                                {(() => {
+                                                    const supp = suppliers.find(s => s.id === partObj?.supplierId);
+                                                    if (!supp) return null;
+                                                    return (
+                                                        <span
+                                                            className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60 flex items-center gap-1">
+                            <Truck className="w-2.5 h-2.5 text-blue-600"/>
+                                                            {supp.name}
+                          </span>
+                                                    );
+                                                })()}
                                             </div>
                                             {p.hasProductWarranty && <p className="mt-1 text-[10px] font-bold text-emerald-700">Garansi Produk: {p.warrantyDurationDays || 0} hari{p.warrantyTerms ? ` · ${p.warrantyTerms}` : ''}</p>}
                                         </div>
@@ -1443,6 +1461,7 @@ export const POSForm: React.FC<POSFormProps> = ({
                                 {filteredPickerParts.map(part => {
                                     const loc = formatPartLocation(part);
                                     const isOutOfStock = part.stock <= 0;
+                                    const supplier = suppliers.find(s => s.id === part.supplierId);
                                     return (
                                         <button
                                             key={part.id}
@@ -1476,6 +1495,15 @@ export const POSForm: React.FC<POSFormProps> = ({
                               <MapPin className="w-3 h-3 text-amber-600 shrink-0"/>
                               <span>{loc}</span>
                             </span>
+
+                                                    {/* Supplier Badge */}
+                                                    {supplier && (
+                                                        <span
+                                                            className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/70 flex items-center gap-1">
+                              <Truck className="w-3 h-3 text-blue-600 shrink-0"/>
+                              <span>{supplier.name}</span>
+                            </span>
+                                                    )}
                                                 </div>
 
                                                 {part.locationNotes && (

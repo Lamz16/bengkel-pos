@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: implement soft delete and restore functionality for spare parts, add transaction draft management">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: implement POS state management with reset functionality and enhance transaction handling">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/POSForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/POSForm.tsx" afterDir="false" />
@@ -238,7 +238,8 @@
       <workItem from="1792567964027" duration="35000" />
       <workItem from="1793753786548" duration="2980000" />
       <workItem from="1794062938201" duration="641000" />
-      <workItem from="1794186785152" duration="5577000" />
+      <workItem from="1794186785152" duration="5962000" />
+      <workItem from="1794205517227" duration="1604000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -440,7 +441,15 @@
       <option name="project" value="LOCAL" />
       <updated>1794192970647</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="feat: implement POS state management with reset functionality and enhance transaction handling">
+      <option name="closed" value="true" />
+      <created>1794194848993</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1794194848993</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -481,6 +490,7 @@
     <MESSAGE value="feat: update workspace configuration for new launcher functionality and task management" />
     <MESSAGE value="feat: implement confirmation prompts for deletion actions and enhance error handling" />
     <MESSAGE value="feat: implement soft delete and restore functionality for spare parts, add transaction draft management" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: implement soft delete and restore functionality for spare parts, add transaction draft management" />
+    <MESSAGE value="feat: implement POS state management with reset functionality and enhance transaction handling" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: implement POS state management with reset functionality and enhance transaction handling" />
   </component>
 </project>
