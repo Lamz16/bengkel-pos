@@ -21,7 +21,8 @@ import {
   PartCategory,
   WarehouseRack,
   WarehouseZone,
-  StorageLocation, StorageLocationType
+  StorageLocation, StorageLocationType,
+  TransactionDraft
 } from '../types';
 
 export interface BootstrapResponse {
@@ -423,11 +424,38 @@ export const api = {
     await request(`/api/parts/${id}`, { method: 'DELETE' });
   },
 
+  async restorePart(id: string): Promise<SparePart> {
+    return request<SparePart>(`/api/parts/${id}/restore`, { method: 'POST' });
+  },
+
   async addPartStock(partId: string, amount: number, supplierId: string, costPrice: number): Promise<SparePart> {
     return request<SparePart>(`/api/parts/${partId}/stock`, {
       method: 'POST',
       body: JSON.stringify({ amount, supplierId, costPrice }),
     });
+  },
+
+  // Transaction Drafts
+  async getDrafts(): Promise<TransactionDraft[]> {
+    return request<TransactionDraft[]>('/api/drafts');
+  },
+  async getDraft(id: string): Promise<TransactionDraft> {
+    return request<TransactionDraft>(`/api/drafts/${id}`);
+  },
+  async createDraft(data: Partial<TransactionDraft>): Promise<TransactionDraft> {
+    return request<TransactionDraft>('/api/drafts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  async updateDraft(id: string, data: Partial<TransactionDraft>): Promise<TransactionDraft> {
+    return request<TransactionDraft>(`/api/drafts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  async deleteDraft(id: string): Promise<void> {
+    await request(`/api/drafts/${id}`, { method: 'DELETE' });
   },
 
   // Services

@@ -18,6 +18,7 @@ const toSparePart = (p: PartWithMasterData): SparePart => ({
   shelfLevel: p.shelfLevel || undefined, binNumber: p.binNumber || undefined,
   rackLocation: p.rack?.code || undefined, rackZone: p.rack?.zone?.name || undefined,
   locationNotes: p.locationNotes || undefined, version: p.version || 1, lastUpdated: p.updatedAt ? p.updatedAt.toISOString() : new Date().toISOString(),
+  isActive: p.isActive ?? true,
 });
 
 export class PartRepository implements IPartRepository {
@@ -210,6 +211,7 @@ export class PartRepository implements IPartRepository {
           warrantyDurationDays: data.hasProductWarranty === false ? 0 : data.warrantyDurationDays,
           warrantyTerms: data.hasProductWarranty === false ? null : data.warrantyTerms,
           supplierId: data.supplierId, imageUrl: data.imageUrl,
+          isActive: data.isActive !== undefined ? data.isActive : undefined,
           rackId: locationWasProvided ? (masterIds?.rackId || null) : undefined,
           shelfLevel: locationWasProvided ? (data.shelfLevel || null) : undefined,
           binNumber: locationWasProvided ? (data.binNumber || null) : undefined,
@@ -243,11 +245,23 @@ export class PartRepository implements IPartRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    if (!isDbConnected()) throw new Error('Database tidak tersedia.');
-    await prisma.$transaction(tx => deleteUnusedPart(tx, id), { isolationLevel: 'Serializable' });
-    memoryStore.purchases = memoryStore.purchases.filter(p => p.partId !== id);
-    memoryStore.parts = memoryStore.parts.filter(p => p.id !== id);
-    return true;
+    if (isDbConnected()) {
+      const updated = await prisma.sparePart.update({
+        where: { id },
+        data: { isActive: false, version: { increment: 1 } },
+        include: includeMasterData,
+      });
+      const part = toSparePart(updated);
+      const index = memoryStore.parts.findIndex(p => p.id === id);
+      if (index >= 0) memoryStore.parts[index] = part;
+      return true;
+    }
+    const index = memoryStore.parts.findIndex(p => p.id === id);
+    if (index >= 0) {
+      memoryStore.parts[index] = { ...memoryStore.parts[index], isActive: false };
+      return true;
+    }
+    return false;
   }
 
   async adjustStock(id: string, delta: number, newPurchasePrice?: number): Promise<SparePart | null> {

@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, ExpenseCategory, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone, ServiceQueue } from './types';
+import { WorkshopService, User, CompanySettings, SparePart, ServiceStatus, Customer, Vehicle, Expense, ExpenseCategory, Supplier, PurchaseRecord, Mechanic, MechanicDeduction, MechanicAttendance, DistributorInvoice, PartCategory, WarehouseRack, WarehouseZone, ServiceQueue, TransactionDraft } from './types';
 
 // UI and Feature Components
 import { Modal } from './components/Modal';
@@ -48,6 +48,7 @@ import { ActivityLogView } from './components/ActivityLogView';
 import { ReceivablesView } from './components/ReceivablesView';
 import { ServiceQueueView } from './components/ServiceQueueView';
 import { CompletedTransactionsReportView } from './components/CompletedTransactionsReportView';
+import { DraftTransactionsModal } from './components/DraftTransactionsModal';
 
 // Modular Form Components
 import { StaffForm } from './components/forms/StaffForm';
@@ -85,6 +86,9 @@ export default function AppLayout() {
   const [activeTab, setActiveTab] = useState<string>(() => window.location.pathname === '/log' ? 'logs' : 'dashboard');
   const [showPOSForm, setShowPOSForm] = useState(false);
   const [editingService, setEditingService] = useState<WorkshopService | null>(null);
+  const [activeDraft, setActiveDraft] = useState<TransactionDraft | null>(null);
+  const [drafts, setDrafts] = useState<TransactionDraft[]>([]);
+  const [showDraftsModal, setShowDraftsModal] = useState(false);
   const [originQueueId, setOriginQueueId] = useState<string | undefined>();
   const [saleCart, setSaleCart] = useState<Array<{ partId: string; quantity: number }>>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -262,9 +266,9 @@ export default function AppLayout() {
     }
   };
 
-  // Low stock calculation for badges and global alerts
+  // Low stock calculation for badges and global alerts (hanya barang aktif)
   const lowStockCount = useMemo(() => {
-    return parts.filter(p => p.stock <= p.minStock).length;
+    return parts.filter(p => p.isActive !== false && p.stock <= p.minStock).length;
   }, [parts]);
 
   // Distributor Invoices (Nota Tempo) State
@@ -328,6 +332,9 @@ export default function AppLayout() {
         setMasterZones(data.zones ?? []);
         setExpenseCategories(loadedExpenseCategories ?? []);
         setPostgresConnected(data.postgresConnected);
+        api.getDrafts().then(draftList => {
+          if (isMounted) setDrafts(draftList ?? []);
+        }).catch(() => {});
       } catch (err) {
         if (!isMounted) return;
         const message = err instanceof Error ? err.message : 'Gagal memuat data dari server.';
@@ -428,6 +435,17 @@ export default function AppLayout() {
       setCustomers(updatedCustomers);
       setShowPOSForm(false);
       setOriginQueueId(undefined);
+
+      if (activeDraft) {
+        try {
+          await api.deleteDraft(activeDraft.id);
+          setDrafts(prev => prev.filter(d => d.id !== activeDraft.id));
+          setActiveDraft(null);
+        } catch (e) {
+          console.error('Failed to clear draft after service creation:', e);
+        }
+      }
+
       // Transaksi servis/repair belum menampilkan nota saat order baru dibuat.
       // Nota penjualan langsung tetap ditampilkan segera setelah transaksi berhasil.
       if (savedService.receiptType === 'SALE') {
@@ -449,12 +467,119 @@ export default function AppLayout() {
       setCustomers(updatedCustomers);
       setShowPOSForm(false);
       setEditingService(null);
+
+      if (activeDraft) {
+        try {
+          await api.deleteDraft(activeDraft.id);
+          setDrafts(prev => prev.filter(d => d.id !== activeDraft.id));
+          setActiveDraft(null);
+        } catch (e) {
+          console.error('Failed to clear draft after service update:', e);
+        }
+      }
+
       setSelectedInvoiceId(updated.id);
       setActiveTab('pos');
     } catch (err) {
       console.error('Error updating service:', err);
       alert(err instanceof Error ? err.message : 'Transaksi gagal diperbarui.');
     }
+  };
+
+  const handleSaveDraft = async (draftData: Partial<TransactionDraft>) => {
+    try {
+      if (activeDraft?.id) {
+        const updated = await api.updateDraft(activeDraft.id, draftData);
+        setDrafts(prev => prev.map(d => d.id === updated.id ? updated : d));
+        alert(`Draft transaksi ${updated.draftCode} berhasil diperbarui.`);
+      } else {
+        const created = await api.createDraft(draftData);
+        setDrafts(prev => [created, ...prev]);
+        alert(`Transaksi berhasil disimpan sebagai draft (${created.draftCode}).`);
+      }
+      setActiveDraft(null);
+      setEditingService(null);
+      setOriginQueueId(undefined);
+      setShowPOSForm(false);
+    } catch (err) {
+      console.error('Failed to save transaction draft:', err);
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan draft transaksi.');
+    }
+  };
+
+  const handleDeleteDraft = async (id: string) => {
+    if (!window.confirm('Hapus draft transaksi ini?')) return;
+    try {
+      await api.deleteDraft(id);
+      setDrafts(prev => prev.filter(d => d.id !== id));
+      if (activeDraft?.id === id) {
+        setActiveDraft(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete transaction draft:', err);
+      alert(err instanceof Error ? err.message : 'Gagal menghapus draft transaksi.');
+    }
+  };
+
+  const handleResumeDraft = (draft: TransactionDraft) => {
+    const partsUsed = (draft.itemsPayload?.partsUsed || []).map(p => ({
+      partId: p.partId || '',
+      name: p.name,
+      quantity: p.quantity,
+      priceAtTime: p.priceAtTime,
+      normalPriceAtTime: p.normalPriceAtTime,
+      purchasePriceAtTime: p.purchasePriceAtTime,
+      hasProductWarranty: p.hasProductWarranty,
+      warrantyDurationDays: p.warrantyDurationDays,
+      warrantyTerms: p.warrantyTerms,
+      wholesaleType: (p.wholesaleType === 'percent' || p.wholesaleType === 'nominal' || p.wholesaleType === 'unit_price') ? p.wholesaleType : undefined,
+      wholesaleValue: p.wholesaleValue,
+      wholesaleUnitPrice: p.wholesaleUnitPrice,
+    }));
+
+    const rawServiceItems = draft.itemsPayload?.serviceItems || [];
+    const serviceItems = rawServiceItems.length > 0
+      ? rawServiceItems.map(s => ({
+          name: s.name,
+          price: s.price,
+        }))
+      : (draft.laborFee > 0 ? [{ name: 'Jasa Servis', price: draft.laborFee }] : []);
+
+    const resumedService: WorkshopService = {
+      id: '',
+      customerId: draft.customerId || '',
+      customerName: draft.customerName,
+      customerPhone: draft.customerPhone || '',
+      vehicleId: draft.vehicleId || '',
+      vehiclePlate: draft.vehiclePlate || '',
+      vehicleModel: draft.vehicleModel || '',
+      kilometers: draft.kilometers || 0,
+      complaint: draft.complaint || '',
+      diagnosis: draft.diagnosis || draft.note || '',
+      status: 'In Progress',
+      createdAt: new Date().toISOString(),
+      partsUsed,
+      serviceItems,
+      laborFee: draft.laborFee || 0,
+      totalAmount: draft.totalAmount || 0,
+      discountAmount: draft.discountAmount || 0,
+      discountReason: draft.discountReason || '',
+      paymentStatus: 'Unpaid',
+      mechanicId: draft.mechanicId,
+      mechanicName: draft.mechanicName,
+      mechanicBonusPercent: draft.mechanicBonusPercent,
+      receiptType: draft.receiptType,
+      originQueueId: draft.originQueueId,
+    };
+
+    setActiveDraft(draft);
+    setEditingService(resumedService);
+    if (draft.originQueueId) {
+      setOriginQueueId(draft.originQueueId);
+    }
+    setActiveTab('pos');
+    setShowDraftsModal(false);
+    setShowPOSForm(true);
   };
 
   const handleUpdateStatus = async (id: string, newStatus: ServiceStatus) => {
@@ -513,10 +638,19 @@ export default function AppLayout() {
   const handleDeletePart = async (id: string) => {
     try {
       await api.deletePart(id);
-      setPurchases(prev => prev.filter(p => p.partId !== id));
-      setParts(prev => prev.filter(x => x.id !== id));
+      setParts(prev => prev.map(p => p.id === id ? { ...p, isActive: false } : p));
     } catch (err) {
-      console.error('Failed to delete part:', err);
+      console.error('Failed to soft delete part:', err);
+      throw err;
+    }
+  };
+
+  const handleRestorePart = async (id: string) => {
+    try {
+      const updated = await api.restorePart(id);
+      setParts(prev => prev.map(p => p.id === id ? updated : p));
+    } catch (err) {
+      console.error('Failed to restore part:', err);
       throw err;
     }
   };
@@ -810,12 +944,17 @@ export default function AppLayout() {
           dbStatus={{ connected: postgresConnected, orm: 'prisma' }}
           printerStatus={{ ready: typeof window !== 'undefined' && typeof window.print === 'function' }}
           lowStockCount={lowStockCount}
+          draftCount={drafts.length}
+          onOpenDraftsModal={() => setShowDraftsModal(true)}
           onOpenLowStockModal={() => setShowLowStockModal(true)}
           onOpenMobileMenu={() => setIsSidebarOpen(true)}
           theme={theme}
           onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
-          onClosePOSForm={() => setShowPOSForm(false)}
-          onOpenPOSForm={() => { setEditingService(null); setOriginQueueId(undefined); setShowPOSForm(true); }}
+          onClosePOSForm={() => {
+            setShowPOSForm(false);
+            setActiveDraft(null);
+          }}
+          onOpenPOSForm={() => { setEditingService(null); setActiveDraft(null); setOriginQueueId(undefined); setShowPOSForm(true); }}
         />
 
         {/* Scrollable Viewport */}
@@ -896,6 +1035,7 @@ export default function AppLayout() {
                     onClick={() => {
                       setShowPOSForm(false);
                       setEditingService(null);
+                      setActiveDraft(null);
                       setOriginQueueId(undefined);
                       setPosInitialCustomer(null);
                       setPosInitialPromoPercent(null);
@@ -905,9 +1045,10 @@ export default function AppLayout() {
                   >
                     <X className="w-5 h-5" />
                   </button>
-                  <h2 className="text-xl font-black text-slate-900">{editingService ? 'Edit Transaksi' : 'New Transaction'}</h2>
+                  <h2 className="text-xl font-black text-slate-900">{editingService ? (activeDraft ? `Lanjutkan Draft: ${activeDraft.draftCode}` : 'Edit Transaksi') : 'New Transaction'}</h2>
                 </div>
                 <POSForm 
+                  key={activeDraft ? `draft-${activeDraft.id}` : (editingService?.id ? `service-${editingService.id}` : 'pos-form-fresh')}
                   onSave={(service) => {
                     if (editingService?.id) handleEditService(service); else handleNewService(service);
                     setPosInitialCustomer(null);
@@ -926,6 +1067,14 @@ export default function AppLayout() {
                   initialCart={saleCart}
                   initialService={editingService}
                   originQueueId={originQueueId}
+                  drafts={drafts}
+                  activeDraft={activeDraft}
+                  onSaveDraft={handleSaveDraft}
+                  onOpenDraftsModal={() => setShowDraftsModal(true)}
+                  onClearActiveDraft={() => {
+                    setActiveDraft(null);
+                    setEditingService(null);
+                  }}
                 />
               </motion.div>
             )}
@@ -979,6 +1128,7 @@ export default function AppLayout() {
                   }}
                   onEdit={(p) => setEditingPart(p)}
                   onDelete={handleDeletePart}
+                  onRestore={handleRestorePart}
                   onOpenLowStockModal={() => setShowLowStockModal(true)}
                   onOpenMasterDataModal={() => setShowMasterDataModal(true)}
                   onCheckoutCart={(items) => { setEditingService(null); setSaleCart(items); setShowPOSForm(true); }}
@@ -1268,6 +1418,14 @@ export default function AppLayout() {
               onClose={() => setSelectedInvoiceId(null)}
             />
           )}
+
+          <DraftTransactionsModal
+            isOpen={showDraftsModal}
+            onClose={() => setShowDraftsModal(false)}
+            drafts={drafts}
+            onResumeDraft={handleResumeDraft}
+            onDeleteDraft={handleDeleteDraft}
+          />
         </AnimatePresence>
       </main>
     </div>

@@ -15,9 +15,12 @@ import {
     Check,
     Percent,
     MapPin,
-    Hash
+    Hash,
+    FileClock,
+    Clock,
+    CheckCircle2
 } from 'lucide-react';
-import {WorkshopService, SparePart, Customer, Vehicle, Mechanic, CompanySettings} from '../types';
+import {WorkshopService, SparePart, Customer, Vehicle, Mechanic, CompanySettings, TransactionDraft} from '../types';
 import {CurrencyInput} from './CurrencyInput';
 import {getAIDiagnosis} from '../services/geminiService';
 import {getCustomerLoyaltyStats, getActiveLoyaltyTiers} from '../utils/loyalty';
@@ -40,6 +43,11 @@ interface POSFormProps {
     initialCart?: Array<{ partId: string; quantity: number }>;
     initialService?: WorkshopService | null;
     originQueueId?: string;
+    drafts?: TransactionDraft[];
+    onSaveDraft?: (draft: Partial<TransactionDraft>) => Promise<void>;
+    onOpenDraftsModal?: () => void;
+    activeDraft?: TransactionDraft | null;
+    onClearActiveDraft?: () => void;
 }
 
 export const POSForm: React.FC<POSFormProps> = ({
@@ -56,20 +64,42 @@ export const POSForm: React.FC<POSFormProps> = ({
                                                     onAddVehicle,
                                                     initialCart,
                                                     initialService,
-                                                    originQueueId
+                                                    originQueueId,
+                                                    drafts = [],
+                                                    onSaveDraft,
+                                                    onOpenDraftsModal,
+                                                    activeDraft,
+                                                    onClearActiveDraft
                                                 }) => {
     const activeMechanics = useMemo(() => mechanics.filter(m => m.status === 'Active'), [mechanics]);
     const defaultMec = activeMechanics[0] || mechanics[0];
 
-    const [formData, setFormData] = useState({
-        customerId: initialService?.customerId || (initialCustomer ? initialCustomer.id : ''),
-        customerName: initialService?.customerName || (initialCustomer ? initialCustomer.name : ''),
-        customerPhone: initialService?.customerPhone || (initialCustomer ? initialCustomer.phone : ''),
-        vehicleId: initialService?.vehicleId || '', vehiclePlate: initialService?.vehiclePlate || '', vehicleModel: initialService?.vehicleModel || '',
-        km: initialService ? String(initialService.kilometers || '') : '', complaint: initialService?.complaint || '', laborFee: '0',
-        type: initialService?.receiptType === 'SALE' ? 'Retail' as const : 'Service' as const,
-        mechanicId: initialService?.mechanicId || (defaultMec ? defaultMec.id : ''), mechanicName: initialService?.mechanicName || (defaultMec ? defaultMec.name : ''), mechanicBonusPercent: initialService?.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
-        serviceWarrantyDurationDays: String(initialService?.serviceWarrantyDurationDays ?? ''), serviceWarrantyTerms: initialService?.serviceWarrantyTermsSnapshot || '', saleWarrantyDurationDays: String(initialService?.saleWarrantyDurationDays ?? ''), saleWarrantyTerms: initialService?.saleWarrantyTermsSnapshot || '', paymentStatus: initialService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Partial' | 'Paid', paymentDueDate: initialService?.paymentDueDate ? initialService.paymentDueDate.slice(0, 10) : ''
+    const [formData, setFormData] = useState(() => {
+        const sourceDraft = activeDraft;
+        const sourceService = initialService;
+        return {
+            customerId: sourceDraft?.customerId || sourceService?.customerId || (initialCustomer ? initialCustomer.id : ''),
+            customerName: sourceDraft?.customerName || sourceService?.customerName || (initialCustomer ? initialCustomer.name : ''),
+            customerPhone: sourceDraft?.customerPhone || sourceService?.customerPhone || (initialCustomer ? initialCustomer.phone : ''),
+            vehicleId: sourceDraft?.vehicleId || sourceService?.vehicleId || '',
+            vehiclePlate: sourceDraft?.vehiclePlate || sourceService?.vehiclePlate || '',
+            vehicleModel: sourceDraft?.vehicleModel || sourceService?.vehicleModel || '',
+            km: sourceDraft?.kilometers != null && sourceDraft.kilometers > 0 
+                ? String(sourceDraft.kilometers) 
+                : (sourceService ? String(sourceService.kilometers || '') : ''),
+            complaint: sourceDraft?.complaint || sourceService?.complaint || '',
+            laborFee: String(sourceDraft?.laborFee ?? sourceService?.laborFee ?? '0'),
+            type: (sourceDraft?.receiptType === 'SALE' || sourceService?.receiptType === 'SALE') ? 'Retail' as const : 'Service' as const,
+            mechanicId: sourceDraft?.mechanicId || sourceService?.mechanicId || (defaultMec ? defaultMec.id : ''),
+            mechanicName: sourceDraft?.mechanicName || sourceService?.mechanicName || (defaultMec ? defaultMec.name : ''),
+            mechanicBonusPercent: sourceDraft?.mechanicBonusPercent ?? sourceService?.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
+            serviceWarrantyDurationDays: String(sourceService?.serviceWarrantyDurationDays ?? ''),
+            serviceWarrantyTerms: sourceService?.serviceWarrantyTermsSnapshot || '',
+            saleWarrantyDurationDays: String(sourceService?.saleWarrantyDurationDays ?? ''),
+            saleWarrantyTerms: sourceService?.saleWarrantyTermsSnapshot || '',
+            paymentStatus: sourceService?.paymentStatus || 'Unpaid' as 'Unpaid' | 'Partial' | 'Paid',
+            paymentDueDate: sourceService?.paymentDueDate ? sourceService.paymentDueDate.slice(0, 10) : ''
+        };
     });
     const [initialPaymentMethod, setInitialPaymentMethod] = useState<'Cash' | 'Transfer' | 'QRIS'>('Cash');
     const [initialPaymentAmount, setInitialPaymentAmount] = useState('');
@@ -91,11 +121,46 @@ export const POSForm: React.FC<POSFormProps> = ({
         productWarrantyOverride?: boolean;
         warrantyDurationDays?: number;
         warrantyTerms?: string
-    }>>(initialService?.partsUsed || []);
+    }>>(() => {
+        if (activeDraft?.itemsPayload?.partsUsed?.length) {
+            return activeDraft.itemsPayload.partsUsed.map(p => ({
+                partId: p.partId || '',
+                name: p.name,
+                quantity: p.quantity,
+                priceAtTime: p.priceAtTime,
+                normalPriceAtTime: p.normalPriceAtTime,
+                wholesaleType: p.wholesaleType,
+                wholesaleValue: p.wholesaleValue,
+                wholesaleUnitPrice: p.wholesaleUnitPrice,
+                purchasePriceAtTime: p.purchasePriceAtTime,
+                hasProductWarranty: p.hasProductWarranty,
+                warrantyDurationDays: p.warrantyDurationDays,
+                warrantyTerms: p.warrantyTerms
+            }));
+        }
+        return initialService?.partsUsed || [];
+    });
     const [wholesalePartId, setWholesalePartId] = useState<string | null>(null);
     const [itemWholesaleType, setItemWholesaleType] = useState<'percent' | 'nominal' | 'unit_price'>('percent');
     const [itemWholesaleValue, setItemWholesaleValue] = useState('');
-    const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>(initialService?.serviceItems?.length ? initialService.serviceItems.map(item => ({ name: item.name, price: String(item.price) })) : [{name: '', price: ''}]);
+    const [serviceItems, setServiceItems] = useState<Array<{ name: string; price: string }>>(() => {
+        if (activeDraft?.itemsPayload?.serviceItems?.length) {
+            return activeDraft.itemsPayload.serviceItems.map(s => ({
+                name: s.name,
+                price: String(s.price)
+            }));
+        }
+        if (activeDraft && activeDraft.laborFee > 0) {
+            return [{ name: 'Jasa Servis', price: String(activeDraft.laborFee) }];
+        }
+        if (initialService?.serviceItems?.length) {
+            return initialService.serviceItems.map(item => ({
+                name: item.name,
+                price: String(item.price)
+            }));
+        }
+        return [{ name: '', price: '' }];
+    });
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [, setDiagnosis] = useState('');
     const [showPartPicker, setShowPartPicker] = useState(false);
@@ -105,10 +170,12 @@ export const POSForm: React.FC<POSFormProps> = ({
     const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
     // Customer Loyalty Discount & Promo States
-    const [discountAmount, setDiscountAmount] = useState<number>(initialService?.discountAmount || 0);
+    const [discountAmount, setDiscountAmount] = useState<number>(
+        activeDraft?.discountAmount ?? initialService?.discountAmount ?? 0
+    );
     const [discountPercent, setDiscountPercent] = useState<number | null>(initialPromoPercent || null);
     const [discountReason, setDiscountReason] = useState<string>(
-        initialService?.discountReason || (initialPromoPercent ? `Promo Pelanggan Setia (${initialPromoPercent}%)` : '')
+        activeDraft?.discountReason || initialService?.discountReason || (initialPromoPercent ? `Promo Pelanggan Setia (${initialPromoPercent}%)` : '')
     );
     const [showCustomDiscount, setShowCustomDiscount] = useState<boolean>(false);
     const [customDiscountValue, setCustomDiscountValue] = useState<string>('');
@@ -116,6 +183,102 @@ export const POSForm: React.FC<POSFormProps> = ({
     const [isWholesaleOpen, setIsWholesaleOpen] = useState(false);
     const [wholesaleValue, setWholesaleValue] = useState('');
     const [wholesaleType, setWholesaleType] = useState<'percent' | 'nominal'>('percent');
+
+    // Sync state when activeDraft or initialService changes
+    useEffect(() => {
+        if (activeDraft) {
+            setFormData({
+                customerId: activeDraft.customerId || '',
+                customerName: activeDraft.customerName || '',
+                customerPhone: activeDraft.customerPhone || '',
+                vehicleId: activeDraft.vehicleId || '',
+                vehiclePlate: activeDraft.vehiclePlate || '',
+                vehicleModel: activeDraft.vehicleModel || '',
+                km: activeDraft.kilometers != null && activeDraft.kilometers > 0 ? String(activeDraft.kilometers) : '',
+                complaint: activeDraft.complaint || '',
+                laborFee: String(activeDraft.laborFee || 0),
+                type: activeDraft.receiptType === 'SALE' ? 'Retail' : 'Service',
+                mechanicId: activeDraft.mechanicId || (defaultMec ? defaultMec.id : ''),
+                mechanicName: activeDraft.mechanicName || (defaultMec ? defaultMec.name : ''),
+                mechanicBonusPercent: activeDraft.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
+                serviceWarrantyDurationDays: '',
+                serviceWarrantyTerms: '',
+                saleWarrantyDurationDays: '',
+                saleWarrantyTerms: '',
+                paymentStatus: 'Unpaid',
+                paymentDueDate: ''
+            });
+
+            if (activeDraft.itemsPayload?.partsUsed?.length) {
+                setUsedParts(activeDraft.itemsPayload.partsUsed.map(p => ({
+                    partId: p.partId || '',
+                    name: p.name,
+                    quantity: p.quantity,
+                    priceAtTime: p.priceAtTime,
+                    normalPriceAtTime: p.normalPriceAtTime,
+                    wholesaleType: p.wholesaleType,
+                    wholesaleValue: p.wholesaleValue,
+                    wholesaleUnitPrice: p.wholesaleUnitPrice,
+                    purchasePriceAtTime: p.purchasePriceAtTime,
+                    hasProductWarranty: p.hasProductWarranty,
+                    warrantyDurationDays: p.warrantyDurationDays,
+                    warrantyTerms: p.warrantyTerms
+                })));
+            } else {
+                setUsedParts([]);
+            }
+
+            if (activeDraft.itemsPayload?.serviceItems?.length) {
+                setServiceItems(activeDraft.itemsPayload.serviceItems.map(s => ({
+                    name: s.name,
+                    price: String(s.price)
+                })));
+            } else if (activeDraft.laborFee > 0) {
+                setServiceItems([{ name: 'Jasa Servis', price: String(activeDraft.laborFee) }]);
+            } else {
+                setServiceItems([{ name: '', price: '' }]);
+            }
+
+            setDiscountAmount(activeDraft.discountAmount || 0);
+            setDiscountReason(activeDraft.discountReason || '');
+            setTransactionWarrantyEnabled(false);
+            if (activeDraft.diagnosis) {
+                setDiagnosis(activeDraft.diagnosis);
+            }
+        } else if (initialService) {
+            setFormData({
+                customerId: initialService.customerId || '',
+                customerName: initialService.customerName || '',
+                customerPhone: initialService.customerPhone || '',
+                vehicleId: initialService.vehicleId || '',
+                vehiclePlate: initialService.vehiclePlate || '',
+                vehicleModel: initialService.vehicleModel || '',
+                km: initialService.kilometers != null && initialService.kilometers > 0 ? String(initialService.kilometers) : '',
+                complaint: initialService.complaint || '',
+                laborFee: String(initialService.laborFee || 0),
+                type: initialService.receiptType === 'SALE' ? 'Retail' : 'Service',
+                mechanicId: initialService.mechanicId || (defaultMec ? defaultMec.id : ''),
+                mechanicName: initialService.mechanicName || (defaultMec ? defaultMec.name : ''),
+                mechanicBonusPercent: initialService.mechanicBonusPercent ?? (defaultMec ? defaultMec.defaultBonusPercent : 15),
+                serviceWarrantyDurationDays: String(initialService.serviceWarrantyDurationDays ?? ''),
+                serviceWarrantyTerms: initialService.serviceWarrantyTermsSnapshot || '',
+                saleWarrantyDurationDays: String(initialService.saleWarrantyDurationDays ?? ''),
+                saleWarrantyTerms: initialService.saleWarrantyTermsSnapshot || '',
+                paymentStatus: initialService.paymentStatus || 'Unpaid',
+                paymentDueDate: initialService.paymentDueDate ? initialService.paymentDueDate.slice(0, 10) : ''
+            });
+
+            setUsedParts(initialService.partsUsed || []);
+            setServiceItems(initialService.serviceItems?.length 
+                ? initialService.serviceItems.map(s => ({ name: s.name, price: String(s.price) })) 
+                : [{ name: '', price: '' }]);
+            setDiscountAmount(initialService.discountAmount || 0);
+            setDiscountReason(initialService.discountReason || '');
+            setTransactionWarrantyEnabled(
+                initialService.receiptType === 'SALE' ? !!initialService.saleWarrantyEnabled : !!initialService.serviceWarrantyEnabled
+            );
+        }
+    }, [activeDraft, initialService, defaultMec]);
 
     // Customer matching for Loyalty Tracking
     const matchedCustomer = useMemo(() => {
@@ -336,8 +499,156 @@ export const POSForm: React.FC<POSFormProps> = ({
         }
     };
 
+    const [savingDraft, setSavingDraft] = useState(false);
+
+    const handleSaveDraftClick = async () => {
+        if (!formData.customerName?.trim() && usedParts.length === 0 && serviceItems.length === 0) {
+            alert('Mohon isi nama pelanggan atau masukkan minimal satu barang / jasa sebelum menyimpan draft.');
+            return;
+        }
+
+        setSavingDraft(true);
+        try {
+            const draftData: Partial<TransactionDraft> = {
+                id: activeDraft?.id,
+                draftCode: activeDraft?.draftCode,
+                receiptType: formData.type === 'Retail' ? 'SALE' : 'SERVICE',
+                customerName: formData.customerName?.trim() || 'Pelanggan Umum',
+                customerPhone: formData.customerPhone?.trim() || undefined,
+                customerId: formData.customerId || undefined,
+                vehiclePlate: formData.vehiclePlate?.trim() || (formData.type === 'Retail' ? 'RETAIL' : undefined),
+                vehicleModel: formData.vehicleModel?.trim() || (formData.type === 'Retail' ? 'Direct Sale' : undefined),
+                vehicleId: formData.vehicleId || undefined,
+                kilometers: Number(formData.km || 0),
+                complaint: formData.complaint?.trim() || undefined,
+                diagnosis: formData.diagnosis?.trim() || undefined,
+                laborFee: formData.type === 'Retail' ? 0 : laborFeeNum,
+                totalAmount: grandTotal,
+                discountAmount: discountAmount > 0 ? discountAmount : 0,
+                discountReason: discountAmount > 0 ? discountReason : undefined,
+                mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
+                mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),
+                mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
+                originQueueId: originQueueId || undefined,
+                itemsPayload: {
+                    partsUsed: usedParts,
+                    serviceItems: formData.type === 'Retail' ? [] : serviceItems.filter(s => s.name?.trim()),
+                },
+            };
+
+            if (onSaveDraft) {
+                await onSaveDraft(draftData);
+            }
+        } finally {
+            setSavingDraft(false);
+        }
+    };
+
+    const handleSubmitTransaction = () => {
+        const initialPaid = formData.paymentStatus === 'Paid' ? grandTotal : Number(initialPaymentAmount || 0);
+        const warrantyDays = Number(formData.type === 'Retail' ? formData.saleWarrantyDurationDays : formData.serviceWarrantyDurationDays);
+        if (formData.paymentStatus === 'Partial' && (!initialPaid || initialPaid >= grandTotal)) {
+            return alert('Nominal uang muka harus lebih besar dari nol dan kurang dari total tagihan.');
+        }
+        if (transactionWarrantyEnabled && warrantyDays < 1) {
+            return alert('Isi durasi garansi minimal satu hari atau nonaktifkan garansi.');
+        }
+
+        onSave({
+            // New IDs are generated atomically by the backend; only an edit retains its existing ID.
+            id: initialService?.id || '',
+            customerId: formData.customerId,
+            customerName: formData.customerName,
+            customerPhone: formData.customerPhone || undefined,
+            vehicleId: formData.vehicleId,
+            vehiclePlate: formData.vehiclePlate || 'RETAIL',
+            vehicleModel: formData.vehicleModel || 'Direct Sale',
+            kilometers: Number(formData.km || 0),
+            complaint: formData.complaint,
+            status: initialService?.status || (formData.type === 'Retail' ? 'Done' : 'In Progress'),
+            createdAt: initialService?.createdAt || new Date().toISOString(),
+            partsUsed: usedParts,
+            serviceItems: formData.type === 'Retail' ? [] : serviceItems.map(item => ({
+                name: item.name.trim(),
+                price: Number(item.price || 0)
+            })).filter(item => item.name),
+            laborFee: formData.type === 'Retail' ? 0 : laborFeeNum,
+            totalAmount: grandTotal,
+            discountAmount: discountAmount > 0 ? discountAmount : undefined,
+            discountReason: discountAmount > 0 ? discountReason : undefined,
+            paymentStatus: formData.paymentStatus,
+            paymentDueDate: formData.paymentDueDate ? new Date(`${formData.paymentDueDate}T23:59:59`).toISOString() : new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
+            payments: initialPaid > 0 ? [{ amount: initialPaid, paymentMethod: initialPaymentMethod, paymentDate: new Date().toISOString() }] : [],
+            mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
+            mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),
+            mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
+            mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100),
+            receiptType: formData.type === 'Retail' ? 'SALE' : 'SERVICE',
+            saleWarrantyEnabled: formData.type === 'Retail' && transactionWarrantyEnabled,
+            saleWarrantyDurationDays: formData.type === 'Retail' && transactionWarrantyEnabled ? Number(formData.saleWarrantyDurationDays || 0) : 0,
+            saleWarrantyTermsSnapshot: formData.type === 'Retail' && transactionWarrantyEnabled ? formData.saleWarrantyTerms.trim() || undefined : undefined,
+            serviceWarrantyEnabled: formData.type !== 'Retail' && transactionWarrantyEnabled,
+            serviceWarrantyDurationDays: formData.type !== 'Retail' && transactionWarrantyEnabled ? Number(formData.serviceWarrantyDurationDays || 0) : 0,
+            serviceWarrantyTermsSnapshot: formData.type !== 'Retail' && transactionWarrantyEnabled ? formData.serviceWarrantyTerms.trim() || undefined : undefined,
+            version: initialService?.version,
+            originQueueId
+        });
+    };
+
     return (
         <div className="space-y-6 pb-20">
+            {/* Draft Actions & Status Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl shadow-2xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                        <FileClock className="w-4 h-4 text-amber-500" />
+                        Kasir POS
+                    </span>
+                    {activeDraft ? (
+                        <div className="flex items-center gap-1.5 bg-amber-100 border border-amber-300 text-amber-900 px-2.5 py-1 rounded-xl text-xs font-bold">
+                            <span>Melanjutkan Draft: <strong>{activeDraft.draftCode}</strong> ({activeDraft.customerName})</span>
+                            {onClearActiveDraft && (
+                                <button
+                                    type="button"
+                                    onClick={onClearActiveDraft}
+                                    className="ml-1 text-[10px] font-black underline hover:text-amber-950"
+                                >
+                                    Batal
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                            Parkir transaksi sementara kapan saja agar antrean tetap lancar
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {onOpenDraftsModal && (
+                        <button
+                            type="button"
+                            onClick={onOpenDraftsModal}
+                            className="px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
+                        >
+                            <Clock className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Daftar Draft ({drafts.length})</span>
+                        </button>
+                    )}
+                    {onSaveDraft && (
+                        <button
+                            type="button"
+                            disabled={savingDraft}
+                            onClick={handleSaveDraftClick}
+                            className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50"
+                            title="Simpan sementara transaksi ini"
+                        >
+                            <FileClock className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{savingDraft ? 'Menyimpan...' : (activeDraft ? 'Perbarui Draft' : 'Simpan Draft')}</span>
+                        </button>
+                    )}
+                </div>
+            </div>
             <div className="p-1 bg-slate-100 rounded-2xl flex gap-1">
                 {(['Service', 'Retail'] as const).map((t) => (
                     <button
@@ -971,63 +1282,83 @@ export const POSForm: React.FC<POSFormProps> = ({
                         {transactionWarrantyEnabled ? <div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><label className="text-[10px] font-bold text-emerald-800">Durasi (hari)<input type="number" min="1" value={formData.type === 'Retail' ? formData.saleWarrantyDurationDays : formData.serviceWarrantyDurationDays} onChange={event => setFormData(prev => formData.type === 'Retail' ? ({ ...prev, saleWarrantyDurationDays: event.target.value }) : ({ ...prev, serviceWarrantyDurationDays: event.target.value }))} className="mt-1 h-10 w-full rounded-xl border border-emerald-200 bg-white px-3 text-xs" /></label><label className="text-[10px] font-bold text-emerald-800">Ketentuan<input value={formData.type === 'Retail' ? formData.saleWarrantyTerms : formData.serviceWarrantyTerms} onChange={event => setFormData(prev => formData.type === 'Retail' ? ({ ...prev, saleWarrantyTerms: event.target.value }) : ({ ...prev, serviceWarrantyTerms: event.target.value }))} placeholder="Ketentuan garansi khusus transaksi" className="mt-1 h-10 w-full rounded-xl border border-emerald-200 bg-white px-3 text-xs" /></label></div> : <p className="text-[10px] text-emerald-800">Tidak ada garansi untuk transaksi ini.</p>}
                     </section>
 
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Tagihan</span>
-                            {discountAmount > 0 && (
-                                <span
-                                    className="text-[10px] font-bold text-emerald-600">Hemat Rp {discountAmount.toLocaleString()}</span>
+                    {/* Ringkasan Pembayaran & Action Buttons */}
+                    <div className="pt-2 space-y-4">
+                        {/* Total Tagihan Card */}
+                        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                                    Total Tagihan
+                                </span>
+                                {discountAmount > 0 ? (
+                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 mt-0.5">
+                                        <Tag className="w-3.5 h-3.5" /> Hemat Rp {discountAmount.toLocaleString()}
+                                    </span>
+                                ) : (
+                                    <span className="text-xs text-slate-400 font-medium mt-0.5 block">
+                                        {formData.type === 'Retail' ? 'Penjualan Langsung' : 'Servis & Suku Cadang'}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="text-right">
+                                <span className="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight block">
+                                    Rp {(grandTotal || 0).toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons: Submit Order / Complete Sale & Simpan Draft */}
+                        <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+                            {/* Tombol Utama (Submit Order / Complete Sale) */}
+                            <button
+                                type="button"
+                                disabled={!canSubmit}
+                                onClick={handleSubmitTransaction}
+                                className={cn(
+                                    "h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 px-6 disabled:grayscale disabled:opacity-40 disabled:cursor-not-allowed",
+                                    onSaveDraft ? "flex-1 sm:flex-[2.6]" : "w-full"
+                                )}
+                            >
+                                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                                <span>
+                                    {initialService?.id 
+                                        ? 'Simpan Perubahan Transaksi' 
+                                        : (formData.type === 'Retail' ? 'Complete Sale (Bayar)' : 'Submit Order (Proses Servis)')}
+                                </span>
+                            </button>
+
+                            {/* Tombol Sekunder (Simpan Draft) */}
+                            {onSaveDraft && (
+                                <button
+                                    type="button"
+                                    disabled={savingDraft}
+                                    onClick={handleSaveDraftClick}
+                                    className="h-14 flex-1 sm:flex-[1.2] bg-amber-50 hover:bg-amber-100 text-amber-900 border-2 border-amber-300 hover:border-amber-400 rounded-2xl font-bold text-xs shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 px-4 disabled:opacity-50"
+                                    title="Simpan sementara transaksi ini agar kasir bisa melayani antrean lain"
+                                >
+                                    <FileClock className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                                    <div className="text-left leading-tight">
+                                        <span className="block font-black text-xs text-amber-900">
+                                            {savingDraft ? 'Menyimpan...' : (activeDraft ? 'Perbarui Draft' : 'Simpan Draft')}
+                                        </span>
+                                        <span className="text-[10px] text-amber-700 font-medium normal-case block">
+                                            Parkir antrean
+                                        </span>
+                                    </div>
+                                </button>
                             )}
                         </div>
-                        <span
-                            className="text-2xl font-black text-blue-600">Rp {(grandTotal || 0).toLocaleString()}</span>
-                    </div>
 
-                    <button
-                        disabled={!canSubmit}
-                        onClick={() => { const initialPaid = formData.paymentStatus === 'Paid' ? grandTotal : Number(initialPaymentAmount || 0); const warrantyDays = Number(formData.type === 'Retail' ? formData.saleWarrantyDurationDays : formData.serviceWarrantyDurationDays); if (formData.paymentStatus === 'Partial' && (!initialPaid || initialPaid >= grandTotal)) return alert('Nominal uang muka harus lebih besar dari nol dan kurang dari total tagihan.'); if (transactionWarrantyEnabled && warrantyDays < 1) return alert('Isi durasi garansi minimal satu hari atau nonaktifkan garansi.'); onSave({
-                            // New IDs are generated atomically by the backend; only an edit retains its existing ID.
-                            id: initialService?.id || '',
-                            customerId: formData.customerId,
-                            customerName: formData.customerName,
-                            customerPhone: formData.customerPhone || undefined,
-                            vehicleId: formData.vehicleId,
-                            vehiclePlate: formData.vehiclePlate || 'RETAIL',
-                            vehicleModel: formData.vehicleModel || 'Direct Sale',
-                            kilometers: Number(formData.km || 0),
-                            complaint: formData.complaint,
-                            status: initialService?.status || (formData.type === 'Retail' ? 'Done' : 'In Progress'),
-                            createdAt: initialService?.createdAt || new Date().toISOString(),
-                            partsUsed: usedParts,
-                            serviceItems: formData.type === 'Retail' ? [] : serviceItems.map(item => ({
-                                name: item.name.trim(),
-                                price: Number(item.price || 0)
-                            })).filter(item => item.name),
-                            laborFee: formData.type === 'Retail' ? 0 : laborFeeNum,
-                            totalAmount: grandTotal,
-                            discountAmount: discountAmount > 0 ? discountAmount : undefined,
-                            discountReason: discountAmount > 0 ? discountReason : undefined,
-                            paymentStatus: formData.paymentStatus,
-                            paymentDueDate: formData.paymentDueDate ? new Date(`${formData.paymentDueDate}T23:59:59`).toISOString() : new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
-                            payments: initialPaid > 0 ? [{ amount: initialPaid, paymentMethod: initialPaymentMethod, paymentDate: new Date().toISOString() }] : [],
-                            mechanicId: formData.type === 'Retail' ? undefined : (formData.mechanicId || undefined),
-                            mechanicName: formData.type === 'Retail' ? undefined : (formData.mechanicName || undefined),
-                            mechanicBonusPercent: formData.type === 'Retail' ? 0 : Number(formData.mechanicBonusPercent || 0),
-                            mechanicBonusAmount: formData.type === 'Retail' ? 0 : Math.round((laborFeeNum * Number(formData.mechanicBonusPercent || 0)) / 100),
-                            receiptType: formData.type === 'Retail' ? 'SALE' : 'SERVICE',
-                            saleWarrantyEnabled: formData.type === 'Retail' && transactionWarrantyEnabled,
-                            saleWarrantyDurationDays: formData.type === 'Retail' && transactionWarrantyEnabled ? Number(formData.saleWarrantyDurationDays || 0) : 0,
-                            saleWarrantyTermsSnapshot: formData.type === 'Retail' && transactionWarrantyEnabled ? formData.saleWarrantyTerms.trim() || undefined : undefined,
-                            serviceWarrantyEnabled: formData.type !== 'Retail' && transactionWarrantyEnabled,
-                            serviceWarrantyDurationDays: formData.type !== 'Retail' && transactionWarrantyEnabled ? Number(formData.serviceWarrantyDurationDays || 0) : 0,
-                            serviceWarrantyTermsSnapshot: formData.type !== 'Retail' && transactionWarrantyEnabled ? formData.serviceWarrantyTerms.trim() || undefined : undefined
-                            ,version: initialService?.version,
-                            originQueueId
-                        }); }}
-                        className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-blue-200 active:scale-95 transition-all disabled:grayscale disabled:opacity-50"
-                    >
-                        {initialService?.id ? 'Simpan Perubahan Transaksi' : (formData.type === 'Retail' ? 'Complete Sale' : 'Submit Order')}
-                    </button>
+                        {/* Petunjuk Kasir */}
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-400 px-1 pt-0.5">
+                            <span>* Pastikan rincian transaksi sudah lengkap sebelum memproses.</span>
+                            {onSaveDraft && (
+                                <span className="text-amber-700 font-medium">
+                                    Draft tidak memotong stok gudang sebelum difinalisasi.
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 

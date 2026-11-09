@@ -4,16 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: update workspace configuration for new launcher functionality and task management">
+    <list default="true" id="02215a36-3220-4871-b7b2-5f11dc51020c" name="Changes" comment="feat: implement confirmation prompts for deletion actions and enhance error handling">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/AppLayout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/AppLayout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/DistributorTempoView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/DistributorTempoView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Header.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/InventoryView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/InventoryView.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/LowStockModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/LowStockModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/POSForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/POSForm.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SettingsView.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SettingsView.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/forms/PartForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/PartForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/forms/AddStockForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/forms/AddStockForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/container.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/container.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controllers/partController.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controllers/partController.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/db/memoryStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/db/memoryStore.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/repositories/partRepository.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/repositories/partRepository.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/apiRouter.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/routes/partRoutes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/routes/partRoutes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -242,7 +249,9 @@
       <workItem from="1792557116785" duration="1593000" />
       <workItem from="1792566077082" duration="1715000" />
       <workItem from="1792567964027" duration="35000" />
-      <workItem from="1793753786548" duration="2061000" />
+      <workItem from="1793753786548" duration="2980000" />
+      <workItem from="1794062938201" duration="641000" />
+      <workItem from="1794186785152" duration="4562000" />
     </task>
     <task id="LOCAL-00001" summary="update sidebar">
       <option name="closed" value="true" />
@@ -428,7 +437,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792567062171</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="feat: implement confirmation prompts for deletion actions and enhance error handling">
+      <option name="closed" value="true" />
+      <created>1793756819391</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1793756819391</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -467,6 +484,7 @@
     <MESSAGE value="feat: enhance print companion functionality and add print profile settings" />
     <MESSAGE value="feat: implement new launcher functionality with improved logging and server management" />
     <MESSAGE value="feat: update workspace configuration for new launcher functionality and task management" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: update workspace configuration for new launcher functionality and task management" />
+    <MESSAGE value="feat: implement confirmation prompts for deletion actions and enhance error handling" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: implement confirmation prompts for deletion actions and enhance error handling" />
   </component>
 </project>

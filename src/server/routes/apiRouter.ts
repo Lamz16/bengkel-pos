@@ -22,6 +22,7 @@ import { requireDatabase } from '../middleware/databaseRequired';
 import { activityLogger } from '../middleware/activityLogger';
 import { activityLogRouter } from './activityLogRoutes';
 import { serviceQueueRouter } from './serviceQueueRoutes';
+import { draftRouter } from './draftRoutes';
 import { transactionReportRouter } from './transactionReportRoutes';
 import { payrollRouter } from './payrollRoutes';
 
@@ -62,6 +63,7 @@ apiRouter.use('/parts', partRouter);
 apiRouter.use('/services', serviceRouter);
 apiRouter.use('/transaction-reports', transactionReportRouter);
 apiRouter.use('/service-queues', serviceQueueRouter);
+apiRouter.use('/drafts', draftRouter);
 apiRouter.use('/mechanics', mechanicRouter);
 apiRouter.use('/deductions', deductionRouter);
 apiRouter.use('/attendances', attendanceRouter);

@@ -10,7 +10,8 @@ interface AddStockFormProps {
 }
 
 export const AddStockForm: React.FC<AddStockFormProps> = ({ parts, suppliers, initialPartId, onSave }) => {
-  const [selectedPartId, setSelectedPartId] = useState(initialPartId || parts[0]?.id || '');
+  const availableParts = useMemo(() => parts.filter(p => p.isActive !== false || p.id === initialPartId), [parts, initialPartId]);
+  const [selectedPartId, setSelectedPartId] = useState(initialPartId || availableParts[0]?.id || '');
   const [amount, setAmount] = useState('0');
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export const AddStockForm: React.FC<AddStockFormProps> = ({ parts, suppliers, in
     }
   }, [initialPartId]);
   
-  const currentPart = useMemo(() => parts.find(p => p.id === selectedPartId), [parts, selectedPartId]);
+  const currentPart = useMemo(() => availableParts.find(p => p.id === selectedPartId), [availableParts, selectedPartId]);
   const [costPrice, setCostPrice] = useState('0');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
 
@@ -39,7 +40,7 @@ export const AddStockForm: React.FC<AddStockFormProps> = ({ parts, suppliers, in
           onChange={e => setSelectedPartId(e.target.value)}
           className="w-full h-12 px-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-sm font-bold"
         >
-          {parts.map(p => <option key={p.id} value={p.id}>{p.name} (Stok: {p.stock})</option>)}
+          {availableParts.map(p => <option key={p.id} value={p.id}>{p.name} (Stok: {p.stock})</option>)}
         </select>
       </div>
 

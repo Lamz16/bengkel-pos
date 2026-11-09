@@ -2,7 +2,7 @@ import {
   CompanySettings, SparePart, Customer, Vehicle, WorkshopService, Mechanic,
   MechanicDeduction, MechanicAttendance, Supplier, PurchaseRecord, Expense,
   ExpenseCategory, User, DistributorInvoice, PartCategory, WarehouseRack,
-  WarehouseZone, LoyaltyTier,
+  WarehouseZone, LoyaltyTier, TransactionDraft,
 } from '../../types';
 
 /**
@@ -30,6 +30,7 @@ export interface MemoryStore {
   expenseCategories: ExpenseCategory[];
   staff: Array<{ id: string; name: string; role: string; status: string; shifts?: string; email?: string }>;
   distributorInvoices?: DistributorInvoice[];
+  drafts: TransactionDraft[];
 }
 
 export const memoryStore: MemoryStore = {
@@ -37,5 +38,5 @@ export const memoryStore: MemoryStore = {
   loyaltyTiers: [], users: [], customers: [], vehicles: [], parts: [],
   categories: [], racks: [], zones: [], services: [], mechanics: [],
   deductions: [], attendances: [], suppliers: [], purchases: [], expenses: [],
-  expenseCategories: [], staff: [], distributorInvoices: [],
+  expenseCategories: [], staff: [], distributorInvoices: [], drafts: [],
 };

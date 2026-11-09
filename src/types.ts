@@ -229,6 +229,7 @@ export interface SparePart {
   rackLocation?: string;   // Ringkasan label lokasi (e.g. "Rak A - Tingkat 2 - Kotak 04")
   rackZone?: string;       // Area/Gudang (e.g. "Gudang Utama", "Toko Depan", "Gudang B")
   locationNotes?: string;  // Petunjuk posisi (e.g. "Dekat pintu kiri, susunan paling depan")
+  isActive?: boolean;      // Status aktif barang (false jika di-soft delete / arsip)
   version?: number;
 }
 
@@ -492,4 +493,56 @@ export interface PartLocationStock {
   locationId: string;
   quantity: number;
   location?: StorageLocation;
+}
+
+export interface TransactionDraftItem {
+  partId?: string;
+  name: string;
+  quantity: number;
+  priceAtTime: number;
+  normalPriceAtTime?: number;
+  purchasePriceAtTime?: number;
+  hasProductWarranty?: boolean;
+  warrantyDurationDays?: number;
+  warrantyTerms?: string;
+  wholesaleType?: 'percent' | 'nominal' | 'unit_price';
+  wholesaleValue?: number;
+  wholesaleUnitPrice?: number;
+}
+
+export interface TransactionDraftServiceItem {
+  name: string;
+  price: number;
+}
+
+export interface TransactionDraft {
+  id: string;
+  draftCode: string;
+  receiptType: 'SERVICE' | 'SALE';
+  customerName: string;
+  customerPhone?: string;
+  customerId?: string;
+  vehiclePlate?: string;
+  vehicleModel?: string;
+  vehicleId?: string;
+  kilometers?: number;
+  complaint?: string;
+  diagnosis?: string;
+  laborFee: number;
+  totalAmount: number;
+  discountAmount?: number;
+  discountReason?: string;
+  mechanicId?: string;
+  mechanicName?: string;
+  mechanicBonusPercent?: number;
+  originQueueId?: string;
+  note?: string;
+  itemsPayload: {
+    partsUsed: TransactionDraftItem[];
+    serviceItems: TransactionDraftServiceItem[];
+  };
+  createdById?: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt: string;
 }

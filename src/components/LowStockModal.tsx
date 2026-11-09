@@ -43,9 +43,9 @@ export const LowStockModal: React.FC<LowStockModalProps> = ({
   const [search, setSearch] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // Filter low stock parts
+  // Filter low stock parts (hanya barang aktif)
   const allLowStock = useMemo(() => {
-    return parts.filter(p => p.stock <= p.minStock);
+    return parts.filter(p => p.isActive !== false && p.stock <= p.minStock);
   }, [parts]);
 
   const outOfStockCount = useMemo(() => {

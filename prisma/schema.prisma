@@ -155,6 +155,7 @@ model SparePart {
   shelfLevel       String?
   binNumber        String?
   locationNotes    String?
+  isActive         Boolean                  @default(true)
   version          Int                      @default(1)
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
@@ -173,6 +174,7 @@ model SparePart {
   @@index([productId])
   @@index([rackId])
   @@index([supplierId])
+  @@index([isActive])
   @@index([rackId, shelfLevel, binNumber])
   @@unique([productId, variantName, size])
 }
@@ -720,4 +722,37 @@ model PartLocationStock {
   location   StorageLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
   @@unique([partId, locationId])
   @@index([locationId])
+}
+
+model TransactionDraft {
+  id                   String   @id @default(uuid())
+  draftCode            String   @unique
+  receiptType          String   @default("SERVICE") // "SERVICE" | "SALE"
+  customerName         String
+  customerPhone        String?
+  customerId           String?
+  vehiclePlate         String?
+  vehicleModel         String?
+  vehicleId            String?
+  kilometers           Int?     @default(0)
+  complaint            String?
+  diagnosis            String?
+  laborFee             Decimal  @default(0) @db.Decimal(18, 2)
+  totalAmount          Decimal  @default(0) @db.Decimal(18, 2)
+  discountAmount       Decimal? @default(0) @db.Decimal(18, 2)
+  discountReason       String?
+  mechanicId           String?
+  mechanicName         String?
+  mechanicBonusPercent Float?   @default(0)
+  originQueueId        String?
+  note                 String?
+  itemsPayload         Json
+  createdById          String?
+  createdByName        String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([receiptType])
+  @@index([customerName])
 }

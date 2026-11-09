@@ -21,6 +21,7 @@ import { FinanceService } from './services/financeService';
 import { SettingsService } from './services/settingsService';
 import { AiDiagnosisService } from './services/aiDiagnosisService';
 import { ServiceQueueService } from './services/serviceQueueService';
+import { DraftService } from './services/draftService';
 
 // Repositories (Data Access Layer)
 export const customerRepository = new CustomerRepository();
@@ -53,3 +54,4 @@ export const financeService = new FinanceService(financeRepository);
 export const settingsService = new SettingsService(settingsRepository, staffRepository);
 export const aiDiagnosisService = new AiDiagnosisService();
 export const serviceQueueService = new ServiceQueueService();
+export const draftService = new DraftService();

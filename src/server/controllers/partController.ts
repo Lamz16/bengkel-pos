@@ -74,17 +74,31 @@ export class PartController {
       const before = await inventoryService.getPart(req.params.id);
       if (!before) return res.status(404).json({ error: 'Barang tidak ditemukan.' });
       await inventoryService.deletePart(req.params.id);
-      if (before) await recordAudit(req, { action: 'Menghapus sparepart', entity: 'SparePart', entityId: req.params.id, before, description: `Sparepart ${before.name} dihapus.` });
-      res.json({ success: true, message: 'Suku cadang berhasil dihapus' });
+      if (before) await recordAudit(req, { action: 'Menonaktifkan sparepart (soft delete)', entity: 'SparePart', entityId: req.params.id, before, description: `Sparepart ${before.name} dinonaktifkan (soft delete).` });
+      res.json({ success: true, message: 'Suku cadang berhasil dinonaktifkan (soft delete)' });
     } catch (err: any) {
       if (err instanceof PartInUseError) return res.status(409).json({ error: err.message });
       if (err?.code === 'P2034') return res.status(409).json({ error: 'Data barang berubah saat penghapusan. Muat ulang lalu coba kembali.' });
       if (err?.code === 'P2003') {
         return res.status(409).json({ error: 'Barang tidak dapat dihapus karena masih terkait riwayat stok, pembelian, transaksi, retur, atau lokasi stok. Data barang dan riwayatnya tetap disimpan.' });
       }
-      if (err?.code === 'P2025') return res.status(404).json({ error: 'Barang tidak ditemukan atau sudah dihapus.' });
+      if (err?.code === 'P2025') return res.status(404).json({ error: 'Barang tidak ditemukan atau sudah dinonaktifkan.' });
       console.error('Failed to delete part:', err);
-      res.status(500).json({ error: 'Barang gagal dihapus. Silakan coba kembali.' });
+      res.status(500).json({ error: 'Barang gagal dinonaktifkan. Silakan coba kembali.' });
+    }
+  }
+
+  async restorePart(req: Request, res: Response) {
+    try {
+      const before = await inventoryService.getPart(req.params.id);
+      if (!before) return res.status(404).json({ error: 'Barang tidak ditemukan.' });
+      const updated = await (inventoryService as any).partRepo.update(req.params.id, { isActive: true });
+      if (!updated) return res.status(404).json({ error: 'Barang tidak ditemukan.' });
+      await recordAudit(req, { action: 'Memulihkan sparepart', entity: 'SparePart', entityId: updated.id, before, after: updated, description: `Sparepart ${updated.name} diaktifkan kembali.` });
+      res.json(updated);
+    } catch (err: any) {
+      console.error('Failed to restore part:', err);
+      res.status(500).json({ error: err.message || 'Gagal memulihkan suku cadang' });
     }
   }
 

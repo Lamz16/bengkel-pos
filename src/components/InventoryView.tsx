@@ -46,6 +46,7 @@ interface InventoryViewProps {
   onAddStock: (partId?: string) => void;
   onEdit: (p: SparePart) => void;
   onDelete: (id: string) => Promise<void>;
+  onRestore?: (id: string) => Promise<void>;
   initialShowLowStockModal?: boolean;
   onOpenLowStockModal?: () => void;
   onOpenMasterDataModal?: () => void;
@@ -64,6 +65,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onAddStock, 
   onEdit, 
   onDelete,
+  onRestore,
   initialShowLowStockModal = false,
   onOpenLowStockModal,
   onOpenMasterDataModal,
@@ -73,6 +75,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [deleteTarget, setDeleteTarget] = useState<SparePart | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [activeStatusFilter, setActiveStatusFilter] = useState<'active' | 'archived' | 'all'>('active');
   const deleteInFlight = useRef(false);
   const confirmDelete = async () => {
     if (!deleteTarget || deleteInFlight.current) return;
@@ -195,9 +199,17 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         stockStatusFilter === 'low_stock' ? (p.stock <= p.minStock) :
         p.stock === 0;
 
-      return matchSearch && matchRack && matchCategory && matchStatus;
+      const matchActiveStatus = 
+        activeStatusFilter === 'all' ? true :
+        activeStatusFilter === 'active' ? (p.isActive !== false) :
+        (p.isActive === false);
+
+      return matchSearch && matchRack && matchCategory && matchStatus && matchActiveStatus;
     });
-  }, [parts, searchTerm, selectedRackFilter, selectedCategoryFilter, stockStatusFilter]);
+  }, [parts, searchTerm, selectedRackFilter, selectedCategoryFilter, stockStatusFilter, activeStatusFilter]);
+
+  const activeCount = useMemo(() => parts.filter(p => p.isActive !== false).length, [parts]);
+  const archivedCount = useMemo(() => parts.filter(p => p.isActive === false).length, [parts]);
 
   // Grouped racks summary for the Warehouse Rack Locator tab
   const rackGroups = useMemo(() => {
@@ -242,7 +254,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   };
 
   const lowStockCount = parts.filter(p => p.stock <= p.minStock).length;
-  const totalUnits = parts.reduce((acc, p) => acc + (p.stock || 0), 0);
+  const totalUnits = parts.filter(p => p.isActive !== false).reduce((acc, p) => acc + (p.stock || 0), 0);
 
   return (
     <div className="space-y-4 pb-20">
@@ -386,6 +398,40 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 mr-1">
                 <Sliders className="w-3.5 h-3.5 text-blue-600" /> Filter:
               </span>
+
+              {/* Status Aktif / Arsip Toggle */}
+              <div className="flex items-center bg-slate-200/70 p-0.5 rounded-xl text-xs font-bold mr-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveStatusFilter('active')}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-lg transition-all",
+                    activeStatusFilter === 'active' ? "bg-white text-blue-600 shadow-xs font-black" : "text-slate-600 hover:text-slate-900"
+                  )}
+                >
+                  Aktif ({activeCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStatusFilter('archived')}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-lg transition-all",
+                    activeStatusFilter === 'archived' ? "bg-white text-rose-600 shadow-xs font-black" : "text-slate-600 hover:text-slate-900"
+                  )}
+                >
+                  Arsip / Terhapus ({archivedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStatusFilter('all')}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-lg transition-all",
+                    activeStatusFilter === 'all' ? "bg-white text-slate-900 shadow-xs font-black" : "text-slate-600 hover:text-slate-900"
+                  )}
+                >
+                  Semua ({parts.length})
+                </button>
+              </div>
 
               {/* Dropdown 1: Status Stok */}
               <div className="relative">
@@ -648,10 +694,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </div>
 
               {/* Reset Filter Button */}
-              {(stockStatusFilter !== 'all' || selectedCategoryFilter !== 'all' || selectedRackFilter !== 'all' || searchTerm) && (
+              {(activeStatusFilter !== 'active' || stockStatusFilter !== 'all' || selectedCategoryFilter !== 'all' || selectedRackFilter !== 'all' || searchTerm) && (
                 <button
                   type="button"
                   onClick={() => {
+                    setActiveStatusFilter('active');
                     setStockStatusFilter('all');
                     setSelectedCategoryFilter('all');
                     setSelectedRackFilter('all');
@@ -736,6 +783,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-black text-slate-900 truncate">{part.name}</p>
+                          {part.isActive === false && (
+                            <span className="text-[10px] font-black bg-rose-50 text-rose-700 px-2 py-0.5 rounded-md border border-rose-200 flex items-center gap-1">
+                              <PackageX className="w-3 h-3 text-rose-600" />
+                              Arsip / Terhapus
+                            </span>
+                          )}
                           {part.size && <span className="text-[10px] font-black bg-violet-50 text-violet-700 px-2 py-0.5 rounded-md border border-violet-100">{part.variantName || 'Ukuran'}: {part.size}</span>}
                           {part.sku ? (
                             <span className="text-[10px] font-mono font-black bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100 flex items-center gap-0.5">
@@ -827,14 +880,38 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={() => { setDeleteError(''); setDeleteTarget(part); }}
-                        aria-label="Hapus Sparepart"
-                        title="Hapus Part"
-                        className="p-2 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 rounded-xl transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {part.isActive === false ? (
+                        onRestore && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (restoringId) return;
+                              setRestoringId(part.id);
+                              try {
+                                await onRestore(part.id);
+                              } finally {
+                                setRestoringId(null);
+                              }
+                            }}
+                            disabled={restoringId === part.id}
+                            aria-label="Pulihkan Sparepart"
+                            title="Pulihkan / Aktifkan Kembali Part"
+                            className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            <span className="text-[10px] font-black hidden sm:inline">{restoringId === part.id ? 'Memulihkan...' : 'Pulihkan'}</span>
+                          </button>
+                        )
+                      ) : (
+                        <button 
+                          onClick={() => { setDeleteError(''); setDeleteTarget(part); }}
+                          aria-label="Hapus Sparepart"
+                          title="Hapus / Nonaktifkan Part"
+                          className="p-2 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 rounded-xl transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>}
                   </div>
                 </div>
@@ -1270,13 +1347,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           }}
         />
       )}
-      {deleteTarget && <Modal title="Konfirmasi Hapus Barang" maxWidth="sm" onClose={() => { if (!deleteInFlight.current) setDeleteTarget(null); }}>
+      {deleteTarget && <Modal title="Konfirmasi Nonaktifkan / Hapus Barang" maxWidth="sm" onClose={() => { if (!deleteInFlight.current) setDeleteTarget(null); }}>
         <div role="alertdialog" aria-modal="true" aria-label="Konfirmasi Hapus Barang" aria-describedby="delete-part-description" className="space-y-4">
-          <p id="delete-part-description" className="text-sm text-slate-700">Hapus barang <strong>{deleteTarget.name}</strong>{deleteTarget.sku ? ' (' + deleteTarget.sku + ')' : ''}? Tindakan ini tidak dapat dibatalkan. Catatan pembelian dan riwayat stok awal ikut dihapus. Penghapusan hanya diizinkan jika belum ada transaksi atau pergerakan stok lanjutan.</p>
+          <p id="delete-part-description" className="text-sm text-slate-700">
+            Hapus barang <strong>{deleteTarget.name}</strong>{deleteTarget.sku ? ' (' + deleteTarget.sku + ')' : ''}? Tindakan ini akan menonaktifkan barang (soft delete). Barang tidak akan muncul lagi di kasir atau transaksi baru, namun riwayat transaksi dan nota masa lalu tetap tersimpan dengan aman di pembukuan.
+          </p>
           {deleteError && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{deleteError}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" autoFocus disabled={isDeleting} onClick={() => setDeleteTarget(null)} className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold disabled:opacity-50">Batal</button>
-            <button type="button" disabled={isDeleting} onClick={confirmDelete} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{isDeleting ? 'Menghapus...' : 'Hapus Barang'}</button>
+            <button type="button" disabled={isDeleting} onClick={confirmDelete} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{isDeleting ? 'Memproses...' : 'Hapus (Soft Delete)'}</button>
           </div>
         </div>
       </Modal>}

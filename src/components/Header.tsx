@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Menu, ArrowLeft, Plus, AlertTriangle, Moon, Sun, Printer } from 'lucide-react';
+import { Menu, ArrowLeft, Plus, AlertTriangle, Moon, Sun, Printer, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface HeaderProps {
@@ -9,7 +9,9 @@ interface HeaderProps {
   dbStatus?: { connected: boolean; orm: string };
   printerStatus?: { ready: boolean };
   lowStockCount?: number;
+  draftCount?: number;
   onOpenLowStockModal?: () => void;
+  onOpenDraftsModal?: () => void;
   onOpenMobileMenu: () => void;
   onClosePOSForm: () => void;
   onOpenPOSForm: () => void;
@@ -23,7 +25,9 @@ export const Header: React.FC<HeaderProps> = ({
   dbStatus,
   printerStatus,
   lowStockCount = 0,
+  draftCount = 0,
   onOpenLowStockModal,
+  onOpenDraftsModal,
   onOpenMobileMenu,
   onClosePOSForm,
   onOpenPOSForm,
@@ -87,6 +91,18 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
         </button>
+
+        {draftCount > 0 && onOpenDraftsModal && (
+          <button
+            type="button"
+            onClick={onOpenDraftsModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-black transition-all shadow-2xs"
+            title={`Terdapat ${draftCount} draft transaksi tertahan. Klik untuk membuka.`}
+          >
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
+            <span>Draft ({draftCount})</span>
+          </button>
+        )}
 
         {lowStockCount > 0 && onOpenLowStockModal && (
           <button
