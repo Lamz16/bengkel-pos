@@ -184,7 +184,7 @@ export const POSForm: React.FC<POSFormProps> = ({
     const [wholesaleValue, setWholesaleValue] = useState('');
     const [wholesaleType, setWholesaleType] = useState<'percent' | 'nominal'>('percent');
 
-    // Sync state when activeDraft or initialService changes
+    // Sync state when activeDraft, initialService, or initialCart changes
     useEffect(() => {
         if (activeDraft) {
             setFormData({
@@ -277,8 +277,83 @@ export const POSForm: React.FC<POSFormProps> = ({
             setTransactionWarrantyEnabled(
                 initialService.receiptType === 'SALE' ? !!initialService.saleWarrantyEnabled : !!initialService.serviceWarrantyEnabled
             );
+        } else if (initialCart && initialCart.length > 0) {
+            setFormData({
+                customerId: initialCustomer ? initialCustomer.id : '',
+                customerName: initialCustomer ? initialCustomer.name : '',
+                customerPhone: initialCustomer ? initialCustomer.phone : '',
+                vehicleId: '',
+                vehiclePlate: 'RETAIL',
+                vehicleModel: 'Direct Sale',
+                km: '',
+                complaint: '',
+                laborFee: '0',
+                type: 'Retail',
+                mechanicId: defaultMec ? defaultMec.id : '',
+                mechanicName: defaultMec ? defaultMec.name : '',
+                mechanicBonusPercent: defaultMec ? defaultMec.defaultBonusPercent : 15,
+                serviceWarrantyDurationDays: '',
+                serviceWarrantyTerms: '',
+                saleWarrantyDurationDays: '',
+                saleWarrantyTerms: '',
+                paymentStatus: 'Unpaid',
+                paymentDueDate: ''
+            });
+
+            setUsedParts(initialCart.map(entry => {
+                const part = parts.find(item => item.id === entry.partId);
+                if (!part) return null;
+                const quantity = Math.max(1, Math.min(entry.quantity, part.stock));
+                return {
+                    partId: part.id,
+                    name: part.name,
+                    quantity,
+                    priceAtTime: part.price,
+                    normalPriceAtTime: part.price,
+                    purchasePriceAtTime: part.purchasePrice,
+                    hasProductWarranty: part.hasProductWarranty,
+                    productWarrantyOverride: false,
+                    warrantyDurationDays: part.warrantyDurationDays,
+                    warrantyTerms: part.warrantyTerms
+                };
+            }).filter(Boolean) as any);
+
+            setServiceItems([{ name: '', price: '' }]);
+            setDiscountAmount(0);
+            setDiscountReason('');
+            setTransactionWarrantyEnabled(false);
+            setDiagnosis('');
+        } else {
+            // Clean state reset: Tidak ada draft, service, maupun cart tertinggal
+            setFormData({
+                customerId: initialCustomer ? initialCustomer.id : '',
+                customerName: initialCustomer ? initialCustomer.name : '',
+                customerPhone: initialCustomer ? initialCustomer.phone : '',
+                vehicleId: '',
+                vehiclePlate: '',
+                vehicleModel: '',
+                km: '',
+                complaint: '',
+                laborFee: '0',
+                type: 'Service',
+                mechanicId: defaultMec ? defaultMec.id : '',
+                mechanicName: defaultMec ? defaultMec.name : '',
+                mechanicBonusPercent: defaultMec ? defaultMec.defaultBonusPercent : 15,
+                serviceWarrantyDurationDays: '',
+                serviceWarrantyTerms: '',
+                saleWarrantyDurationDays: '',
+                saleWarrantyTerms: '',
+                paymentStatus: 'Unpaid',
+                paymentDueDate: ''
+            });
+            setUsedParts([]);
+            setServiceItems([{ name: '', price: '' }]);
+            setDiscountAmount(0);
+            setDiscountReason(initialPromoPercent ? `Promo Pelanggan Setia (${initialPromoPercent}%)` : '');
+            setTransactionWarrantyEnabled(false);
+            setDiagnosis('');
         }
-    }, [activeDraft, initialService, defaultMec]);
+    }, [activeDraft, initialService, initialCart, parts, initialCustomer, initialPromoPercent, defaultMec]);
 
     // Customer matching for Loyalty Tracking
     const matchedCustomer = useMemo(() => {
@@ -313,28 +388,6 @@ export const POSForm: React.FC<POSFormProps> = ({
             p.category.toLowerCase().includes(q)
         );
     }, [parts, partSearchQuery]);
-
-    useEffect(() => {
-        if (!initialCart?.length) return;
-        setFormData(prev => ({...prev, type: 'Retail'}));
-        setUsedParts(initialCart.map(entry => {
-            const part = parts.find(item => item.id === entry.partId);
-            if (!part) return null;
-            const quantity = Math.max(1, Math.min(entry.quantity, part.stock));
-            return {
-                partId: part.id,
-                name: part.name,
-                quantity,
-                priceAtTime: part.price,
-                normalPriceAtTime: part.price,
-                purchasePriceAtTime: part.purchasePrice,
-                hasProductWarranty: part.hasProductWarranty,
-                productWarrantyOverride: false,
-                warrantyDurationDays: part.warrantyDurationDays,
-                warrantyTerms: part.warrantyTerms
-            };
-        }).filter(Boolean) as any);
-    }, [initialCart, parts]);
 
     const changePartQuantity = (partId: string, nextQuantity: number) => {
         const available = parts.find(part => part.id === partId)?.stock || 0;

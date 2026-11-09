@@ -423,6 +423,26 @@ export default function AppLayout() {
     setWarrantyModalService(null);
   };
 
+  // Membersihkan seluruh state memory transaksi POS
+  const resetPOSState = useCallback(() => {
+    setEditingService(null);
+    setActiveDraft(null);
+    setSaleCart([]);
+    setOriginQueueId(undefined);
+    setPosInitialCustomer(null);
+    setPosInitialPromoPercent(null);
+  }, []);
+
+  const openNewTransaction = useCallback(() => {
+    resetPOSState();
+    setShowPOSForm(true);
+  }, [resetPOSState]);
+
+  const closePOSForm = useCallback(() => {
+    setShowPOSForm(false);
+    resetPOSState();
+  }, [resetPOSState]);
+
   const handleNewService = async (service: WorkshopService) => {
     try {
       const savedService = await api.createService(service);
@@ -433,14 +453,12 @@ export default function AppLayout() {
       ]);
       setParts(updatedParts);
       setCustomers(updatedCustomers);
-      setShowPOSForm(false);
-      setOriginQueueId(undefined);
+      closePOSForm();
 
       if (activeDraft) {
         try {
           await api.deleteDraft(activeDraft.id);
           setDrafts(prev => prev.filter(d => d.id !== activeDraft.id));
-          setActiveDraft(null);
         } catch (e) {
           console.error('Failed to clear draft after service creation:', e);
         }
@@ -465,14 +483,12 @@ export default function AppLayout() {
       const [updatedParts, updatedCustomers] = await Promise.all([api.getParts(), api.getCustomers()]);
       setParts(updatedParts);
       setCustomers(updatedCustomers);
-      setShowPOSForm(false);
-      setEditingService(null);
+      closePOSForm();
 
       if (activeDraft) {
         try {
           await api.deleteDraft(activeDraft.id);
           setDrafts(prev => prev.filter(d => d.id !== activeDraft.id));
-          setActiveDraft(null);
         } catch (e) {
           console.error('Failed to clear draft after service update:', e);
         }
@@ -497,10 +513,7 @@ export default function AppLayout() {
         setDrafts(prev => [created, ...prev]);
         alert(`Transaksi berhasil disimpan sebagai draft (${created.draftCode}).`);
       }
-      setActiveDraft(null);
-      setEditingService(null);
-      setOriginQueueId(undefined);
-      setShowPOSForm(false);
+      closePOSForm();
     } catch (err) {
       console.error('Failed to save transaction draft:', err);
       alert(err instanceof Error ? err.message : 'Gagal menyimpan draft transaksi.');
@@ -522,6 +535,7 @@ export default function AppLayout() {
   };
 
   const handleResumeDraft = (draft: TransactionDraft) => {
+    resetPOSState();
     const partsUsed = (draft.itemsPayload?.partsUsed || []).map(p => ({
       partId: p.partId || '',
       name: p.name,
@@ -929,7 +943,7 @@ export default function AppLayout() {
         logoUrl={companySettings.logoUrl}
         onSelectTab={(tabId) => {
           setActiveTab(tabId);
-          setShowPOSForm(false);
+          closePOSForm();
         }}
         onCloseMobile={() => setIsSidebarOpen(false)}
         onLogout={handleLogout}
@@ -950,11 +964,8 @@ export default function AppLayout() {
           onOpenMobileMenu={() => setIsSidebarOpen(true)}
           theme={theme}
           onToggleTheme={() => setTheme(current => current === 'dark' ? 'light' : 'dark')}
-          onClosePOSForm={() => {
-            setShowPOSForm(false);
-            setActiveDraft(null);
-          }}
-          onOpenPOSForm={() => { setEditingService(null); setActiveDraft(null); setOriginQueueId(undefined); setShowPOSForm(true); }}
+          onClosePOSForm={closePOSForm}
+          onOpenPOSForm={openNewTransaction}
         />
 
         {/* Scrollable Viewport */}
@@ -996,7 +1007,7 @@ export default function AppLayout() {
                   </div>
                   {(currentUser.role === 'Owner' || currentUser.role === 'Admin') && (
                     <button 
-                      onClick={() => { setEditingService(null); setOriginQueueId(undefined); setShowPOSForm(true); }}
+                      onClick={openNewTransaction}
                       className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-100"
                     >
                       New Transaction
@@ -1021,6 +1032,7 @@ export default function AppLayout() {
             {!showPOSForm && activeTab === 'queue' && (
               <motion.div key="queue" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <ServiceQueueView onConvert={(queue: ServiceQueue) => {
+                  resetPOSState();
                   setOriginQueueId(queue.id);
                   setEditingService({ id: '', customerId: queue.customerId || '', customerName: queue.customerName, customerPhone: queue.customerPhone, vehicleId: queue.vehicleId || '', vehiclePlate: queue.vehiclePlate, vehicleModel: queue.vehicleModel, kilometers: queue.kilometers || 0, complaint: queue.complaint, diagnosis: queue.diagnosis || queue.internalNotes, status: 'In Progress', createdAt: new Date().toISOString(), partsUsed: [], serviceItems: [], laborFee: 0, totalAmount: 0, paymentStatus: 'Unpaid', mechanicId: queue.mechanicId, mechanicName: queue.mechanicName, receiptType: 'SERVICE', originQueueId: queue.id });
                   setShowPOSForm(true);
@@ -1032,14 +1044,7 @@ export default function AppLayout() {
               <motion.div key="pos-form" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
                 <div className="flex items-center gap-3 mb-6">
                   <button 
-                    onClick={() => {
-                      setShowPOSForm(false);
-                      setEditingService(null);
-                      setActiveDraft(null);
-                      setOriginQueueId(undefined);
-                      setPosInitialCustomer(null);
-                      setPosInitialPromoPercent(null);
-                    }} 
+                    onClick={closePOSForm} 
                     aria-label="Tutup Form POS"
                     className="p-2 bg-white rounded-xl border border-slate-100"
                   >
@@ -1048,7 +1053,7 @@ export default function AppLayout() {
                   <h2 className="text-xl font-black text-slate-900">{editingService ? (activeDraft ? `Lanjutkan Draft: ${activeDraft.draftCode}` : 'Edit Transaksi') : 'New Transaction'}</h2>
                 </div>
                 <POSForm 
-                  key={activeDraft ? `draft-${activeDraft.id}` : (editingService?.id ? `service-${editingService.id}` : 'pos-form-fresh')}
+                  key={activeDraft ? `draft-${activeDraft.id}` : (editingService?.id ? `service-${editingService.id}` : (saleCart.length ? `cart-${saleCart.map(c => c.partId).join('-')}` : (posInitialCustomer ? `customer-${posInitialCustomer.id}` : 'pos-form-clean')))}
                   onSave={(service) => {
                     if (editingService?.id) handleEditService(service); else handleNewService(service);
                     setPosInitialCustomer(null);
@@ -1071,10 +1076,7 @@ export default function AppLayout() {
                   activeDraft={activeDraft}
                   onSaveDraft={handleSaveDraft}
                   onOpenDraftsModal={() => setShowDraftsModal(true)}
-                  onClearActiveDraft={() => {
-                    setActiveDraft(null);
-                    setEditingService(null);
-                  }}
+                  onClearActiveDraft={resetPOSState}
                 />
               </motion.div>
             )}
@@ -1131,7 +1133,11 @@ export default function AppLayout() {
                   onRestore={handleRestorePart}
                   onOpenLowStockModal={() => setShowLowStockModal(true)}
                   onOpenMasterDataModal={() => setShowMasterDataModal(true)}
-                  onCheckoutCart={(items) => { setEditingService(null); setSaleCart(items); setShowPOSForm(true); }}
+                  onCheckoutCart={(items) => {
+                    resetPOSState();
+                    setSaleCart(items);
+                    setShowPOSForm(true);
+                  }}
                   canManageInventory={currentUser.role === 'Owner'}
                 />
               </motion.div>
@@ -1147,9 +1153,10 @@ export default function AppLayout() {
                   onEdit={(c) => setEditingCustomer(c)}
                   onDelete={handleDeleteCustomer}
                   onSelectCustomerForPOS={(cust, promoPct) => {
+                    resetPOSState();
                     setPosInitialCustomer(cust);
                     setPosInitialPromoPercent(promoPct || null);
-                    setEditingService(null); setShowPOSForm(true);
+                    setShowPOSForm(true);
                   }}
                 />
               </motion.div>
